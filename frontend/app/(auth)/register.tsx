@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -106,9 +106,12 @@ export default function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Ionicons name="person-add" size={48} color="#4CAF50" />
-          <Text style={styles.title}>Criar Conta</Text>
-          <Text style={styles.subtitle}>Cadastre-se no BIKE SEGURA BC</Text>
+          <Image
+            source={require('../../assets/images/logo.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.subtitle}>Cadastre-se</Text>
         </View>
 
         <View style={styles.form}>
@@ -118,7 +121,7 @@ export default function RegisterScreen() {
             placeholder="João Silva"
             value={formData.nome_completo}
             onChangeText={(text) => updateField('nome_completo', text)}
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>CPF</Text>
@@ -129,7 +132,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => updateField('cpf', formatCPF(text))}
             keyboardType="numeric"
             maxLength={14}
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>Data de Nascimento</Text>
@@ -140,7 +143,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => updateField('data_nascimento', formatDate(text))}
             keyboardType="numeric"
             maxLength={10}
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>Telefone</Text>
@@ -151,7 +154,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => updateField('telefone', formatPhone(text))}
             keyboardType="phone-pad"
             maxLength={15}
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>E-mail</Text>
@@ -162,7 +165,7 @@ export default function RegisterScreen() {
             onChangeText={(text) => updateField('email', text)}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>Senha</Text>
@@ -172,7 +175,7 @@ export default function RegisterScreen() {
             value={formData.senha}
             onChangeText={(text) => updateField('senha', text)}
             secureTextEntry
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>Confirmar Senha</Text>
@@ -182,7 +185,7 @@ export default function RegisterScreen() {
             value={formData.confirmarSenha}
             onChangeText={(text) => updateField('confirmarSenha', text)}
             secureTextEntry
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <TouchableOpacity
@@ -210,7 +213,7 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
   },
   scrollContent: {
     flexGrow: 1,
@@ -221,16 +224,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 16,
+  logo: {
+    width: 200,
+    height: 140,
   },
   subtitle: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 18,
+    color: '#FFC107',
     marginTop: 8,
+    fontWeight: 'bold',
   },
   form: {
     width: '100%',
@@ -238,30 +240,31 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFC107',
     marginBottom: 8,
     marginTop: 12,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#333',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1a1a1a',
+    color: '#fff',
   },
   button: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FFC107',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 24,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#666',
   },
   buttonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -271,7 +274,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   linkText: {
-    color: '#4CAF50',
+    color: '#FFC107',
     fontSize: 14,
   },
 });

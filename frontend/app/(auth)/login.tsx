@@ -9,10 +9,10 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -44,9 +44,11 @@ export default function LoginScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Ionicons name="bicycle" size={64} color="#4CAF50" />
-          <Text style={styles.title}>BIKE SEGURA BC</Text>
-          <Text style={styles.subtitle}>Proteja sua bicicleta</Text>
+          <Image
+            source={require('../../assets/images/logo.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.form}>
@@ -58,7 +60,7 @@ export default function LoginScreen() {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <Text style={styles.label}>Senha</Text>
@@ -68,7 +70,7 @@ export default function LoginScreen() {
             value={senha}
             onChangeText={setSenha}
             secureTextEntry
-            placeholderTextColor="#999"
+            placeholderTextColor="#666"
           />
 
           <TouchableOpacity
@@ -96,7 +98,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
   },
   scrollContent: {
     flexGrow: 1,
@@ -107,16 +109,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 48,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 16,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    marginTop: 8,
+  logo: {
+    width: 280,
+    height: 200,
   },
   form: {
     width: '100%',
@@ -124,30 +119,31 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#333',
+    color: '#FFC107',
     marginBottom: 8,
     marginTop: 16,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
+    borderWidth: 2,
+    borderColor: '#333',
     borderRadius: 8,
     padding: 16,
     fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#1a1a1a',
+    color: '#fff',
   },
   button: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#FFC107',
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 24,
   },
   buttonDisabled: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#666',
   },
   buttonText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -156,7 +152,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#4CAF50',
+    color: '#FFC107',
     fontSize: 14,
   },
 });
