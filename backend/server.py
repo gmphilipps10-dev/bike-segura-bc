@@ -23,7 +23,7 @@ db = client[os.environ['DB_NAME']]
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.getenv("SECRET_KEY", "seu-secret-key-super-seguro-aqui-mude-em-producao")
+SECRET_KEY = os.environ['SECRET_KEY']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 * 24 * 60  # 30 days
 
@@ -257,7 +257,9 @@ async def create_bike(bike_data: BikeCreate, current_user: dict = Depends(get_cu
 
 @api_router.get("/bikes", response_model=List[BikeResponse])
 async def get_bikes(current_user: dict = Depends(get_current_user)):
-    bikes = await db.bikes.find({"proprietario_id": str(current_user["_id"])}).to_list(1000)
+    bikes = await db.bikes.find(
+        {"proprietario_id": str(current_user["_id"])}
+    ).limit(100).to_list(100)
     
     result = []
     for bike in bikes:
