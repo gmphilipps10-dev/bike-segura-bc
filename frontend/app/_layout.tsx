@@ -14,8 +14,9 @@ function RootLayoutNav() {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
+    const inProtectedRoute = ['add-bike', 'bike-details'].includes(segments[0]);
 
-    if (user && !inTabsGroup) {
+    if (user && !inTabsGroup && !inProtectedRoute && segments[0]) {
       router.replace('/(tabs)/home');
     } else if (!user && !inAuthGroup) {
       router.replace('/(auth)/login');
@@ -26,6 +27,8 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="add-bike" options={{ headerShown: false }} />
+      <Stack.Screen name="bike-details" options={{ headerShown: false }} />
     </Stack>
   );
 }
