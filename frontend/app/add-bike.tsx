@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { bikeAPI } from '../utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function AddBikeScreen() {
   const router = useRouter();
@@ -62,77 +63,71 @@ export default function AddBikeScreen() {
     setFotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async () => {
-    console.log('🔵 BOTÃO CLICADO - handleSubmit chamado');
+  const handleSubmit = () => {
+    alert('Botão foi clicado!'); // Teste básico
     
     const { marca, modelo, cor, numero_serie, tipo } = formData;
 
-    console.log('📝 Dados do formulário:', { marca, modelo, cor, numero_serie, tipo });
-
-    if (!marca || !modelo || !cor || !numero_serie || !tipo) {
-      console.log('❌ Validação falhou - campos obrigatórios faltando');
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios:\n• Marca\n• Modelo\n• Cor\n• Número de Série\n• Tipo (clique em um dos botões)');
+    // Validação básica
+    if (!marca) {
+      alert('Preencha a Marca');
+      return;
+    }
+    if (!modelo) {
+      alert('Preencha o Modelo');
+      return;
+    }
+    if (!cor) {
+      alert('Preencha a Cor');
+      return;
+    }
+    if (!numero_serie) {
+      alert('Preencha o Número de Série');
+      return;
+    }
+    if (!tipo) {
+      alert('Selecione o Tipo (clique em um dos botões: Urbana, MTB, Speed ou Elétrica)');
       return;
     }
 
-    console.log('✅ Validação passou');
-
-    // Fotos agora são opcionais
-    if (fotos.length === 0) {
-      console.log('⚠️ Sem fotos - mostrando confirmação');
-      Alert.alert(
-        'Sem Fotos',
-        'Você não adicionou fotos. Deseja cadastrar assim mesmo?\n\n(Recomendamos adicionar fotos para facilitar identificação)',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Cadastrar Sem Fotos', onPress: () => submitBike() },
-        ]
-      );
-      return;
-    }
-
-    console.log('📸 Tem fotos - prosseguindo');
+    // Se passou validação, chama submitBike
+    alert('Validação OK! Cadastrando...');
     submitBike();
   };
 
   const submitBike = async () => {
-    const { marca, modelo, cor, numero_serie, tipo } = formData;
+    const { marca, modelo, cor, numero_serie, tipo, valor_estimado, caracteristicas, link_rastreamento } = formData;
 
     setLoading(true);
     try {
-      console.log('Iniciando cadastro de bike...', {
-        marca,
-        modelo,
-        cor,
-        numero_serie,
-        tipo,
-        totalFotos: fotos.length
-      });
-
-      await bikeAPI.create({
-        marca,
-        modelo,
-        cor,
-        numero_serie,
-        fotos: fotos.length > 0 ? fotos : [],
-        tipo,
-        valor_estimado: formData.valor_estimado ? parseFloat(formData.valor_estimado) : undefined,
-        caracteristicas: formData.caracteristicas || undefined,
-        link_rastreamento: formData.link_rastreamento || undefined,
-      });
-
-      console.log('Bike cadastrada com sucesso!');
-
-      Alert.alert('Sucesso!', 'Bicicleta cadastrada com sucesso', [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
+      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/bikes`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${await AsyncStorage.getItem('token')}`,
         },
-      ]);
+        body: JSON.stringify({
+          marca,
+          modelo,
+          cor,
+          numero_serie,
+          fotos: [],
+          tipo,
+          valor_estimado: valor_estimado ? parseFloat(valor_estimado) : undefined,
+          caracteristicas: caracteristicas || undefined,
+          link_rastreamento: link_rastreamento || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.detail || 'Erro ao cadastrar');
+      }
+
+      alert('✅ Bicicleta cadastrada com sucesso!');
+      router.back();
     } catch (error: any) {
-      console.error('Erro ao cadastrar bike:', error);
-      const errorMessage = error.message || 'Erro desconhecido ao cadastrar bicicleta';
-      Alert.alert('Erro ao Cadastrar', errorMessage);
+      alert('Erro: ' + error.message);
     } finally {
       setLoading(false);
     }
