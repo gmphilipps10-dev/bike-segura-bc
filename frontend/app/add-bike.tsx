@@ -63,15 +63,23 @@ export default function AddBikeScreen() {
   };
 
   const handleSubmit = async () => {
+    console.log('🔵 BOTÃO CLICADO - handleSubmit chamado');
+    
     const { marca, modelo, cor, numero_serie, tipo } = formData;
 
+    console.log('📝 Dados do formulário:', { marca, modelo, cor, numero_serie, tipo });
+
     if (!marca || !modelo || !cor || !numero_serie || !tipo) {
-      Alert.alert('Erro', 'Preencha todos os campos obrigatórios');
+      console.log('❌ Validação falhou - campos obrigatórios faltando');
+      Alert.alert('Erro', 'Preencha todos os campos obrigatórios:\n• Marca\n• Modelo\n• Cor\n• Número de Série\n• Tipo (clique em um dos botões)');
       return;
     }
 
+    console.log('✅ Validação passou');
+
     // Fotos agora são opcionais
     if (fotos.length === 0) {
+      console.log('⚠️ Sem fotos - mostrando confirmação');
       Alert.alert(
         'Sem Fotos',
         'Você não adicionou fotos. Deseja cadastrar assim mesmo?\n\n(Recomendamos adicionar fotos para facilitar identificação)',
@@ -83,6 +91,7 @@ export default function AddBikeScreen() {
       return;
     }
 
+    console.log('📸 Tem fotos - prosseguindo');
     submitBike();
   };
 
