@@ -70,8 +70,8 @@ export default function AddBikeScreen() {
       return;
     }
 
-    if (fotos.length < 3) {
-      Alert.alert('É necessário adicionar pelo menos 3 fotos da bicicleta');
+    if (fotos.length < 1) {
+      Alert.alert('É necessário adicionar pelo menos 1 foto da bicicleta');
       return;
     }
 
@@ -246,9 +246,14 @@ export default function AddBikeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Rastreamento</Text>
 
-            <Text style={styles.label}>Link de Rastreamento</Text>
+            <Text style={styles.label}>Link de Rastreamento (Opcional)</Text>
             <Text style={styles.helperText}>
-              Cole aqui o link do seu rastreador (AirTag, Find My Device, GPS)
+              ℹ️ <Text style={{fontWeight: 'bold'}}>O que é isso?</Text>{'\n'}
+              Cole aqui o link do rastreador que você já usa:{'\n'}
+              • AirTag (Buscar da Apple){'\n'}
+              • Find My Device (Android/Xiaomi){'\n'}
+              • Rastreador GPS (link da plataforma){'\n\n'}
+              O app guardará esse link para acesso rápido em caso de furto.
             </Text>
             <TextInput
               style={styles.input}
