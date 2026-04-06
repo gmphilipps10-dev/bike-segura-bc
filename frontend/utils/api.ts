@@ -70,17 +70,34 @@ export const bikeAPI = {
     caracteristicas?: string;
     link_rastreamento?: string;
   }): Promise<Bike> => {
-    const headers = await getAuthHeaders();
-    const response = await fetch(`${API_URL}/bikes`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Erro ao cadastrar bicicleta');
+    try {
+      const headers = await getAuthHeaders();
+      console.log('Enviando requisição para criar bike...');
+      
+      const response = await fetch(`${API_URL}/bikes`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+      
+      console.log('Resposta recebida:', response.status);
+      
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
+        console.error('Erro na resposta:', error);
+        
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Sessão expirada. Faça login novamente.');
+        }
+        
+        throw new Error(error.detail || `Erro ao cadastrar bicicleta (${response.status})`);
+      }
+      
+      return response.json();
+    } catch (error: any) {
+      console.error('Erro ao criar bike:', error);
+      throw error;
     }
-    return response.json();
   },
 
   getAll: async (): Promise<Bike[]> => {

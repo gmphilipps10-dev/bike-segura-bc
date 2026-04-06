@@ -71,12 +71,21 @@ export default function AddBikeScreen() {
     }
 
     if (fotos.length < 3) {
-      Alert.alert('Erro', 'É necessário adicionar pelo menos 3 fotos da bicicleta');
+      Alert.alert('É necessário adicionar pelo menos 3 fotos da bicicleta');
       return;
     }
 
     setLoading(true);
     try {
+      console.log('Iniciando cadastro de bike...', {
+        marca,
+        modelo,
+        cor,
+        numero_serie,
+        tipo,
+        totalFotos: fotos.length
+      });
+
       await bikeAPI.create({
         marca,
         modelo,
@@ -89,6 +98,8 @@ export default function AddBikeScreen() {
         link_rastreamento: formData.link_rastreamento || undefined,
       });
 
+      console.log('Bike cadastrada com sucesso!');
+
       Alert.alert('Sucesso!', 'Bicicleta cadastrada com sucesso', [
         {
           text: 'OK',
@@ -96,7 +107,9 @@ export default function AddBikeScreen() {
         },
       ]);
     } catch (error: any) {
-      Alert.alert('Erro', error.message);
+      console.error('Erro ao cadastrar bike:', error);
+      const errorMessage = error.message || 'Erro desconhecido ao cadastrar bicicleta';
+      Alert.alert('Erro ao Cadastrar', errorMessage);
     } finally {
       setLoading(false);
     }
