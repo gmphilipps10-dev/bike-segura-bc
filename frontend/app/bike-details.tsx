@@ -61,8 +61,12 @@ export default function BikeDetailsScreen() {
               setBike(updatedBike);
               Alert.alert(
                 '✅ Alerta Acionado',
-                'Sua bicicleta foi marcada como FURTADA.\n\nRecomendamos:\n1. Abrir o rastreamento\n2. Registrar boletim de ocorrência\n3. Compartilhar com autoridades',
+                'Sua bicicleta foi marcada como FURTADA.\n\nRecomendamos:\n1. Abrir o rastreamento\n2. Registrar boletim de ocorrência na Delegacia Virtual SC\n3. Compartilhar informações com autoridades',
                 [
+                  {
+                    text: 'Delegacia Virtual SC',
+                    onPress: () => Linking.openURL('https://delegaciavirtual.sc.gov.br/'),
+                  },
                   {
                     text: 'Ver Rastreamento',
                     onPress: () => handleOpenTracking(),
@@ -232,6 +236,13 @@ export default function BikeDetailsScreen() {
                   <Text style={styles.trackingButtonText}>Ver Rastreamento</Text>
                 </TouchableOpacity>
               )}
+              <TouchableOpacity 
+                style={styles.policeButton} 
+                onPress={() => Linking.openURL('https://delegaciavirtual.sc.gov.br/')}
+              >
+                <Ionicons name="shield-checkmark" size={20} color="#fff" />
+                <Text style={styles.policeButtonText}>Delegacia Virtual SC</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
                 <Ionicons name="share-social" size={20} color="#FFC107" />
                 <Text style={styles.shareButtonText}>Compartilhar</Text>
@@ -439,6 +450,20 @@ const styles = StyleSheet.create({
   },
   trackingButtonText: {
     color: '#000',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  policeButton: {
+    backgroundColor: '#2196F3',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  policeButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
