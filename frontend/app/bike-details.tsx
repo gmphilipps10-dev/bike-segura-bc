@@ -46,10 +46,7 @@ export default function BikeDetailsScreen() {
 
     Alert.alert(
       '⚠️ ALERTA DE FURTO',
-      `Confirma que a bicicleta ${bike.marca} ${bike.modelo} foi furtada?\n\nEsta ação:
-• Marcará a bike como FURTADA
-• Registrará data e hora
-• Dará acesso ao rastreamento`,
+      `Confirma que a bicicleta ${bike.marca} ${bike.modelo} foi furtada?\n\nEsta ação:\n• Marcará a bike como FURTADA\n• Registrará data e hora\n• Dará acesso ao rastreamento`,
       [
         {
           text: 'Cancelar',
@@ -64,10 +61,7 @@ export default function BikeDetailsScreen() {
               setBike(updatedBike);
               Alert.alert(
                 '✅ Alerta Acionado',
-                'Sua bicicleta foi marcada como FURTADA.\n\nRecomendamos:
-1. Abrir o rastreamento
-2. Registrar boletim de ocorrência
-3. Compartilhar com autoridades',
+                'Sua bicicleta foi marcada como FURTADA.\n\nRecomendamos:\n1. Abrir o rastreamento\n2. Registrar boletim de ocorrência\n3. Compartilhar com autoridades',
                 [
                   {
                     text: 'Ver Rastreamento',
@@ -99,14 +93,7 @@ export default function BikeDetailsScreen() {
   const handleShare = async () => {
     if (!bike) return;
 
-    const message = `🚨 BICICLETA FURTADA
-
-${bike.marca} ${bike.modelo}
-Cor: ${bike.cor}
-Série: ${bike.numero_serie}
-${bike.data_furto ? `Data do furto: ${format(new Date(bike.data_furto), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}` : ''}
-
-${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
+    const message = `🚨 BICICLETA FURTADA\n\n${bike.marca} ${bike.modelo}\nCor: ${bike.cor}\nSérie: ${bike.numero_serie}\n${bike.data_furto ? `Data do furto: ${format(new Date(bike.data_furto), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}` : ''}\n\n${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
 
     try {
       await Share.share({
@@ -149,7 +136,7 @@ ${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text>Carregando...</Text>
+          <Text style={styles.loadingText}>Carregando...</Text>
         </View>
       </SafeAreaView>
     );
@@ -158,11 +145,11 @@ ${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
   const getStatusColor = () => {
     switch (bike.status) {
       case 'Ativa':
-        return '#4CAF50';
+        return '#FFC107';
       case 'Furtada':
         return '#F44336';
       case 'Recuperada':
-        return '#2196F3';
+        return '#FFC107';
       default:
         return '#999';
     }
@@ -172,7 +159,7 @@ ${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
+          <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes da Bike</Text>
         <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
@@ -241,12 +228,12 @@ ${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
                   style={styles.trackingButton}
                   onPress={handleOpenTracking}
                 >
-                  <Ionicons name="location" size={20} color="#fff" />
+                  <Ionicons name="location" size={20} color="#000" />
                   <Text style={styles.trackingButtonText}>Ver Rastreamento</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                <Ionicons name="share-social" size={20} color="#2196F3" />
+                <Ionicons name="share-social" size={20} color="#FFC107" />
                 <Text style={styles.shareButtonText}>Compartilhar</Text>
               </TouchableOpacity>
             </View>
@@ -308,7 +295,7 @@ ${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
                 style={styles.trackingLinkButton}
                 onPress={handleOpenTracking}
               >
-                <Ionicons name="open-outline" size={20} color="#4CAF50" />
+                <Ionicons name="open-outline" size={20} color="#FFC107" />
                 <Text style={styles.trackingLinkText} numberOfLines={1}>
                   {bike.link_rastreamento}
                 </Text>
@@ -324,16 +311,16 @@ ${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#333',
   },
   backButton: {
     width: 40,
@@ -344,7 +331,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   deleteButton: {
     width: 40,
@@ -356,6 +343,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    fontSize: 16,
   },
   scrollView: {
     flex: 1,
@@ -381,7 +372,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   thumbnailActive: {
-    borderColor: '#4CAF50',
+    borderColor: '#FFC107',
   },
   content: {
     padding: 16,
@@ -395,7 +386,7 @@ const styles = StyleSheet.create({
   bikeTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     flex: 1,
   },
   statusBadge: {
@@ -405,18 +396,20 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   statusText: {
-    color: '#fff',
+    color: '#000',
     fontSize: 12,
     fontWeight: '600',
   },
   alertBanner: {
     flexDirection: 'row',
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#2a1a1a',
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
     alignItems: 'center',
     gap: 12,
+    borderWidth: 1,
+    borderColor: '#F44336',
   },
   alertContent: {
     flex: 1,
@@ -428,7 +421,7 @@ const styles = StyleSheet.create({
   },
   alertDate: {
     fontSize: 14,
-    color: '#666',
+    color: '#999',
     marginTop: 4,
   },
   actionButtons: {
@@ -436,7 +429,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   trackingButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#FFC107',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -445,23 +438,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   trackingButtonText: {
-    color: '#fff',
+    color: '#000',
     fontWeight: 'bold',
     fontSize: 16,
   },
   shareButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2196F3',
+    borderWidth: 2,
+    borderColor: '#FFC107',
     gap: 8,
   },
   shareButtonText: {
-    color: '#2196F3',
+    color: '#FFC107',
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -481,15 +474,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
     marginBottom: 16,
   },
   infoRow: {
@@ -502,7 +497,7 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
     fontWeight: '500',
   },
   trackingLinkButton: {
@@ -510,13 +505,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     padding: 12,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#1a1a1a',
     borderRadius: 8,
   },
   trackingLinkText: {
     flex: 1,
     fontSize: 14,
-    color: '#4CAF50',
+    color: '#FFC107',
     fontWeight: '500',
   },
 });
