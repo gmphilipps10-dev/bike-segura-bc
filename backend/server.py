@@ -236,11 +236,7 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 
 @api_router.post("/bikes", response_model=BikeResponse)
 async def create_bike(bike_data: BikeCreate, current_user: dict = Depends(get_current_user)):
-    if len(bike_data.fotos) < 1:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="É necessário enviar pelo menos 1 foto da bicicleta"
-        )
+    # Fotos são opcionais (permite array vazio para testes no navegador)
     
     bike_dict = {
         "proprietario_id": str(current_user["_id"]),

@@ -70,10 +70,24 @@ export default function AddBikeScreen() {
       return;
     }
 
-    if (fotos.length < 1) {
-      Alert.alert('É necessário adicionar pelo menos 1 foto da bicicleta');
+    // Fotos agora são opcionais
+    if (fotos.length === 0) {
+      Alert.alert(
+        'Sem Fotos',
+        'Você não adicionou fotos. Deseja cadastrar assim mesmo?\n\n(Recomendamos adicionar fotos para facilitar identificação)',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Cadastrar Sem Fotos', onPress: () => submitBike() },
+        ]
+      );
       return;
     }
+
+    submitBike();
+  };
+
+  const submitBike = async () => {
+    const { marca, modelo, cor, numero_serie, tipo } = formData;
 
     setLoading(true);
     try {
@@ -91,7 +105,7 @@ export default function AddBikeScreen() {
         modelo,
         cor,
         numero_serie,
-        fotos,
+        fotos: fotos.length > 0 ? fotos : [],
         tipo,
         valor_estimado: formData.valor_estimado ? parseFloat(formData.valor_estimado) : undefined,
         caracteristicas: formData.caracteristicas || undefined,
@@ -131,8 +145,12 @@ export default function AddBikeScreen() {
       >
         <ScrollView style={styles.scrollView}>
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Fotos da Bicicleta *</Text>
-            <Text style={styles.sectionSubtitle}>Mínimo 3 fotos</Text>
+            <Text style={styles.sectionTitle}>Fotos da Bicicleta (Opcional)</Text>
+            <Text style={styles.sectionSubtitle}>
+              ⚠️ Fotos não funcionam no navegador.{'\n'}
+              Use o app no celular (Expo Go) para adicionar fotos.{'\n'}
+              Você pode cadastrar sem fotos por enquanto.
+            </Text>
 
             <View style={styles.photosContainer}>
               {fotos.map((foto, index) => (
