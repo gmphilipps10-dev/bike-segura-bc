@@ -16,9 +16,17 @@ from bson import ObjectId
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
+# MongoDB connection with Atlas-friendly settings
 mongo_url = os.environ['MONGO_URL']
-client = AsyncIOMotorClient(mongo_url)
+client = AsyncIOMotorClient(
+    mongo_url,
+    serverSelectionTimeoutMS=5000,  # 5 second timeout for server selection
+    connectTimeoutMS=10000,  # 10 second connection timeout
+    socketTimeoutMS=10000,  # 10 second socket timeout
+    retryWrites=True,  # Enable retryable writes
+    retryReads=True,  # Enable retryable reads
+    maxPoolSize=10,  # Connection pool size
+)
 db = client[os.environ['DB_NAME']]
 
 # Security
@@ -399,6 +407,33 @@ async def alert_furto(bike_id: str, current_user: dict = Depends(get_current_use
 
 # Include the router in the main app
 app.include_router(api_router)
+
+# Health check endpoints for Kubernetes
+@app.get("/")
+async def root():
+    """Root endpoint for Kubernetes health checks"""
+    return {"status": "online", "app": "BIKE SEGURA BC", "version": "1.0.0"}
+
+@app.get("/health")
+async def health_check():
+    """Dedicated health check endpoint"""
+    try:
+        # Test MongoDB connection
+        await db.command("ping")
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "app": "BIKE SEGURA BC"
+        }
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        raise HTTPException(status_code=503, detail="Service unavailable")
+
+@app.get("/favicon.ico")
+async def favicon():
+    """Return 204 for favicon requests to avoid 404 errors"""
+    from fastapi.responses import Response
+    return Response(status_code=204)
 
 app.add_middleware(
     CORSMiddleware,
