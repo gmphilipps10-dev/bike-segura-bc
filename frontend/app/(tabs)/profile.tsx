@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -14,9 +16,12 @@ import { authAPI } from '../../utils/api';
 import { User } from '../../types';
 
 export default function ProfileScreen() {
-  const { user: authUser, signOut } = useAuth();
+  const { signOut } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalContent, setModalContent] = useState('');
 
   const loadUserData = async () => {
     try {
@@ -35,16 +40,54 @@ export default function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert('Sair', 'Tem certeza que deseja sair?', [
-      {
-        text: 'Cancelar',
-        style: 'cancel',
-      },
-      {
-        text: 'Sair',
-        style: 'destructive',
-        onPress: () => signOut(),
-      },
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Sair', style: 'destructive', onPress: () => signOut() },
     ]);
+  };
+
+  const showModal = (title: string, content: string) => {
+    setModalTitle(title);
+    setModalContent(content);
+    setModalVisible(true);
+  };
+
+  const handleComoFunciona = () => {
+    showModal(
+      'Como Funciona',
+      'O BIKE SEGURA BC e um aplicativo de seguranca e recuperacao de bicicletas.\n\n' +
+      '1. CADASTRE sua bicicleta com fotos detalhadas (frente, traseira, laterais e numero do quadro).\n\n' +
+      '2. ADICIONE o link de rastreamento do seu dispositivo (AirTag, GPS, etc.).\n\n' +
+      '3. ANEXE a nota fiscal para comprovar a propriedade.\n\n' +
+      '4. EM CASO DE FURTO, acione o Alerta de Furto no Dashboard. O app registra a data/hora e disponibiliza o rastreamento.\n\n' +
+      '5. REGISTRE o boletim de ocorrencia na Delegacia Virtual de SC diretamente pelo app.\n\n' +
+      '6. COMPARTILHE as informacoes da bicicleta para ajudar na recuperacao.'
+    );
+  };
+
+  const handleAjuda = () => {
+    showModal(
+      'Ajuda',
+      'Perguntas Frequentes:\n\n' +
+      'Como cadastrar minha bike?\nVa para a aba "Bikes" e toque no botao "+". Preencha os dados e adicione as fotos.\n\n' +
+      'O que e o link de rastreamento?\nE o link do seu dispositivo de rastreio (AirTag, GPS tracker). Cole o link ao cadastrar a bike.\n\n' +
+      'Como acionar o Alerta de Furto?\nNo Dashboard (Home), toque no botao vermelho "Alerta de Furto" e selecione a bicicleta.\n\n' +
+      'As fotos sao obrigatorias?\nSim. Sao necessarias 5 fotos: frente, traseira, lateral direita, lateral esquerda e numero do quadro.\n\n' +
+      'Preciso de internet para usar o app?\nSim, o app precisa de conexao para sincronizar seus dados.'
+    );
+  };
+
+  const handleTermos = () => {
+    showModal(
+      'Termos de Uso',
+      'BIKE SEGURA BC - Termos de Uso\n\n' +
+      'Ao utilizar o aplicativo BIKE SEGURA BC, voce concorda com os seguintes termos:\n\n' +
+      '1. O app tem como objetivo auxiliar na seguranca e recuperacao de bicicletas furtadas na regiao de Balneario Camboriu e Santa Catarina.\n\n' +
+      '2. As informacoes cadastradas sao de responsabilidade do usuario e devem ser verdadeiras.\n\n' +
+      '3. O app nao substitui o registro de boletim de ocorrencia na delegacia competente.\n\n' +
+      '4. Os dados sao armazenados de forma segura e nao serao compartilhados com terceiros sem autorizacao.\n\n' +
+      '5. O app nao se responsabiliza pela recuperacao efetiva da bicicleta, sendo uma ferramenta de auxilio.\n\n' +
+      '6. O uso do app e gratuito e sem fins lucrativos.'
+    );
   };
 
   return (
@@ -55,20 +98,24 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.profileHeader}>
-          <View style={styles.avatar}>
-            <Ionicons name="person" size={48} color="#4CAF50" />
-          </View>
+          {user?.foto_perfil ? (
+            <Image source={{ uri: user.foto_perfil }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Ionicons name="person" size={48} color="#FFC107" />
+            </View>
+          )}
           <Text style={styles.userName}>{user?.nome_completo}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informações Pessoais</Text>
+          <Text style={styles.sectionTitle}>Informacoes Pessoais</Text>
 
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
-                <Ionicons name="card" size={20} color="#666" />
+                <Ionicons name="card" size={20} color="#FFC107" />
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>CPF</Text>
@@ -80,7 +127,7 @@ export default function ProfileScreen() {
 
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
-                <Ionicons name="call" size={20} color="#666" />
+                <Ionicons name="call" size={20} color="#FFC107" />
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Telefone</Text>
@@ -92,7 +139,7 @@ export default function ProfileScreen() {
 
             <View style={styles.infoRow}>
               <View style={styles.infoIcon}>
-                <Ionicons name="calendar" size={20} color="#666" />
+                <Ionicons name="calendar" size={20} color="#FFC107" />
               </View>
               <View style={styles.infoContent}>
                 <Text style={styles.infoLabel}>Data de Nascimento</Text>
@@ -105,28 +152,28 @@ export default function ProfileScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre o App</Text>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleComoFunciona}>
             <View style={styles.menuIcon}>
-              <Ionicons name="shield-checkmark" size={24} color="#4CAF50" />
+              <Ionicons name="shield-checkmark" size={24} color="#FFC107" />
             </View>
             <Text style={styles.menuText}>Como Funciona</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleAjuda}>
             <View style={styles.menuIcon}>
               <Ionicons name="help-circle" size={24} color="#2196F3" />
             </View>
             <Text style={styles.menuText}>Ajuda</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={handleTermos}>
             <View style={styles.menuIcon}>
               <Ionicons name="document-text" size={24} color="#FF9800" />
             </View>
             <Text style={styles.menuText}>Termos de Uso</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="chevron-forward" size={20} color="#666" />
           </TouchableOpacity>
         </View>
 
@@ -137,9 +184,31 @@ export default function ProfileScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>BIKE SEGURA BC</Text>
-          <Text style={styles.footerVersion}>Versão 1.0.0</Text>
+          <Text style={styles.footerVersion}>Versao 1.0.0</Text>
         </View>
       </ScrollView>
+
+      {/* MODAL */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{modalTitle}</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.modalClose}>
+                <Ionicons name="close" size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalScroll}>
+              <Text style={styles.modalText}>{modalContent}</Text>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -147,47 +216,57 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   header: {
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#000',
+    borderBottomWidth: 2,
+    borderBottomColor: '#FFC107',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
   },
   scrollView: {
     flex: 1,
   },
   profileHeader: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     alignItems: 'center',
     padding: 32,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#333',
   },
   avatar: {
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#FFC107',
+  },
+  avatarImage: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#FFC107',
   },
   userName: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 14,
-    color: '#666',
+    color: '#999',
   },
   section: {
     marginTop: 24,
@@ -196,18 +275,15 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
     marginBottom: 12,
   },
   infoCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   infoRow: {
     flexDirection: 'row',
@@ -228,25 +304,22 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
     fontWeight: '500',
   },
   divider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#333',
   },
   menuItem: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   menuIcon: {
     width: 40,
@@ -255,14 +328,14 @@ const styles = StyleSheet.create({
   menuText: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#fff',
     fontWeight: '500',
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     margin: 16,
     marginTop: 24,
     padding: 16,
@@ -283,11 +356,52 @@ const styles = StyleSheet.create({
   footerText: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#4CAF50',
+    color: '#FFC107',
   },
   footerVersion: {
     fontSize: 12,
     color: '#999',
     marginTop: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.85)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#1a1a1a',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+    borderTopWidth: 2,
+    borderTopColor: '#FFC107',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#333',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFC107',
+  },
+  modalClose: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalScroll: {
+    padding: 20,
+  },
+  modalText: {
+    fontSize: 15,
+    color: '#ccc',
+    lineHeight: 24,
+    paddingBottom: 40,
   },
 });

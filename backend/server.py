@@ -70,6 +70,7 @@ class UserResponse(BaseModel):
     data_nascimento: str
     telefone: str
     email: str
+    foto_perfil: Optional[str] = None
 
 class BikeCreate(BaseModel):
     marca: str
@@ -231,7 +232,8 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "cpf": current_user["cpf"],
         "data_nascimento": current_user["data_nascimento"],
         "telefone": current_user["telefone"],
-        "email": current_user["email"]
+        "email": current_user["email"],
+        "foto_perfil": current_user.get("foto_perfil")
     }
 
 # ============ BIKE ROUTES ============

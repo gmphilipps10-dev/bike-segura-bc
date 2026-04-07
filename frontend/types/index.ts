@@ -5,6 +5,7 @@ export interface User {
   cpf?: string;
   telefone?: string;
   data_nascimento?: string;
+  foto_perfil?: string;
 }
 
 export interface BikePhotos {
