@@ -43,8 +43,8 @@ export default function RegisterScreen() {
       return;
     }
 
-    const result = await ImagePicker.launchImagePickerAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: 'images',
       allowsEditing: true,
       aspect: [1, 1], // Quadrado para foto de perfil
       quality: 0.5,
