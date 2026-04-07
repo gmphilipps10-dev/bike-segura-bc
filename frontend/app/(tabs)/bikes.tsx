@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Image,
   RefreshControl,
-  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -26,7 +26,7 @@ export default function BikesScreen() {
       const data = await bikeAPI.getAll();
       setBikes(data);
     } catch (error) {
-      console.error(error);
+      console.error('Erro ao carregar bikes:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -55,6 +55,27 @@ export default function BikesScreen() {
     }
   };
 
+  const getBikeThumbnail = (bike: Bike): string | null => {
+    if (bike.fotos && typeof bike.fotos === 'object') {
+      return bike.fotos.frente || bike.fotos.lateral_direita || bike.fotos.numero_quadro || null;
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Minhas Bicicletas</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FFC107" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -63,68 +84,93 @@ export default function BikesScreen() {
           style={styles.addButton}
           onPress={() => router.push('/add-bike')}
         >
-          <Ionicons name="add" size={24} color="#fff" />
+          <Ionicons name="add" size={24} color="#000" />
         </TouchableOpacity>
       </View>
 
       <ScrollView
         style={styles.scrollView}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#FFC107"
+            colors={['#FFC107']}
+          />
+        }
       >
-        {bikes.length === 0 && !loading && (
+        {bikes.length === 0 && (
           <View style={styles.emptyState}>
-            <Ionicons name="bicycle-outline" size={64} color="#ccc" />
+            <Ionicons name="bicycle-outline" size={64} color="#333" />
             <Text style={styles.emptyText}>Nenhuma bicicleta cadastrada</Text>
             <Text style={styles.emptySubtext}>
-              Toque no botão + para cadastrar sua primeira bike
+              Toque no botao + para cadastrar sua primeira bike
             </Text>
+            <TouchableOpacity
+              style={styles.emptyButton}
+              onPress={() => router.push('/add-bike')}
+            >
+              <Ionicons name="add-circle" size={20} color="#000" />
+              <Text style={styles.emptyButtonText}>Cadastrar Bicicleta</Text>
+            </TouchableOpacity>
           </View>
         )}
 
-        {bikes.map((bike) => (
-          <TouchableOpacity
-            key={bike.id}
-            style={styles.bikeCard}
-            onPress={() => router.push(`/bike-details?id=${bike.id}`)}
-          >
-            {bike.fotos && bike.fotos[0] && (
-              <Image
-                source={{ uri: bike.fotos[0] }}
-                style={styles.bikeImage}
-                resizeMode="cover"
-              />
-            )}
-            <View style={styles.bikeContent}>
-              <View style={styles.bikeHeader}>
-                <Text style={styles.bikeName}>
-                  {bike.marca} {bike.modelo}
-                </Text>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getStatusColor(bike.status) },
-                  ]}
-                >
-                  <Text style={styles.statusText}>{bike.status}</Text>
+        {bikes.map((bike) => {
+          const thumbnail = getBikeThumbnail(bike);
+          return (
+            <TouchableOpacity
+              key={bike.id}
+              style={styles.bikeCard}
+              onPress={() => router.push(`/bike-details?id=${bike.id}`)}
+            >
+              {thumbnail ? (
+                <Image
+                  source={{ uri: thumbnail }}
+                  style={styles.bikeImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.bikeImagePlaceholder}>
+                  <Ionicons name="bicycle" size={48} color="#333" />
+                  <Text style={styles.noPhotoText}>Sem foto</Text>
                 </View>
-              </View>
-              <Text style={styles.bikeDetail}>{bike.cor}</Text>
-              <Text style={styles.bikeDetail}>Série: {bike.numero_serie}</Text>
-              <View style={styles.bikeFooter}>
-                <View style={styles.bikeType}>
-                  <Ionicons name="bicycle" size={16} color="#666" />
-                  <Text style={styles.bikeTypeText}>{bike.tipo}</Text>
-                </View>
-                {bike.link_rastreamento && (
-                  <View style={styles.trackingIndicator}>
-                    <Ionicons name="location" size={16} color="#4CAF50" />
-                    <Text style={styles.trackingText}>Rastreamento</Text>
+              )}
+              <View style={styles.bikeContent}>
+                <View style={styles.bikeHeader}>
+                  <Text style={styles.bikeName}>
+                    {bike.marca} {bike.modelo}
+                  </Text>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      { backgroundColor: getStatusColor(bike.status) },
+                    ]}
+                  >
+                    <Text style={styles.statusText}>{bike.status}</Text>
                   </View>
-                )}
+                </View>
+                <Text style={styles.bikeDetail}>Cor: {bike.cor}</Text>
+                <Text style={styles.bikeDetail}>Serie: {bike.numero_serie}</Text>
+                <View style={styles.bikeFooter}>
+                  <View style={styles.bikeType}>
+                    <Ionicons name="bicycle" size={16} color="#FFC107" />
+                    <Text style={styles.bikeTypeText}>{bike.tipo}</Text>
+                  </View>
+                  {bike.link_rastreamento && (
+                    <View style={styles.trackingIndicator}>
+                      <Ionicons name="location" size={16} color="#4CAF50" />
+                      <Text style={styles.trackingText}>Rastreamento</Text>
+                    </View>
+                  )}
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
+
+        <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -133,32 +179,40 @@ export default function BikesScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#000',
+    borderBottomWidth: 2,
+    borderBottomColor: '#FFC107',
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
   },
   addButton: {
-    backgroundColor: '#4CAF50',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    backgroundColor: '#FFC107',
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyState: {
     alignItems: 'center',
@@ -174,26 +228,50 @@ const styles = StyleSheet.create({
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#999',
+    color: '#666',
     marginTop: 8,
     textAlign: 'center',
   },
+  emptyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFC107',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 24,
+    gap: 8,
+  },
+  emptyButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
   bikeCard: {
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     marginHorizontal: 16,
     marginTop: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   bikeImage: {
     width: '100%',
     height: 200,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#111',
+  },
+  bikeImagePlaceholder: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noPhotoText: {
+    color: '#555',
+    fontSize: 12,
+    marginTop: 4,
   },
   bikeContent: {
     padding: 16,
@@ -207,7 +285,7 @@ const styles = StyleSheet.create({
   bikeName: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
     flex: 1,
   },
   statusBadge: {
@@ -223,7 +301,7 @@ const styles = StyleSheet.create({
   },
   bikeDetail: {
     fontSize: 14,
-    color: '#666',
+    color: '#999',
     marginTop: 4,
   },
   bikeFooter: {
@@ -233,7 +311,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
+    borderTopColor: '#333',
   },
   bikeType: {
     flexDirection: 'row',
@@ -242,7 +320,7 @@ const styles = StyleSheet.create({
   },
   bikeTypeText: {
     fontSize: 14,
-    color: '#666',
+    color: '#FFC107',
   },
   trackingIndicator: {
     flexDirection: 'row',

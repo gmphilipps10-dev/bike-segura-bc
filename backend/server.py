@@ -280,6 +280,14 @@ async def get_bikes(current_user: dict = Depends(get_current_user)):
     for bike in bikes:
         bike["id"] = str(bike["_id"])
         del bike["_id"]
+        # Migrar fotos de array legado para dict
+        if isinstance(bike.get("fotos"), list):
+            bike["fotos"] = {}
+        if not isinstance(bike.get("fotos"), dict):
+            bike["fotos"] = {}
+        # Garantir nota_fiscal existe
+        if "nota_fiscal" not in bike:
+            bike["nota_fiscal"] = None
         result.append(bike)
     
     return result
@@ -308,6 +316,13 @@ async def get_bike(bike_id: str, current_user: dict = Depends(get_current_user))
     
     bike["id"] = str(bike["_id"])
     del bike["_id"]
+    # Migrar fotos legado
+    if isinstance(bike.get("fotos"), list):
+        bike["fotos"] = {}
+    if not isinstance(bike.get("fotos"), dict):
+        bike["fotos"] = {}
+    if "nota_fiscal" not in bike:
+        bike["nota_fiscal"] = None
     return bike
 
 @api_router.put("/bikes/{bike_id}", response_model=BikeResponse)

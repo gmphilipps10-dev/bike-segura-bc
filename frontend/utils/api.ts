@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AuthResponse, User, Bike } from '../types';
+import { AuthResponse, User, Bike, BikePhotos } from '../types';
 
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL + '/api';
 
@@ -64,11 +64,11 @@ export const bikeAPI = {
     modelo: string;
     cor: string;
     numero_serie: string;
-    fotos: string[];
+    fotos: BikePhotos;
     tipo: string;
-    valor_estimado?: number;
     caracteristicas?: string;
     link_rastreamento?: string;
+    nota_fiscal?: string;
   }): Promise<Bike> => {
     try {
       const headers = await getAuthHeaders();

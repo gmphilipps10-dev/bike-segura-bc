@@ -1,446 +1,325 @@
 #!/usr/bin/env python3
 """
-BIKE SEGURA BC - Backend API Testing
-Tests all backend endpoints for authentication, bike CRUD, and theft alerts
+BIKE SEGURA BC Backend API Testing
+Testing the refactored Bike CRUD with new photo dictionary schema
 """
 
 import requests
 import json
-import base64
-from datetime import datetime
 import sys
+from datetime import datetime
 
 # Backend URL from frontend .env
 BASE_URL = "https://bike-tracking-alert.preview.emergentagent.com/api"
 
-class BikeSeguraAPITester:
+# Test credentials from test_credentials.md
+TEST_USER = {
+    "email": "joao.silva@bikesegura.com",
+    "senha": "MinhaSenh@123"
+}
+
+class BikeAPITester:
     def __init__(self):
-        self.base_url = BASE_URL
-        self.session = requests.Session()
-        self.auth_token = None
-        self.test_user_id = None
-        self.test_bike_id = None
-        self.test_results = {
-            "auth_register": False,
-            "auth_login": False,
-            "auth_me": False,
-            "bike_create": False,
-            "bike_list": False,
-            "bike_get": False,
-            "bike_update": False,
-            "bike_delete": False,
-            "alert_furto": False
-        }
+        self.token = None
+        self.user_id = None
+        self.created_bikes = []
         
     def log(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
         
-    def generate_test_photo_base64(self):
-        """Generate a simple base64 encoded test image"""
-        # Simple 1x1 pixel PNG in base64
-        return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=="
+    def test_login(self):
+        """Test user login and get JWT token"""
+        self.log("🔐 Testing user login...")
+        
+        response = requests.post(f"{BASE_URL}/auth/login", json=TEST_USER)
+        
+        if response.status_code == 200:
+            data = response.json()
+            self.token = data["access_token"]
+            self.user_id = data["user"]["id"]
+            self.log(f"✅ Login successful - User ID: {self.user_id}")
+            return True
+        else:
+            self.log(f"❌ Login failed: {response.status_code} - {response.text}")
+            return False
     
-    def test_api_health(self):
-        """Test if API is responding"""
-        try:
-            response = self.session.get(f"{self.base_url}/")
-            if response.status_code == 200:
-                self.log("✅ API Health Check: PASSED")
+    def get_headers(self):
+        """Get authorization headers"""
+        return {"Authorization": f"Bearer {self.token}"}
+    
+    def test_create_bike_with_full_photos_dict(self):
+        """Test creating bike with complete fotos dictionary"""
+        self.log("📸 Testing bike creation with full fotos dict...")
+        
+        bike_data = {
+            "marca": "Trek",
+            "modelo": "FX 3 Disc",
+            "cor": "Azul",
+            "numero_serie": "TRK123456789",
+            "fotos": {
+                "frente": "data:image/jpeg;base64,FAKE_FRENTE_PHOTO_DATA",
+                "tras": "data:image/jpeg;base64,FAKE_TRAS_PHOTO_DATA", 
+                "lateral_direita": "data:image/jpeg;base64,FAKE_LATERAL_DIR_DATA",
+                "lateral_esquerda": "data:image/jpeg;base64,FAKE_LATERAL_ESQ_DATA",
+                "numero_quadro": "data:image/jpeg;base64,FAKE_NUMERO_QUADRO_DATA"
+            },
+            "tipo": "Urbana",
+            "caracteristicas": "Bike urbana com freios a disco",
+            "link_rastreamento": "https://tracker.example.com/TRK123456789",
+            "nota_fiscal": "data:application/pdf;base64,FAKE_NOTA_FISCAL_PDF_DATA"
+        }
+        
+        response = requests.post(f"{BASE_URL}/bikes", json=bike_data, headers=self.get_headers())
+        
+        if response.status_code == 200:
+            bike = response.json()
+            self.created_bikes.append(bike["id"])
+            self.log(f"✅ Bike created successfully with full fotos dict - ID: {bike['id']}")
+            
+            # Verify response structure
+            if isinstance(bike.get("fotos"), dict):
+                self.log("✅ Response fotos is dict type")
+                required_keys = ["frente", "tras", "lateral_direita", "lateral_esquerda", "numero_quadro"]
+                if all(key in bike["fotos"] for key in required_keys):
+                    self.log("✅ All required photo keys present in response")
+                else:
+                    self.log("❌ Missing required photo keys in response")
+            else:
+                self.log("❌ Response fotos is not dict type")
+                
+            if bike.get("nota_fiscal"):
+                self.log("✅ nota_fiscal field present in response")
+            else:
+                self.log("❌ nota_fiscal field missing in response")
+                
+            return True
+        else:
+            self.log(f"❌ Bike creation failed: {response.status_code} - {response.text}")
+            return False
+    
+    def test_create_bike_with_empty_photos_dict(self):
+        """Test creating bike with empty fotos dictionary"""
+        self.log("📷 Testing bike creation with empty fotos dict...")
+        
+        bike_data = {
+            "marca": "Caloi",
+            "modelo": "Elite 30",
+            "cor": "Vermelha",
+            "numero_serie": "CAL987654321",
+            "fotos": {},  # Empty dict
+            "tipo": "Mountain Bike",
+            "caracteristicas": "MTB para trilhas"
+        }
+        
+        response = requests.post(f"{BASE_URL}/bikes", json=bike_data, headers=self.get_headers())
+        
+        if response.status_code == 200:
+            bike = response.json()
+            self.created_bikes.append(bike["id"])
+            self.log(f"✅ Bike created successfully with empty fotos dict - ID: {bike['id']}")
+            
+            # Verify response structure
+            if isinstance(bike.get("fotos"), dict) and len(bike["fotos"]) == 0:
+                self.log("✅ Response fotos is empty dict")
+            else:
+                self.log("❌ Response fotos is not empty dict")
+                
+            return True
+        else:
+            self.log(f"❌ Bike creation failed: {response.status_code} - {response.text}")
+            return False
+    
+    def test_create_bike_with_partial_photos_dict(self):
+        """Test creating bike with partial fotos dictionary (should fail)"""
+        self.log("🚫 Testing bike creation with partial fotos dict (should fail)...")
+        
+        bike_data = {
+            "marca": "Specialized",
+            "modelo": "Rockhopper",
+            "cor": "Preta",
+            "numero_serie": "SPZ555666777",
+            "fotos": {
+                "frente": "data:image/jpeg;base64,FAKE_FRENTE_ONLY",
+                "tras": "data:image/jpeg;base64,FAKE_TRAS_ONLY"
+                # Missing: lateral_direita, lateral_esquerda, numero_quadro
+            },
+            "tipo": "Mountain Bike"
+        }
+        
+        response = requests.post(f"{BASE_URL}/bikes", json=bike_data, headers=self.get_headers())
+        
+        if response.status_code == 400:
+            error_detail = response.json().get("detail", "")
+            if "Fotos obrigatórias faltando" in error_detail:
+                self.log("✅ Correctly rejected partial fotos dict with proper error message")
                 return True
             else:
-                self.log(f"❌ API Health Check: FAILED - Status {response.status_code}")
+                self.log(f"❌ Wrong error message: {error_detail}")
                 return False
-        except Exception as e:
-            self.log(f"❌ API Health Check: FAILED - {str(e)}")
+        else:
+            self.log(f"❌ Should have failed with 400, got: {response.status_code} - {response.text}")
             return False
     
-    def test_auth_register(self):
-        """Test user registration"""
-        try:
-            test_user = {
-                "nome_completo": "João Silva Santos",
-                "cpf": "12345678901",
-                "data_nascimento": "15/03/1990",
-                "telefone": "(11) 99999-8888",
-                "email": "joao.silva@bikesegura.com",
-                "senha": "MinhaSenh@123"
-            }
+    def test_get_all_bikes(self):
+        """Test GET /api/bikes - verify fotos comes back as dict"""
+        self.log("📋 Testing GET all bikes...")
+        
+        response = requests.get(f"{BASE_URL}/bikes", headers=self.get_headers())
+        
+        if response.status_code == 200:
+            bikes = response.json()
+            self.log(f"✅ Retrieved {len(bikes)} bikes")
             
-            response = self.session.post(
-                f"{self.base_url}/auth/register",
-                json=test_user,
-                headers={"Content-Type": "application/json"}
-            )
+            # Check each bike's fotos structure
+            all_dict = True
+            for bike in bikes:
+                if not isinstance(bike.get("fotos"), dict):
+                    self.log(f"❌ Bike {bike.get('id')} has fotos as {type(bike.get('fotos'))}, not dict")
+                    all_dict = False
+                    
+            if all_dict:
+                self.log("✅ All bikes have fotos as dict type")
             
-            if response.status_code == 200:
-                data = response.json()
-                if "access_token" in data and "user" in data:
-                    self.auth_token = data["access_token"]
-                    self.test_user_id = data["user"]["id"]
-                    self.log("✅ Auth Register: PASSED")
-                    self.test_results["auth_register"] = True
-                    return True
-                else:
-                    self.log(f"❌ Auth Register: FAILED - Missing token or user in response")
-                    return False
+            # Check for nota_fiscal field
+            has_nota_fiscal = all("nota_fiscal" in bike for bike in bikes)
+            if has_nota_fiscal:
+                self.log("✅ All bikes have nota_fiscal field")
             else:
-                self.log(f"❌ Auth Register: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
+                self.log("❌ Some bikes missing nota_fiscal field")
                 
-        except Exception as e:
-            self.log(f"❌ Auth Register: FAILED - {str(e)}")
+            return True
+        else:
+            self.log(f"❌ GET bikes failed: {response.status_code} - {response.text}")
             return False
     
-    def test_auth_login(self):
-        """Test user login"""
-        try:
-            login_data = {
-                "email": "joao.silva@bikesegura.com",
-                "senha": "MinhaSenh@123"
-            }
+    def test_get_single_bike(self):
+        """Test GET /api/bikes/{id} - verify fotos comes back as dict"""
+        if not self.created_bikes:
+            self.log("⚠️ No bikes created to test single bike GET")
+            return True
             
-            response = self.session.post(
-                f"{self.base_url}/auth/login",
-                json=login_data,
-                headers={"Content-Type": "application/json"}
-            )
+        bike_id = self.created_bikes[0]
+        self.log(f"🔍 Testing GET single bike: {bike_id}")
+        
+        response = requests.get(f"{BASE_URL}/bikes/{bike_id}", headers=self.get_headers())
+        
+        if response.status_code == 200:
+            bike = response.json()
+            self.log(f"✅ Retrieved bike: {bike.get('marca')} {bike.get('modelo')}")
             
-            if response.status_code == 200:
-                data = response.json()
-                if "access_token" in data and "user" in data:
-                    # Update token from login
-                    self.auth_token = data["access_token"]
-                    self.log("✅ Auth Login: PASSED")
-                    self.test_results["auth_login"] = True
-                    return True
-                else:
-                    self.log(f"❌ Auth Login: FAILED - Missing token or user in response")
-                    return False
+            # Check fotos structure
+            if isinstance(bike.get("fotos"), dict):
+                self.log("✅ Single bike fotos is dict type")
             else:
-                self.log(f"❌ Auth Login: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
+                self.log(f"❌ Single bike fotos is {type(bike.get('fotos'))}, not dict")
                 
-        except Exception as e:
-            self.log(f"❌ Auth Login: FAILED - {str(e)}")
+            # Check nota_fiscal field
+            if "nota_fiscal" in bike:
+                self.log("✅ Single bike has nota_fiscal field")
+            else:
+                self.log("❌ Single bike missing nota_fiscal field")
+                
+            return True
+        else:
+            self.log(f"❌ GET single bike failed: {response.status_code} - {response.text}")
             return False
     
-    def test_auth_me(self):
-        """Test get current user"""
-        try:
-            if not self.auth_token:
-                self.log("❌ Auth Me: FAILED - No auth token available")
-                return False
-                
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
+    def test_valor_estimado_removed(self):
+        """Test that valor_estimado is not accepted in BikeCreate"""
+        self.log("💰 Testing valor_estimado removal from BikeCreate...")
+        
+        bike_data = {
+            "marca": "Giant",
+            "modelo": "Escape 3",
+            "cor": "Verde",
+            "numero_serie": "GNT111222333",
+            "fotos": {},
+            "tipo": "Híbrida",
+            "valor_estimado": 1500.00  # This should be ignored/rejected
+        }
+        
+        response = requests.post(f"{BASE_URL}/bikes", json=bike_data, headers=self.get_headers())
+        
+        if response.status_code == 200:
+            bike = response.json()
+            self.created_bikes.append(bike["id"])
             
-            response = self.session.get(f"{self.base_url}/auth/me", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if "id" in data and "nome_completo" in data and "email" in data:
-                    self.log("✅ Auth Me: PASSED")
-                    self.test_results["auth_me"] = True
-                    return True
-                else:
-                    self.log(f"❌ Auth Me: FAILED - Missing user data in response")
-                    return False
+            # Check if valor_estimado is in response (it shouldn't be)
+            if "valor_estimado" not in bike:
+                self.log("✅ valor_estimado correctly removed from BikeCreate")
+                return True
             else:
-                self.log(f"❌ Auth Me: FAILED - Status {response.status_code}, Response: {response.text}")
+                self.log("❌ valor_estimado still present in response")
                 return False
-                
-        except Exception as e:
-            self.log(f"❌ Auth Me: FAILED - {str(e)}")
+        else:
+            self.log(f"❌ Bike creation failed: {response.status_code} - {response.text}")
             return False
     
-    def test_bike_create(self):
-        """Test bike creation with 3 photos"""
-        try:
-            if not self.auth_token:
-                self.log("❌ Bike Create: FAILED - No auth token available")
-                return False
-                
-            # Create bike with 3 photos (minimum required)
-            bike_data = {
-                "marca": "Trek",
-                "modelo": "Mountain Bike X1",
-                "cor": "Azul",
-                "numero_serie": "TRK123456789",
-                "fotos": [
-                    self.generate_test_photo_base64(),
-                    self.generate_test_photo_base64(),
-                    self.generate_test_photo_base64()
-                ],
-                "tipo": "Mountain Bike",
-                "valor_estimado": 2500.00,
-                "caracteristicas": "Bike de alta performance para trilhas",
-                "link_rastreamento": "https://tracker.example.com/TRK123456789"
-            }
-            
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = self.session.post(
-                f"{self.base_url}/bikes",
-                json=bike_data,
-                headers=headers
-            )
-            
+    def cleanup_created_bikes(self):
+        """Clean up bikes created during testing"""
+        self.log("🧹 Cleaning up created bikes...")
+        
+        for bike_id in self.created_bikes:
+            response = requests.delete(f"{BASE_URL}/bikes/{bike_id}", headers=self.get_headers())
             if response.status_code == 200:
-                data = response.json()
-                if "id" in data and data["status"] == "Ativa":
-                    self.test_bike_id = data["id"]
-                    self.log("✅ Bike Create: PASSED")
-                    self.test_results["bike_create"] = True
-                    return True
-                else:
-                    self.log(f"❌ Bike Create: FAILED - Missing id or incorrect status in response")
-                    return False
+                self.log(f"✅ Deleted bike: {bike_id}")
             else:
-                self.log(f"❌ Bike Create: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Bike Create: FAILED - {str(e)}")
-            return False
-    
-    def test_bike_list(self):
-        """Test listing user's bikes"""
-        try:
-            if not self.auth_token:
-                self.log("❌ Bike List: FAILED - No auth token available")
-                return False
-                
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = self.session.get(f"{self.base_url}/bikes", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if isinstance(data, list) and len(data) > 0:
-                    self.log(f"✅ Bike List: PASSED - Found {len(data)} bikes")
-                    self.test_results["bike_list"] = True
-                    return True
-                else:
-                    self.log(f"❌ Bike List: FAILED - Expected list with bikes, got: {data}")
-                    return False
-            else:
-                self.log(f"❌ Bike List: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Bike List: FAILED - {str(e)}")
-            return False
-    
-    def test_bike_get(self):
-        """Test getting specific bike"""
-        try:
-            if not self.auth_token or not self.test_bike_id:
-                self.log("❌ Bike Get: FAILED - No auth token or bike ID available")
-                return False
-                
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = self.session.get(f"{self.base_url}/bikes/{self.test_bike_id}", headers=headers)
-            
-            if response.status_code == 200:
-                data = response.json()
-                if "id" in data and data["id"] == self.test_bike_id:
-                    self.log("✅ Bike Get: PASSED")
-                    self.test_results["bike_get"] = True
-                    return True
-                else:
-                    self.log(f"❌ Bike Get: FAILED - Bike ID mismatch or missing data")
-                    return False
-            else:
-                self.log(f"❌ Bike Get: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Bike Get: FAILED - {str(e)}")
-            return False
-    
-    def test_bike_update(self):
-        """Test updating bike"""
-        try:
-            if not self.auth_token or not self.test_bike_id:
-                self.log("❌ Bike Update: FAILED - No auth token or bike ID available")
-                return False
-                
-            update_data = {
-                "cor": "Verde",
-                "valor_estimado": 2800.00
-            }
-            
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = self.session.put(
-                f"{self.base_url}/bikes/{self.test_bike_id}",
-                json=update_data,
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data["cor"] == "Verde" and data["valor_estimado"] == 2800.00:
-                    self.log("✅ Bike Update: PASSED")
-                    self.test_results["bike_update"] = True
-                    return True
-                else:
-                    self.log(f"❌ Bike Update: FAILED - Update not reflected in response")
-                    return False
-            else:
-                self.log(f"❌ Bike Update: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Bike Update: FAILED - {str(e)}")
-            return False
-    
-    def test_alert_furto(self):
-        """Test theft alert functionality"""
-        try:
-            if not self.auth_token or not self.test_bike_id:
-                self.log("❌ Alert Furto: FAILED - No auth token or bike ID available")
-                return False
-                
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = self.session.post(
-                f"{self.base_url}/bikes/{self.test_bike_id}/alert-furto",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if data["status"] == "Furtada" and "data_furto" in data and data["data_furto"]:
-                    self.log("✅ Alert Furto: PASSED - Status changed to 'Furtada' and data_furto recorded")
-                    self.test_results["alert_furto"] = True
-                    return True
-                else:
-                    self.log(f"❌ Alert Furto: FAILED - Status not changed or data_furto missing")
-                    return False
-            else:
-                self.log(f"❌ Alert Furto: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Alert Furto: FAILED - {str(e)}")
-            return False
-    
-    def test_bike_delete(self):
-        """Test bike deletion"""
-        try:
-            if not self.auth_token or not self.test_bike_id:
-                self.log("❌ Bike Delete: FAILED - No auth token or bike ID available")
-                return False
-                
-            headers = {
-                "Authorization": f"Bearer {self.auth_token}",
-                "Content-Type": "application/json"
-            }
-            
-            response = self.session.delete(
-                f"{self.base_url}/bikes/{self.test_bike_id}",
-                headers=headers
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                if "message" in data and "deletada" in data["message"]:
-                    self.log("✅ Bike Delete: PASSED")
-                    self.test_results["bike_delete"] = True
-                    return True
-                else:
-                    self.log(f"❌ Bike Delete: FAILED - Unexpected response format")
-                    return False
-            else:
-                self.log(f"❌ Bike Delete: FAILED - Status {response.status_code}, Response: {response.text}")
-                return False
-                
-        except Exception as e:
-            self.log(f"❌ Bike Delete: FAILED - {str(e)}")
-            return False
+                self.log(f"❌ Failed to delete bike {bike_id}: {response.status_code}")
     
     def run_all_tests(self):
-        """Run all backend tests in sequence"""
+        """Run all bike schema tests"""
         self.log("🚀 Starting BIKE SEGURA BC Backend API Tests")
-        self.log(f"🌐 Testing against: {self.base_url}")
+        self.log(f"🌐 Backend URL: {BASE_URL}")
         
-        # Test API health first
-        if not self.test_api_health():
-            self.log("❌ API is not responding. Aborting tests.")
-            return False
+        tests = [
+            ("Login", self.test_login),
+            ("Create bike with full fotos dict", self.test_create_bike_with_full_photos_dict),
+            ("Create bike with empty fotos dict", self.test_create_bike_with_empty_photos_dict),
+            ("Create bike with partial fotos dict (should fail)", self.test_create_bike_with_partial_photos_dict),
+            ("Test valor_estimado removal", self.test_valor_estimado_removed),
+            ("GET all bikes", self.test_get_all_bikes),
+            ("GET single bike", self.test_get_single_bike),
+        ]
         
-        # Authentication tests
-        self.log("\n📋 Testing Authentication...")
-        self.test_auth_register()
-        self.test_auth_login()
-        self.test_auth_me()
+        results = []
         
-        # Bike CRUD tests
-        self.log("\n🚲 Testing Bike CRUD Operations...")
-        self.test_bike_create()
-        self.test_bike_list()
-        self.test_bike_get()
-        self.test_bike_update()
+        for test_name, test_func in tests:
+            try:
+                result = test_func()
+                results.append((test_name, result))
+            except Exception as e:
+                self.log(f"❌ {test_name} failed with exception: {str(e)}")
+                results.append((test_name, False))
         
-        # Theft alert test
-        self.log("\n🚨 Testing Theft Alert...")
-        self.test_alert_furto()
-        
-        # Cleanup - delete test bike
-        self.log("\n🧹 Cleanup...")
-        self.test_bike_delete()
+        # Cleanup
+        self.cleanup_created_bikes()
         
         # Summary
-        self.print_summary()
-        
-        return all(self.test_results.values())
-    
-    def print_summary(self):
-        """Print test results summary"""
         self.log("\n" + "="*60)
-        self.log("📊 TEST RESULTS SUMMARY")
+        self.log("📊 TEST SUMMARY")
         self.log("="*60)
         
-        passed = sum(1 for result in self.test_results.values() if result)
-        total = len(self.test_results)
+        passed = 0
+        failed = 0
         
-        for test_name, result in self.test_results.items():
-            status = "✅ PASSED" if result else "❌ FAILED"
-            self.log(f"{test_name.replace('_', ' ').title()}: {status}")
+        for test_name, result in results:
+            status = "✅ PASS" if result else "❌ FAIL"
+            self.log(f"{status} - {test_name}")
+            if result:
+                passed += 1
+            else:
+                failed += 1
         
-        self.log(f"\nOverall: {passed}/{total} tests passed")
+        self.log(f"\n📈 Results: {passed} passed, {failed} failed")
         
-        if passed == total:
-            self.log("🎉 ALL TESTS PASSED! Backend is working correctly.")
+        if failed == 0:
+            self.log("🎉 All tests passed! New bike schema is working correctly.")
+            return True
         else:
-            self.log(f"⚠️  {total - passed} tests failed. Backend needs attention.")
-
-def main():
-    """Main test execution"""
-    tester = BikeSeguraAPITester()
-    success = tester.run_all_tests()
-    
-    # Exit with appropriate code
-    sys.exit(0 if success else 1)
+            self.log("⚠️ Some tests failed. Check the logs above for details.")
+            return False
 
 if __name__ == "__main__":
-    main()
+    tester = BikeAPITester()
+    success = tester.run_all_tests()
+    sys.exit(0 if success else 1)

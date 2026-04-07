@@ -120,7 +120,7 @@ backend:
         agent: "testing"
         comment: "✅ TESTADO E FUNCIONANDO: Todos os endpoints de autenticação testados com sucesso. POST /api/auth/register cria usuário e retorna JWT, POST /api/auth/login autentica corretamente, GET /api/auth/me retorna dados do usuário autenticado. Validações funcionando: email duplicado rejeitado, CPF duplicado rejeitado, login com credenciais inválidas rejeitado. JWT funcionando corretamente."
 
-  - task: "API de CRUD de Bicicletas"
+  - task: "API de CRUD de Bicicletas (novo schema fotos dict + nota_fiscal)"
     implemented: true
     working: true
     file: "/app/backend/server.py"
@@ -133,7 +133,13 @@ backend:
         comment: "Implementado CRUD completo: POST /api/bikes, GET /api/bikes, GET /api/bikes/{id}, PUT /api/bikes/{id}, DELETE /api/bikes/{id}. Suporta fotos em base64."
       - working: true
         agent: "testing"
-        comment: "✅ TESTADO E FUNCIONANDO: Todos os endpoints CRUD de bicicletas testados com sucesso. POST /api/bikes cria bike com validação de mínimo 3 fotos, GET /api/bikes lista bikes do usuário, GET /api/bikes/{id} retorna bike específica, PUT /api/bikes/{id} atualiza dados, DELETE /api/bikes/{id} remove bike. Autenticação JWT obrigatória funcionando. Validação de propriedade (apenas owner acessa suas bikes) funcionando."
+        comment: "✅ TESTADO E FUNCIONANDO: Todos os endpoints CRUD de bicicletas testados com sucesso."
+      - working: "pending_test"
+        agent: "main"
+        comment: "REFATORADO: BikeCreate.fotos agora é dict com chaves {frente, tras, lateral_direita, lateral_esquerda, numero_quadro}. Adicionado campo nota_fiscal (base64 opcional). Removido valor_estimado do BikeCreate. GET /api/bikes e GET /api/bikes/{id} agora migram dados legados (fotos como array) para dict vazio automaticamente. BikeResponse retorna fotos como dict e nota_fiscal."
+      - working: true
+        agent: "testing"
+        comment: "✅ NOVO SCHEMA TESTADO E FUNCIONANDO PERFEITAMENTE: Todos os 7 cenários de teste passaram com sucesso. POST /api/bikes aceita fotos como dict com todas as chaves obrigatórias {frente, tras, lateral_direita, lateral_esquerda, numero_quadro}, rejeita corretamente fotos parciais com erro apropriado, aceita dict vazio {}. Campo nota_fiscal funcionando. valor_estimado removido corretamente do BikeCreate. GET /api/bikes e GET /api/bikes/{id} retornam fotos como dict e incluem campo nota_fiscal. Migração de dados legados funcionando. Autenticação com joao.silva@bikesegura.com funcionando. Limpeza de dados de teste realizada."
 
   - task: "API de Alerta de Furto"
     implemented: true
@@ -203,4 +209,8 @@ agent_communication:
   - agent: "main"
     message: "Backend implementado e rodando em http://0.0.0.0:8001. Frontend implementado mas com problema temporário de túnel ngrok. Solicito teste do backend first. Credenciais de teste podem ser criadas via API."
   - agent: "testing"
-    message: "✅ BACKEND TESTING COMPLETO: Todos os 3 tasks de backend testados e funcionando perfeitamente. API de Autenticação (registro/login/JWT), API de CRUD de Bicicletas (com validação de 3 fotos mínimas), e API de Alerta de Furto (marca como 'Furtada' e registra data_furto) estão operacionais. Validações de segurança funcionando (duplicatas rejeitadas, autenticação obrigatória, propriedade de bikes). Backend pronto para produção. Frontend tem problemas de túnel ngrok mas isso não afeta o backend."
+    message: "✅ BACKEND TESTING COMPLETO: Todos os 3 tasks de backend testados e funcionando perfeitamente."
+  - agent: "main"
+    message: "REFATORAÇÃO DO SCHEMA DE BICICLETAS: BikeCreate.fotos agora é dict com chaves {frente, tras, lateral_direita, lateral_esquerda, numero_quadro} em base64. Novo campo nota_fiscal (base64 opcional). valor_estimado removido do BikeCreate. GET endpoints agora migram dados legado (fotos array) para dict vazio. Preciso que teste o CRUD de bikes com o novo schema. Use credenciais de test_credentials.md. Teste criar uma bike com fotos como dict. Teste GET /api/bikes que deve retornar fotos como dict. Teste buscar uma bike individual."
+  - agent: "testing"
+    message: "✅ NOVO SCHEMA DE BICICLETAS TESTADO COM SUCESSO: Executei 7 cenários de teste abrangentes e todos passaram perfeitamente. O novo schema fotos como dict está funcionando corretamente, validações estão adequadas, campo nota_fiscal implementado, valor_estimado removido, migração de dados legados funcionando. Backend API totalmente operacional com o novo schema. Credenciais de teste joao.silva@bikesegura.com funcionando. Todos os dados de teste foram limpos após os testes."
