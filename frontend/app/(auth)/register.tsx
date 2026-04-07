@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const router = useRouter();
@@ -26,10 +28,33 @@ export default function RegisterScreen() {
     senha: '',
     confirmarSenha: '',
   });
+  const [fotoPerfil, setFotoPerfil] = useState('');
   const [loading, setLoading] = useState(false);
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (status !== 'granted') {
+      Alert.alert('Permissão negada', 'Precisamos de acesso à galeria para adicionar sua foto.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImagePickerAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1], // Quadrado para foto de perfil
+      quality: 0.5,
+      base64: true,
+    });
+
+    if (!result.canceled && result.assets[0].base64) {
+      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+      setFotoPerfil(base64Image);
+    }
   };
 
   const formatCPF = (value: string) => {
@@ -67,6 +92,11 @@ export default function RegisterScreen() {
     const { nome_completo, cpf, data_nascimento, telefone, email, senha, confirmarSenha } =
       formData;
 
+    if (!fotoPerfil) {
+      Alert.alert('Foto Obrigatória', 'Adicione uma foto de perfil para continuar.');
+      return;
+    }
+
     if (!nome_completo || !cpf || !data_nascimento || !telefone || !email || !senha) {
       Alert.alert('Erro', 'Preencha todos os campos');
       return;
@@ -91,6 +121,7 @@ export default function RegisterScreen() {
         telefone: telefone.replace(/\D/g, ''),
         email,
         senha,
+        foto_perfil: fotoPerfil,
       });
     } catch (error: any) {
       Alert.alert('Erro', error.message);
@@ -115,6 +146,19 @@ export default function RegisterScreen() {
         </View>
 
         <View style={styles.form}>
+          {/* Foto de Perfil */}
+          <Text style={styles.label}>Foto de Perfil *</Text>
+          <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
+            {fotoPerfil ? (
+              <Image source={{ uri: fotoPerfil }} style={styles.photoPreview} />
+            ) : (
+              <View style={styles.photoPlaceholder}>
+                <Ionicons name="person" size={48} color="#666" />
+                <Text style={styles.photoPlaceholderText}>Adicionar Foto</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           <Text style={styles.label}>Nome Completo</Text>
           <TextInput
             style={styles.input}
@@ -236,6 +280,33 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+  },
+  photoButton: {
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
+  photoPreview: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: '#FFC107',
+  },
+  photoPlaceholder: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#1a1a1a',
+    borderWidth: 2,
+    borderColor: '#FFC107',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  photoPlaceholderText: {
+    color: '#666',
+    fontSize: 12,
+    marginTop: 8,
   },
   label: {
     fontSize: 14,

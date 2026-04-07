@@ -59,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     telefone: string;
     email: string;
     senha: string;
+    foto_perfil?: string;
   }) {
     try {
       const response = await authAPI.register(data);
