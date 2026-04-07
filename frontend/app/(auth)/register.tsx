@@ -39,22 +39,59 @@ export default function RegisterScreen() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     
     if (status !== 'granted') {
-      Alert.alert('Permissão negada', 'Precisamos de acesso à galeria para adicionar sua foto.');
+      Alert.alert('Permissao negada', 'Precisamos de acesso a galeria para adicionar sua foto.');
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: 'images',
-      allowsEditing: true,
-      aspect: [1, 1], // Quadrado para foto de perfil
-      quality: 0.5,
-      base64: true,
-    });
-
-    if (!result.canceled && result.assets[0].base64) {
-      const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-      setFotoPerfil(base64Image);
-    }
+    Alert.alert(
+      'Foto de Perfil',
+      'Escolha uma opcao:',
+      [
+        {
+          text: 'Camera',
+          onPress: async () => {
+            try {
+              const camStatus = await ImagePicker.requestCameraPermissionsAsync();
+              if (camStatus.status !== 'granted') {
+                Alert.alert('Permissao negada', 'Precisamos de acesso a camera.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+              });
+              if (!result.canceled && result.assets[0].base64) {
+                setFotoPerfil(`data:image/jpeg;base64,${result.assets[0].base64}`);
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', 'Nao foi possivel abrir a camera: ' + error.message);
+            }
+          },
+        },
+        {
+          text: 'Galeria',
+          onPress: async () => {
+            try {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images',
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+              });
+              if (!result.canceled && result.assets[0].base64) {
+                setFotoPerfil(`data:image/jpeg;base64,${result.assets[0].base64}`);
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', 'Nao foi possivel abrir a galeria: ' + error.message);
+            }
+          },
+        },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
   };
 
   const formatCPF = (value: string) => {
