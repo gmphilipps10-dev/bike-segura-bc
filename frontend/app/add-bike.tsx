@@ -88,7 +88,7 @@ export default function AddBikeScreen() {
         {
           text: 'Galeria',
           onPress: async () => {
-            const result = await ImagePicker.launchImagePickerAsync({
+            const result = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: ImagePicker.MediaTypeOptions.Images,
               allowsEditing: true,
               aspect: [4, 3],
@@ -138,7 +138,7 @@ export default function AddBikeScreen() {
         {
           text: 'Galeria',
           onPress: async () => {
-            const result = await ImagePicker.launchImagePickerAsync({
+            const result = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: ImagePicker.MediaTypeOptions.Images,
               allowsEditing: false,
               quality: 0.5,
