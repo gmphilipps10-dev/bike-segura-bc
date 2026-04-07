@@ -100,11 +100,14 @@ export default function AddBikeScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_BACKEND_URL}/api/bikes`, {
+      const token = await AsyncStorage.getItem('token');
+      const backendURL = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+      
+      const response = await fetch(`${backendURL}/api/bikes`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await AsyncStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           marca,
