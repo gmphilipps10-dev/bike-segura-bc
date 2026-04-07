@@ -76,11 +76,11 @@ class BikeCreate(BaseModel):
     modelo: str
     cor: str
     numero_serie: str
-    fotos: List[str]  # base64 strings
+    fotos: dict  # {"frente": "base64", "tras": "base64", "lateral_direita": "base64", "lateral_esquerda": "base64", "numero_quadro": "base64"}
     tipo: str
-    valor_estimado: Optional[float] = None
     caracteristicas: Optional[str] = None
     link_rastreamento: Optional[str] = None
+    nota_fiscal: Optional[str] = None  # Base64 da nota fiscal (foto ou PDF)
 
 class BikeUpdate(BaseModel):
     marca: Optional[str] = None
@@ -101,12 +101,12 @@ class BikeResponse(BaseModel):
     modelo: str
     cor: str
     numero_serie: str
-    fotos: List[str]
+    fotos: dict  # Estruturado: frente, tras, lateral_direita, lateral_esquerda, numero_quadro
     tipo: str
-    valor_estimado: Optional[float] = None
     caracteristicas: Optional[str] = None
     status: str
     link_rastreamento: Optional[str] = None
+    nota_fiscal: Optional[str] = None
     data_furto: Optional[str] = None
     created_at: str
 
@@ -239,6 +239,15 @@ async def get_me(current_user: dict = Depends(get_current_user)):
 @api_router.post("/bikes", response_model=BikeResponse)
 async def create_bike(bike_data: BikeCreate, current_user: dict = Depends(get_current_user)):
     # Fotos são opcionais (permite array vazio para testes no navegador)
+    # Validar que as fotos obrigatórias foram enviadas (se houver fotos)
+    if bike_data.fotos and isinstance(bike_data.fotos, dict):
+        required_photos = ['frente', 'tras', 'lateral_direita', 'lateral_esquerda', 'numero_quadro']
+        missing = [p for p in required_photos if not bike_data.fotos.get(p)]
+        if missing:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Fotos obrigatórias faltando: {', '.join(missing)}"
+            )
     
     bike_dict = {
         "proprietario_id": str(current_user["_id"]),
@@ -246,12 +255,12 @@ async def create_bike(bike_data: BikeCreate, current_user: dict = Depends(get_cu
         "modelo": bike_data.modelo,
         "cor": bike_data.cor,
         "numero_serie": bike_data.numero_serie,
-        "fotos": bike_data.fotos,
+        "fotos": bike_data.fotos if bike_data.fotos else {},
         "tipo": bike_data.tipo,
-        "valor_estimado": bike_data.valor_estimado,
         "caracteristicas": bike_data.caracteristicas,
         "status": "Ativa",
         "link_rastreamento": bike_data.link_rastreamento,
+        "nota_fiscal": bike_data.nota_fiscal,
         "data_furto": None,
         "created_at": datetime.utcnow().isoformat()
     }
