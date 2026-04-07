@@ -12,9 +12,11 @@ export default function TabsLayout() {
           backgroundColor: '#000',
           borderTopWidth: 1,
           borderTopColor: '#333',
-          paddingBottom: 8,
+          paddingBottom: 24, // Espaço para botões do Android
           paddingTop: 8,
-          height: 64,
+          height: 88, // Aumentado para acomodar safe area
+          position: 'absolute',
+          bottom: 0,
         },
       }}
     >
