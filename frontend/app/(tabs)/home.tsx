@@ -6,8 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   Linking,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -28,7 +28,7 @@ export default function HomeScreen() {
       const data = await bikeAPI.getAll();
       setBikes(data);
     } catch (error) {
-      console.error(error);
+      console.error('Erro ao carregar bikes:', error);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -44,144 +44,174 @@ export default function HomeScreen() {
     loadBikes();
   };
 
-  const handleAlertaFurto = (bike: Bike) => {
-    Alert.alert(
-      '⚠️ ALERTA DE FURTO',
-      `Confirma que a bicicleta ${bike.marca} ${bike.modelo} foi furtada?`,
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Confirmar Furto',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await bikeAPI.alertFurto(bike.id);
-              Alert.alert(
-                'Alerta Acionado',
-                'Sua bicicleta foi marcada como FURTADA. Acesse o rastreamento agora.',
-                [
-                  {
-                    text: 'Ver Rastreamento',
-                    onPress: () => {
-                      if (bike.link_rastreamento) {
-                        Linking.openURL(bike.link_rastreamento);
-                      } else {
-                        Alert.alert(
-                          'Link não cadastrado',
-                          'Cadastre o link de rastreamento desta bike.'
-                        );
-                      }
-                    },
-                  },
-                  { text: 'OK' },
-                ]
-              );
-              loadBikes();
-            } catch (error: any) {
-              Alert.alert('Erro', error.message);
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const activeBikes = bikes.filter((b) => b.status === 'Ativa');
-  const stolenBikes = bikes.filter((b) => b.status === 'Furtada');
+  const activeBikes = bikes.filter((b) => b.status === 'Ativa').length;
+  const stolenBikes = bikes.filter((b) => b.status === 'Furtada').length;
+  const totalBikes = bikes.length;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
+        contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
+        {/* Header com Logo */}
         <View style={styles.header}>
+          <Image
+            source={require('../../assets/images/logo.jpg')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={styles.greeting}>Olá, {user?.nome_completo?.split(' ')[0]}!</Text>
-          <Text style={styles.subtitle}>Suas bicicletas estão protegidas</Text>
+          <Text style={styles.subtitle}>Central de Segurança</Text>
         </View>
 
+        {/* Estatísticas Gerais */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
-            <Ionicons name="bicycle" size={32} color="#4CAF50" />
-            <Text style={styles.statNumber}>{activeBikes.length}</Text>
-            <Text style={styles.statLabel}>Ativas</Text>
+            <Ionicons name="bicycle" size={32} color="#FFC107" />
+            <Text style={styles.statNumber}>{totalBikes}</Text>
+            <Text style={styles.statLabel}>
+              {totalBikes === 1 ? 'Bicicleta' : 'Bicicletas'}
+            </Text>
           </View>
-          <View style={[styles.statCard, styles.statCardDanger]}>
-            <Ionicons name="alert-circle" size={32} color="#F44336" />
-            <Text style={styles.statNumber}>{stolenBikes.length}</Text>
-            <Text style={styles.statLabel}>Furtadas</Text>
+          
+          <View style={styles.statCard}>
+            <Ionicons name="shield-checkmark" size={32} color="#4CAF50" />
+            <Text style={styles.statNumber}>{activeBikes}</Text>
+            <Text style={styles.statLabel}>Protegidas</Text>
           </View>
+
+          {stolenBikes > 0 && (
+            <View style={[styles.statCard, styles.statCardDanger]}>
+              <Ionicons name="alert-circle" size={32} color="#F44336" />
+              <Text style={styles.statNumber}>{stolenBikes}</Text>
+              <Text style={styles.statLabel}>Furtadas</Text>
+            </View>
+          )}
         </View>
 
-        {stolenBikes.length > 0 && (
+        {/* Botão Principal - Cadastrar Bike */}
+        {totalBikes === 0 && (
+          <TouchableOpacity
+            style={styles.mainActionButton}
+            onPress={() => router.push('/add-bike')}
+          >
+            <Ionicons name="add-circle" size={48} color="#FFC107" />
+            <Text style={styles.mainActionTitle}>Cadastre sua Primeira Bike</Text>
+            <Text style={styles.mainActionSubtitle}>
+              Proteja sua bicicleta agora
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Ações Rápidas */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Acesso Rápido</Text>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => router.push('/(tabs)/bikes')}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#FFC107' }]}>
+              <Ionicons name="bicycle" size={24} color="#000" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Minhas Bicicletas</Text>
+              <Text style={styles.actionSubtitle}>
+                Ver e gerenciar bikes cadastradas
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionCard}
+            onPress={() => Linking.openURL('https://delegaciavirtual.sc.gov.br/')}
+          >
+            <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
+              <Ionicons name="shield-checkmark" size={24} color="#fff" />
+            </View>
+            <View style={styles.actionContent}>
+              <Text style={styles.actionTitle}>Delegacia Virtual SC</Text>
+              <Text style={styles.actionSubtitle}>
+                Registrar boletim de ocorrência
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+
+          {totalBikes > 0 && (
+            <TouchableOpacity
+              style={styles.actionCard}
+              onPress={() => router.push('/add-bike')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#4CAF50' }]}>
+                <Ionicons name="add-circle" size={24} color="#fff" />
+              </View>
+              <View style={styles.actionContent}>
+                <Text style={styles.actionTitle}>Cadastrar Nova Bike</Text>
+                <Text style={styles.actionSubtitle}>
+                  Adicionar mais uma bicicleta
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Alertas de Furto */}
+        {stolenBikes > 0 && (
           <View style={styles.alertSection}>
             <View style={styles.alertHeader}>
               <Ionicons name="warning" size={24} color="#F44336" />
-              <Text style={styles.alertTitle}>BICICLETAS FURTADAS</Text>
+              <Text style={styles.alertTitle}>ATENÇÃO!</Text>
             </View>
-            {stolenBikes.map((bike) => (
-              <View key={bike.id} style={styles.alertCard}>
-                <View style={styles.alertCardHeader}>
-                  <Text style={styles.alertCardTitle}>
-                    {bike.marca} {bike.modelo}
-                  </Text>
-                  <Text style={styles.alertCardDate}>
-                    {bike.data_furto
-                      ? new Date(bike.data_furto).toLocaleDateString('pt-BR')
-                      : ''}
-                  </Text>
-                </View>
-                {bike.link_rastreamento && (
-                  <TouchableOpacity
-                    style={styles.trackButton}
-                    onPress={() => Linking.openURL(bike.link_rastreamento!)}
-                  >
-                    <Ionicons name="location" size={20} color="#fff" />
-                    <Text style={styles.trackButtonText}>Ver Rastreamento</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-
-        {activeBikes.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ações Rápidas</Text>
-            {activeBikes.map((bike) => (
-              <View key={bike.id} style={styles.bikeCard}>
-                <View style={styles.bikeInfo}>
-                  <Text style={styles.bikeName}>
-                    {bike.marca} {bike.modelo}
-                  </Text>
-                  <Text style={styles.bikeDetail}>{bike.cor}</Text>
-                </View>
-                <TouchableOpacity
-                  style={styles.alertButton}
-                  onPress={() => handleAlertaFurto(bike)}
-                >
-                  <Ionicons name="alert-circle" size={24} color="#fff" />
-                  <Text style={styles.alertButtonText}>FURTO</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {bikes.length === 0 && !loading && (
-          <View style={styles.emptyState}>
-            <Ionicons name="bicycle-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>Nenhuma bicicleta cadastrada</Text>
+            <Text style={styles.alertText}>
+              Você tem {stolenBikes} {stolenBikes === 1 ? 'bicicleta furtada' : 'bicicletas furtadas'}.
+            </Text>
+            <Text style={styles.alertText}>
+              Acesse "Minhas Bikes" para ver detalhes e rastreamento.
+            </Text>
             <TouchableOpacity
-              style={styles.addButton}
+              style={styles.alertButton}
               onPress={() => router.push('/(tabs)/bikes')}
             >
-              <Text style={styles.addButtonText}>Cadastrar Primeira Bike</Text>
+              <Text style={styles.alertButtonText}>Ver Bikes Furtadas</Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Dicas de Segurança */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Dicas de Segurança</Text>
+          
+          <View style={styles.tipCard}>
+            <Ionicons name="location" size={20} color="#FFC107" />
+            <Text style={styles.tipText}>
+              Cadastre o link do rastreador para acesso rápido
+            </Text>
+          </View>
+
+          <View style={styles.tipCard}>
+            <Ionicons name="camera" size={20} color="#FFC107" />
+            <Text style={styles.tipText}>
+              Tire fotos de todos os ângulos da sua bike
+            </Text>
+          </View>
+
+          <View style={styles.tipCard}>
+            <Ionicons name="key" size={20} color="#FFC107" />
+            <Text style={styles.tipText}>
+              Anote o número de série em local seguro
+            </Text>
+          </View>
+        </View>
+
+        {/* Rodapé com espaço para tab bar */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>🔒 Suas bikes estão protegidas</Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -190,57 +220,132 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#1a1a1a',
+  },
+  scrollContent: {
+    paddingBottom: 100, // Espaço para tab bar
   },
   header: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#000',
     padding: 24,
-    paddingTop: 16,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: '#FFC107',
+  },
+  logo: {
+    width: 200,
+    height: 140,
+    marginBottom: 8,
   },
   greeting: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#FFC107',
+    marginTop: 8,
   },
   subtitle: {
     fontSize: 14,
     color: '#fff',
     marginTop: 4,
-    opacity: 0.9,
   },
   statsContainer: {
     flexDirection: 'row',
     padding: 16,
-    gap: 16,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#000',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#333',
   },
   statCardDanger: {
-    backgroundColor: '#FFEBEE',
+    borderColor: '#F44336',
+    backgroundColor: '#2a1a1a',
   },
   statNumber: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#FFC107',
     marginTop: 8,
   },
   statLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  mainActionButton: {
+    backgroundColor: '#000',
+    margin: 16,
+    padding: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFC107',
+    borderStyle: 'dashed',
+  },
+  mainActionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFC107',
+    marginTop: 16,
+  },
+  mainActionSubtitle: {
     fontSize: 14,
-    color: '#666',
+    color: '#999',
+    marginTop: 8,
+  },
+  section: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFC107',
+    marginBottom: 16,
+  },
+  actionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  actionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  actionContent: {
+    flex: 1,
+  },
+  actionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  actionSubtitle: {
+    fontSize: 13,
+    color: '#999',
     marginTop: 4,
   },
   alertSection: {
-    padding: 16,
+    margin: 16,
+    backgroundColor: '#2a1a1a',
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#F44336',
   },
   alertHeader: {
     flexDirection: 'row',
@@ -249,114 +354,53 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   alertTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#F44336',
   },
-  alertCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
+  alertText: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 8,
+    lineHeight: 20,
   },
-  alertCardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  alertCardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  alertCardDate: {
-    fontSize: 12,
-    color: '#666',
-  },
-  trackButton: {
-    backgroundColor: '#2196F3',
+  alertButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  trackButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  bikeCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  bikeInfo: {
-    flex: 1,
-  },
-  bikeName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  bikeDetail: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  alertButton: {
     backgroundColor: '#F44336',
-    flexDirection: 'row',
-    alignItems: 'center',
     padding: 12,
-    paddingHorizontal: 16,
     borderRadius: 8,
-    gap: 4,
+    marginTop: 12,
+    gap: 8,
   },
   alertButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
   },
-  emptyState: {
+  tipCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: 48,
-    marginTop: 48,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: 16,
-    marginBottom: 24,
-  },
-  addButton: {
-    backgroundColor: '#4CAF50',
-    padding: 16,
+    backgroundColor: '#000',
+    padding: 12,
     borderRadius: 8,
+    marginBottom: 8,
+    gap: 12,
+    borderWidth: 1,
+    borderColor: '#333',
   },
-  addButtonText: {
+  tipText: {
+    flex: 1,
+    fontSize: 14,
     color: '#fff',
-    fontWeight: 'bold',
+  },
+  footer: {
+    alignItems: 'center',
+    padding: 24,
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#999',
   },
 });
