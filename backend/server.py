@@ -52,6 +52,7 @@ class UserRegister(BaseModel):
     telefone: str
     email: EmailStr
     senha: str
+    foto_perfil: Optional[str] = None  # Base64 da foto
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -180,6 +181,7 @@ async def register(user_data: UserRegister):
         "telefone": user_data.telefone,
         "email": user_data.email,
         "senha_hash": get_password_hash(user_data.senha),
+        "foto_perfil": user_data.foto_perfil,
         "created_at": datetime.utcnow().isoformat()
     }
     
