@@ -36,13 +36,6 @@ export default function RegisterScreen() {
   };
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (status !== 'granted') {
-      Alert.alert('Permissao negada', 'Precisamos de acesso a galeria para adicionar sua foto.');
-      return;
-    }
-
     Alert.alert(
       'Foto de Perfil',
       'Escolha uma opcao:',
@@ -74,6 +67,11 @@ export default function RegisterScreen() {
           text: 'Galeria',
           onPress: async () => {
             try {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permissao negada', 'Precisamos de acesso a galeria.');
+                return;
+              }
               const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
                 allowsEditing: true,
