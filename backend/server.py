@@ -236,6 +236,26 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         "foto_perfil": current_user.get("foto_perfil")
     }
 
+class UpdateFotoPerfil(BaseModel):
+    foto_perfil: str
+
+@api_router.put("/auth/foto-perfil", response_model=UserResponse)
+async def update_foto_perfil(data: UpdateFotoPerfil, current_user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {"_id": current_user["_id"]},
+        {"$set": {"foto_perfil": data.foto_perfil}}
+    )
+    updated_user = await db.users.find_one({"_id": current_user["_id"]})
+    return {
+        "id": str(updated_user["_id"]),
+        "nome_completo": updated_user["nome_completo"],
+        "cpf": updated_user["cpf"],
+        "data_nascimento": updated_user["data_nascimento"],
+        "telefone": updated_user["telefone"],
+        "email": updated_user["email"],
+        "foto_perfil": updated_user.get("foto_perfil")
+    }
+
 # ============ BIKE ROUTES ============
 
 @api_router.post("/bikes", response_model=BikeResponse)

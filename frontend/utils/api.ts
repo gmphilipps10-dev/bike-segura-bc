@@ -56,6 +56,20 @@ export const authAPI = {
     }
     return response.json();
   },
+
+  updateFotoPerfil: async (foto_perfil: string): Promise<User> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/auth/foto-perfil`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ foto_perfil }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Erro ao atualizar foto');
+    }
+    return response.json();
+  },
 };
 
 export const bikeAPI = {

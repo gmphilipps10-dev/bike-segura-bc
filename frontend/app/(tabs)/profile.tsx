@@ -8,9 +8,11 @@ import {
   Alert,
   Image,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
 import { authAPI } from '../../utils/api';
 import { User } from '../../types';
@@ -22,6 +24,7 @@ export default function ProfileScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
   const [modalContent, setModalContent] = useState('');
+  const [updatingPhoto, setUpdatingPhoto] = useState(false);
 
   const loadUserData = async () => {
     try {
@@ -49,6 +52,78 @@ export default function ProfileScreen() {
     setModalTitle(title);
     setModalContent(content);
     setModalVisible(true);
+  };
+
+  const pickProfilePhoto = async () => {
+    Alert.alert(
+      'Foto de Perfil',
+      'Escolha uma opcao:',
+      [
+        {
+          text: 'Camera',
+          onPress: async () => {
+            try {
+              const camStatus = await ImagePicker.requestCameraPermissionsAsync();
+              if (camStatus.status !== 'granted') {
+                Alert.alert('Permissao negada', 'Precisamos de acesso a camera.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+              });
+              if (!result.canceled && result.assets[0].base64) {
+                const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+                await saveProfilePhoto(base64Image);
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', 'Nao foi possivel abrir a camera: ' + error.message);
+            }
+          },
+        },
+        {
+          text: 'Galeria',
+          onPress: async () => {
+            try {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permissao negada', 'Precisamos de acesso a galeria.');
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images',
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.5,
+                base64: true,
+              });
+              if (!result.canceled && result.assets[0].base64) {
+                const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+                await saveProfilePhoto(base64Image);
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', 'Nao foi possivel abrir a galeria: ' + error.message);
+            }
+          },
+        },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
+  };
+
+  const saveProfilePhoto = async (base64Image: string) => {
+    setUpdatingPhoto(true);
+    try {
+      const updatedUser = await authAPI.updateFotoPerfil(base64Image);
+      setUser(updatedUser);
+      Alert.alert('Sucesso', 'Foto de perfil atualizada!');
+    } catch (error: any) {
+      Alert.alert('Erro', error.message || 'Erro ao atualizar foto');
+    } finally {
+      setUpdatingPhoto(false);
+    }
   };
 
   const handleComoFunciona = () => {
@@ -98,13 +173,30 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.profileHeader}>
-          {user?.foto_perfil ? (
-            <Image source={{ uri: user.foto_perfil }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={48} color="#FFC107" />
-            </View>
-          )}
+          <TouchableOpacity onPress={pickProfilePhoto} disabled={updatingPhoto}>
+            {updatingPhoto ? (
+              <View style={styles.avatar}>
+                <ActivityIndicator size="large" color="#FFC107" />
+              </View>
+            ) : user?.foto_perfil ? (
+              <View>
+                <Image source={{ uri: user.foto_perfil }} style={styles.avatarImage} />
+                <View style={styles.cameraBadge}>
+                  <Ionicons name="camera" size={16} color="#000" />
+                </View>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.avatar}>
+                  <Ionicons name="person" size={48} color="#FFC107" />
+                </View>
+                <View style={styles.cameraBadge}>
+                  <Ionicons name="camera" size={16} color="#000" />
+                </View>
+              </View>
+            )}
+          </TouchableOpacity>
+          <Text style={styles.photoHint}>Toque para alterar a foto</Text>
           <Text style={styles.userName}>{user?.nome_completo}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
@@ -257,6 +349,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 3,
     borderColor: '#FFC107',
+  },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 16,
+    right: 0,
+    backgroundColor: '#FFC107',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#000',
+  },
+  photoHint: {
+    fontSize: 12,
+    color: '#FFC107',
+    marginBottom: 12,
   },
   userName: {
     fontSize: 22,
