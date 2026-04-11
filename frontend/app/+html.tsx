@@ -80,20 +80,23 @@ export default function Root({ children }: PropsWithChildren) {
 
                   var banner = document.createElement('div');
                   banner.id = 'pwa-install-banner';
-                  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#1a1a1a;border-top:2px solid #FFC107;padding:16px;display:flex;align-items:center;gap:12px;z-index:99999;font-family:-apple-system,sans-serif;';
+                  banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#000;border-top:3px solid #FFC107;padding:20px 16px;display:flex;flex-direction:column;align-items:center;gap:12px;z-index:99999;font-family:-apple-system,sans-serif;box-shadow:0 -4px 20px rgba(0,0,0,0.8);';
 
-                  var icon = document.createElement('div');
-                  icon.style.cssText = 'width:44px;height:44px;border-radius:10px;overflow:hidden;flex-shrink:0;';
-                  icon.innerHTML = '<img src="/icon-192.png" style="width:100%;height:100%;" />';
+                  var logo = document.createElement('img');
+                  logo.src = '/logo.jpg';
+                  logo.style.cssText = 'width:160px;height:auto;margin-bottom:4px;';
 
                   var text = document.createElement('div');
-                  text.style.cssText = 'flex:1;';
+                  text.style.cssText = 'text-align:center;';
+
+                  var row = document.createElement('div');
+                  row.style.cssText = 'display:flex;gap:10px;width:100%;';
 
                   if (type === 'android') {
-                    text.innerHTML = '<div style="color:#FFC107;font-weight:bold;font-size:14px;">Instalar Bike Segura BC</div><div style="color:#999;font-size:12px;margin-top:2px;">Acesse mais rapido pela tela inicial</div>';
+                    text.innerHTML = '<div style="color:#fff;font-size:13px;">Instale o app para acesso rapido</div>';
                     var btn = document.createElement('button');
-                    btn.textContent = 'Instalar';
-                    btn.style.cssText = 'background:#FFC107;color:#000;border:none;padding:10px 20px;border-radius:8px;font-weight:bold;font-size:14px;cursor:pointer;flex-shrink:0;';
+                    btn.textContent = 'Instalar App';
+                    btn.style.cssText = 'flex:1;background:#FFC107;color:#000;border:none;padding:14px;border-radius:10px;font-weight:bold;font-size:15px;cursor:pointer;';
                     btn.onclick = function() {
                       if (deferredPrompt) {
                         deferredPrompt.prompt();
@@ -101,23 +104,25 @@ export default function Root({ children }: PropsWithChildren) {
                       }
                       banner.remove();
                     };
-                    banner.appendChild(icon);
+                    var closeBtn = document.createElement('button');
+                    closeBtn.textContent = 'Agora nao';
+                    closeBtn.style.cssText = 'background:none;border:1px solid #333;color:#999;padding:14px 20px;border-radius:10px;font-size:13px;cursor:pointer;';
+                    closeBtn.onclick = function() { banner.remove(); sessionStorage.setItem('pwa_dismissed','1'); };
+                    banner.appendChild(logo);
                     banner.appendChild(text);
-                    banner.appendChild(btn);
+                    row.appendChild(btn);
+                    row.appendChild(closeBtn);
+                    banner.appendChild(row);
                   } else {
-                    text.innerHTML = '<div style="color:#FFC107;font-weight:bold;font-size:14px;">Instalar Bike Segura BC</div><div style="color:#999;font-size:12px;margin-top:2px;">Toque em <span style="color:#FFC107;">Compartilhar</span> e depois em <span style="color:#FFC107;">Adicionar a Tela de Inicio</span></div>';
-                    banner.appendChild(icon);
+                    text.innerHTML = '<div style="color:#fff;font-size:13px;line-height:1.5;">Toque em <span style="color:#FFC107;font-weight:bold;">Compartilhar</span> e depois em<br><span style="color:#FFC107;font-weight:bold;">Adicionar a Tela de Inicio</span></div>';
+                    var closeBtn2 = document.createElement('button');
+                    closeBtn2.textContent = 'Entendi';
+                    closeBtn2.style.cssText = 'width:100%;background:#FFC107;color:#000;border:none;padding:14px;border-radius:10px;font-weight:bold;font-size:15px;cursor:pointer;';
+                    closeBtn2.onclick = function() { banner.remove(); sessionStorage.setItem('pwa_dismissed','1'); };
+                    banner.appendChild(logo);
                     banner.appendChild(text);
+                    banner.appendChild(closeBtn2);
                   }
-
-                  var close = document.createElement('button');
-                  close.textContent = '✕';
-                  close.style.cssText = 'background:none;border:none;color:#666;font-size:20px;cursor:pointer;padding:8px;flex-shrink:0;';
-                  close.onclick = function() {
-                    banner.remove();
-                    sessionStorage.setItem('pwa_dismissed', '1');
-                  };
-                  banner.appendChild(close);
 
                   document.body.appendChild(banner);
                 }
