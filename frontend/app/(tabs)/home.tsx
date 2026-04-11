@@ -31,6 +31,9 @@ export default function HomeScreen() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [alertStep, setAlertStep] = useState<'none' | 'select' | 'confirm'>('none');
+  const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
+  const [alertLoading, setAlertLoading] = useState(false);
 
   const loadBikes = async () => {
     try {
@@ -67,34 +70,11 @@ export default function HomeScreen() {
       return;
     }
     if (bikesAtivas.length === 1) {
-      confirmAlerta(bikesAtivas[0]);
+      setSelectedBike(bikesAtivas[0]);
+      setAlertStep('confirm');
       return;
     }
-
-    if (Platform.OS === 'web') {
-      // No web, usar prompt simples pois Alert.alert com múltiplos botões não funciona bem
-      const nomes = bikesAtivas.map((b, i) => `${i + 1} - ${b.marca} ${b.modelo}`).join('\n');
-      const escolha = window.prompt(`Selecione a bicicleta furtada (digite o numero):\n\n${nomes}`);
-      if (escolha) {
-        const idx = parseInt(escolha) - 1;
-        if (idx >= 0 && idx < bikesAtivas.length) {
-          confirmAlerta(bikesAtivas[idx]);
-        }
-      }
-      return;
-    }
-
-    Alert.alert(
-      'Selecione a bicicleta furtada',
-      '',
-      [
-        ...bikesAtivas.map((b) => ({
-          text: `${b.marca} ${b.modelo}`,
-          onPress: () => confirmAlerta(b),
-        })),
-        { text: 'Cancelar', style: 'cancel' as const },
-      ]
-    );
+    setAlertStep('select');
   };
 
   const buildWhatsAppMessage = (bike: Bike): string => {
@@ -103,40 +83,21 @@ export default function HomeScreen() {
     return msg;
   };
 
-  const openWhatsApp = (bike: Bike) => {
-    const message = buildWhatsAppMessage(bike);
-    openWhatsAppLink('5547992458380', message);
-  };
-
-  const confirmAlerta = (bike: Bike) => {
-    const doAlerta = async () => {
-      try {
-        await bikeAPI.alertFurto(bike.id);
-        loadBikes();
-        openWhatsApp(bike);
-      } catch (error: any) {
-        Alert.alert('Erro', error.message);
-      }
-    };
-
-    if (Platform.OS === 'web') {
-      const ok = window.confirm(`Deseja marcar "${bike.marca} ${bike.modelo}" como furtada e enviar alerta via WhatsApp?`);
-      if (ok) doAlerta();
-      return;
+  const doConfirmAlerta = async () => {
+    if (!selectedBike) return;
+    setAlertLoading(true);
+    try {
+      await bikeAPI.alertFurto(selectedBike.id);
+      const message = buildWhatsAppMessage(selectedBike);
+      openWhatsAppLink('5547992458380', message);
+      loadBikes();
+      setAlertStep('none');
+      setSelectedBike(null);
+    } catch (error: any) {
+      Alert.alert('Erro', error.message);
+    } finally {
+      setAlertLoading(false);
     }
-
-    Alert.alert(
-      'CONFIRMAR ALERTA DE FURTO',
-      `Deseja marcar a bicicleta "${bike.marca} ${bike.modelo}" como furtada e enviar alerta via WhatsApp?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar',
-          style: 'destructive',
-          onPress: doAlerta,
-        },
-      ]
-    );
   };
 
   return (
@@ -299,6 +260,57 @@ export default function HomeScreen() {
 
         <View style={styles.footer} />
       </ScrollView>
+
+      {/* MODAL DE ALERTA DE FURTO */}
+      {alertStep !== 'none' && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            {alertStep === 'select' && (
+              <>
+                <Ionicons name="warning" size={32} color="#F44336" style={{ alignSelf: 'center' }} />
+                <Text style={styles.modalTitle}>Qual bicicleta foi furtada?</Text>
+                {bikes.filter((b) => b.status === 'Ativa').map((b) => (
+                  <TouchableOpacity
+                    key={b.id}
+                    style={styles.modalBikeItem}
+                    onPress={() => { setSelectedBike(b); setAlertStep('confirm'); }}
+                  >
+                    <Ionicons name="bicycle" size={22} color="#FFC107" />
+                    <Text style={styles.modalBikeText}>{b.marca} {b.modelo}</Text>
+                    <Ionicons name="chevron-forward" size={20} color="#666" />
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => { setAlertStep('none'); setSelectedBike(null); }}>
+                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {alertStep === 'confirm' && selectedBike && (
+              <>
+                <Ionicons name="alert-circle" size={40} color="#F44336" style={{ alignSelf: 'center' }} />
+                <Text style={styles.modalTitle}>Confirmar Alerta de Furto</Text>
+                <Text style={styles.modalDesc}>
+                  Deseja marcar "{selectedBike.marca} {selectedBike.modelo}" como furtada e enviar alerta via WhatsApp?
+                </Text>
+                <TouchableOpacity
+                  style={[styles.modalConfirmBtn, alertLoading && { opacity: 0.6 }]}
+                  onPress={doConfirmAlerta}
+                  disabled={alertLoading}
+                >
+                  <Ionicons name="logo-whatsapp" size={20} color="#fff" />
+                  <Text style={styles.modalConfirmText}>
+                    {alertLoading ? 'Enviando...' : 'CONFIRMAR E ENVIAR ALERTA'}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => { setAlertStep('none'); setSelectedBike(null); }}>
+                  <Text style={styles.modalCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -369,4 +381,31 @@ const styles = StyleSheet.create({
   },
   tipText: { flex: 1, fontSize: 14, color: '#fff' },
   footer: { height: 24 },
+  modalOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center',
+    padding: 24, zIndex: 100,
+  },
+  modalBox: {
+    backgroundColor: '#1a1a1a', borderRadius: 16, padding: 24,
+    width: '100%', maxWidth: 400, borderWidth: 2, borderColor: '#FFC107',
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginTop: 12, marginBottom: 8 },
+  modalDesc: { fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  modalBikeItem: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#000',
+    padding: 16, borderRadius: 10, marginBottom: 8, gap: 12,
+    borderWidth: 1, borderColor: '#333',
+  },
+  modalBikeText: { flex: 1, fontSize: 16, color: '#fff', fontWeight: '600' },
+  modalConfirmBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F44336', padding: 16, borderRadius: 12, gap: 10, marginBottom: 8,
+  },
+  modalConfirmText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  modalCancelBtn: {
+    alignItems: 'center', padding: 14, borderRadius: 12,
+    backgroundColor: '#333',
+  },
+  modalCancelText: { color: '#999', fontSize: 14, fontWeight: '600' },
 });
