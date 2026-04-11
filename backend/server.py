@@ -102,13 +102,14 @@ class BikeResponse(BaseModel):
     modelo: str
     cor: str
     numero_serie: str
-    fotos: dict  # Estruturado: frente, tras, lateral_direita, lateral_esquerda, numero_quadro
+    fotos: dict
     tipo: str
     caracteristicas: Optional[str] = None
-    status: str
+    status: str  # Ativa, Furtada, Offline
     link_rastreamento: Optional[str] = None
     nota_fiscal: Optional[str] = None
     data_furto: Optional[str] = None
+    ultima_atualizacao: Optional[str] = None
     created_at: str
 
 class AlertFurto(BaseModel):
@@ -323,6 +324,7 @@ async def create_bike(bike_data: BikeCreate, current_user: dict = Depends(get_cu
         "link_rastreamento": bike_data.link_rastreamento,
         "nota_fiscal": bike_data.nota_fiscal,
         "data_furto": None,
+        "ultima_atualizacao": datetime.utcnow().isoformat(),
         "created_at": datetime.utcnow().isoformat()
     }
     
@@ -349,6 +351,9 @@ async def get_bikes(current_user: dict = Depends(get_current_user)):
         # Garantir nota_fiscal existe
         if "nota_fiscal" not in bike:
             bike["nota_fiscal"] = None
+        # Garantir ultima_atualizacao existe
+        if "ultima_atualizacao" not in bike:
+            bike["ultima_atualizacao"] = bike.get("created_at")
         result.append(bike)
     
     return result
@@ -384,6 +389,8 @@ async def get_bike(bike_id: str, current_user: dict = Depends(get_current_user))
         bike["fotos"] = {}
     if "nota_fiscal" not in bike:
         bike["nota_fiscal"] = None
+    if "ultima_atualizacao" not in bike:
+        bike["ultima_atualizacao"] = bike.get("created_at")
     return bike
 
 @api_router.put("/bikes/{bike_id}", response_model=BikeResponse)
@@ -477,7 +484,8 @@ async def alert_furto(bike_id: str, current_user: dict = Depends(get_current_use
         {"_id": ObjectId(bike_id)},
         {"$set": {
             "status": "Furtada",
-            "data_furto": datetime.utcnow().isoformat()
+            "data_furto": datetime.utcnow().isoformat(),
+            "ultima_atualizacao": datetime.utcnow().isoformat()
         }}
     )
     

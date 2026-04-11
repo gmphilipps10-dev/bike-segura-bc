@@ -26,10 +26,11 @@ export interface Bike {
   fotos: BikePhotos;
   tipo: string;
   caracteristicas?: string;
-  status: 'Ativa' | 'Furtada' | 'Recuperada';
+  status: 'Ativa' | 'Furtada' | 'Offline';
   link_rastreamento?: string;
   nota_fiscal?: string;
   data_furto?: string;
+  ultima_atualizacao?: string;
   created_at: string;
 }
 

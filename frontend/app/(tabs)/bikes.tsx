@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,12 +8,52 @@ import {
   Image,
   RefreshControl,
   ActivityIndicator,
+  Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { bikeAPI } from '../../utils/api';
 import { Bike } from '../../types';
+
+const getTimeAgo = (dateStr?: string): string => {
+  if (!dateStr) return 'Sem dados';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Agora';
+  if (diffMin < 60) return `ha ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `ha ${diffH}h`;
+  const diffD = Math.floor(diffH / 24);
+  return `ha ${diffD} dia${diffD > 1 ? 's' : ''}`;
+};
+
+const isOnline = (dateStr?: string): boolean => {
+  if (!dateStr) return false;
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  return diffMs < 30 * 60 * 1000; // 30 min
+};
+
+const getStatusConfig = (status: string, lastUpdate?: string) => {
+  switch (status) {
+    case 'Furtada':
+      return { color: '#F44336', text: 'Furtada (rastreamento ativo)', icon: 'alert-circle' as const };
+    case 'Ativa':
+      if (isOnline(lastUpdate)) {
+        return { color: '#4CAF50', text: 'Ativa (monitorando)', icon: 'shield-checkmark' as const };
+      }
+      return { color: '#888', text: 'Sem sinal', icon: 'cloud-offline' as const };
+    case 'Offline':
+      return { color: '#888', text: 'Sem sinal', icon: 'cloud-offline' as const };
+    default:
+      return { color: '#4CAF50', text: 'Ativa (monitorando)', icon: 'shield-checkmark' as const };
+  }
+};
 
 export default function BikesScreen() {
   const router = useRouter();
@@ -33,33 +73,23 @@ export default function BikesScreen() {
     }
   };
 
-  useEffect(() => {
-    loadBikes();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadBikes();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
     loadBikes();
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Ativa':
-        return '#4CAF50';
-      case 'Furtada':
-        return '#F44336';
-      case 'Recuperada':
-        return '#2196F3';
-      default:
-        return '#999';
+  const handleTracking = (bike: Bike) => {
+    if (bike.link_rastreamento) {
+      Linking.openURL(bike.link_rastreamento);
+    } else {
+      Alert.alert('Sem rastreamento', 'Nenhum link de rastreamento cadastrado para esta bicicleta.');
     }
-  };
-
-  const getBikeThumbnail = (bike: Bike): string | null => {
-    if (bike.fotos && typeof bike.fotos === 'object') {
-      return bike.fotos.frente || bike.fotos.lateral_direita || bike.fotos.numero_quadro || null;
-    }
-    return null;
   };
 
   if (loading) {
@@ -67,7 +97,7 @@ export default function BikesScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Minhas Bicicletas</Text>
-          <View style={{ width: 40 }} />
+          <View style={{ width: 44 }} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFC107" />
@@ -104,9 +134,7 @@ export default function BikesScreen() {
           <View style={styles.emptyState}>
             <Ionicons name="bicycle-outline" size={64} color="#333" />
             <Text style={styles.emptyText}>Nenhuma bicicleta cadastrada</Text>
-            <Text style={styles.emptySubtext}>
-              Toque no botao + para cadastrar sua primeira bike
-            </Text>
+            <Text style={styles.emptySubtext}>Toque no + para cadastrar sua primeira bike</Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={() => router.push('/add-bike')}
@@ -118,53 +146,53 @@ export default function BikesScreen() {
         )}
 
         {bikes.map((bike) => {
-          const thumbnail = getBikeThumbnail(bike);
+          const statusCfg = getStatusConfig(bike.status, bike.ultima_atualizacao);
+          const online = isOnline(bike.ultima_atualizacao);
+          const isFurtada = bike.status === 'Furtada';
+
           return (
             <TouchableOpacity
               key={bike.id}
-              style={styles.bikeCard}
+              style={[styles.bikeCard, isFurtada && styles.bikeCardFurtada]}
               onPress={() => router.push(`/bike-details?id=${bike.id}`)}
+              activeOpacity={0.8}
             >
-              {thumbnail ? (
-                <Image
-                  source={{ uri: thumbnail }}
-                  style={styles.bikeImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={styles.bikeImagePlaceholder}>
-                  <Ionicons name="bicycle" size={48} color="#333" />
-                  <Text style={styles.noPhotoText}>Sem foto</Text>
-                </View>
-              )}
-              <View style={styles.bikeContent}>
-                <View style={styles.bikeHeader}>
-                  <Text style={styles.bikeName}>
+              <View style={styles.cardContent}>
+                {/* Nome e Status */}
+                <View style={styles.cardTop}>
+                  <Text style={styles.bikeName} numberOfLines={1}>
                     {bike.marca} {bike.modelo}
                   </Text>
-                  <View
-                    style={[
-                      styles.statusBadge,
-                      { backgroundColor: getStatusColor(bike.status) },
-                    ]}
-                  >
-                    <Text style={styles.statusText}>{bike.status}</Text>
+                  <View style={[styles.statusBadge, { backgroundColor: statusCfg.color }]}>
+                    <Ionicons name={statusCfg.icon} size={12} color="#fff" />
+                    <Text style={styles.statusText} numberOfLines={1}>{statusCfg.text}</Text>
                   </View>
                 </View>
-                <Text style={styles.bikeDetail}>Cor: {bike.cor}</Text>
-                <Text style={styles.bikeDetail}>Serie: {bike.numero_serie}</Text>
-                <View style={styles.bikeFooter}>
-                  <View style={styles.bikeType}>
-                    <Ionicons name="bicycle" size={16} color="#FFC107" />
-                    <Text style={styles.bikeTypeText}>{bike.tipo}</Text>
-                  </View>
-                  {bike.link_rastreamento && (
-                    <View style={styles.trackingIndicator}>
-                      <Ionicons name="location" size={16} color="#4CAF50" />
-                      <Text style={styles.trackingText}>Rastreamento</Text>
-                    </View>
-                  )}
+
+                {/* Indicador de tempo real */}
+                <View style={styles.updateRow}>
+                  <View style={[styles.onlineDot, { backgroundColor: online ? '#4CAF50' : '#F44336' }]} />
+                  <Text style={styles.updateText}>
+                    {online ? 'Online' : 'Offline'} - Atualizado {getTimeAgo(bike.ultima_atualizacao)}
+                  </Text>
                 </View>
+
+                {/* Botao de localizacao */}
+                <TouchableOpacity
+                  style={[
+                    styles.trackingButton,
+                    isFurtada ? styles.trackingButtonFurtada : styles.trackingButtonAtiva,
+                  ]}
+                  onPress={() => handleTracking(bike)}
+                >
+                  <Ionicons name="location" size={20} color={isFurtada ? '#fff' : '#000'} />
+                  <Text style={[
+                    styles.trackingButtonText,
+                    isFurtada ? styles.trackingTextFurtada : styles.trackingTextAtiva,
+                  ]}>
+                    Ver localizacao
+                  </Text>
+                </TouchableOpacity>
               </View>
             </TouchableOpacity>
           );
@@ -177,159 +205,50 @@ export default function BikesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
+  container: { flex: 1, backgroundColor: '#1a1a1a' },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#000',
-    borderBottomWidth: 2,
-    borderBottomColor: '#FFC107',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: 16, backgroundColor: '#000', borderBottomWidth: 2, borderBottomColor: '#FFC107',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFC107',
-  },
+  headerTitle: { fontSize: 24, fontWeight: 'bold', color: '#FFC107' },
   addButton: {
-    backgroundColor: '#FFC107',
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#FFC107', width: 44, height: 44, borderRadius: 22,
+    justifyContent: 'center', alignItems: 'center',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 48,
-    marginTop: 64,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#999',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-    textAlign: 'center',
-  },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 16 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  emptyState: { alignItems: 'center', justifyContent: 'center', padding: 48, marginTop: 64 },
+  emptyText: { fontSize: 18, fontWeight: '600', color: '#999', marginTop: 16 },
+  emptySubtext: { fontSize: 14, color: '#666', marginTop: 8, textAlign: 'center' },
   emptyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFC107',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginTop: 24,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFC107',
+    paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8, marginTop: 24, gap: 8,
   },
-  emptyButtonText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
+  emptyButtonText: { color: '#000', fontWeight: 'bold', fontSize: 14 },
   bikeCard: {
-    backgroundColor: '#000',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#333',
+    backgroundColor: '#000', marginHorizontal: 16, marginTop: 16, borderRadius: 12,
+    borderWidth: 1, borderColor: '#333', overflow: 'hidden',
   },
-  bikeImage: {
-    width: '100%',
-    height: 200,
-    backgroundColor: '#111',
-  },
-  bikeImagePlaceholder: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#111',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  noPhotoText: {
-    color: '#555',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  bikeContent: {
-    padding: 16,
-  },
-  bikeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  bikeName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-  },
+  bikeCardFurtada: { borderColor: '#F44336', borderWidth: 2 },
+  cardContent: { padding: 16 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  bikeName: { fontSize: 18, fontWeight: 'bold', color: '#fff', flex: 1, marginRight: 8 },
   statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 8,
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 12, gap: 4, flexShrink: 0,
   },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
+  statusText: { color: '#fff', fontSize: 11, fontWeight: '600' },
+  updateRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 6 },
+  onlineDot: { width: 8, height: 8, borderRadius: 4 },
+  updateText: { fontSize: 13, color: '#999' },
+  trackingButton: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    padding: 14, borderRadius: 10, gap: 8,
   },
-  bikeDetail: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 4,
-  },
-  bikeFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#333',
-  },
-  bikeType: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  bikeTypeText: {
-    fontSize: 14,
-    color: '#FFC107',
-  },
-  trackingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  trackingText: {
-    fontSize: 12,
-    color: '#4CAF50',
-    fontWeight: '600',
-  },
+  trackingButtonAtiva: { backgroundColor: '#FFC107' },
+  trackingButtonFurtada: { backgroundColor: '#F44336' },
+  trackingButtonText: { fontSize: 16, fontWeight: 'bold' },
+  trackingTextAtiva: { color: '#000' },
+  trackingTextFurtada: { color: '#fff' },
 });

@@ -27,6 +27,39 @@ const PHOTO_LABELS: Record<string, string> = {
   numero_quadro: 'N. do Quadro',
 };
 
+const getTimeAgo = (dateStr?: string): string => {
+  if (!dateStr) return 'Sem dados';
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Agora';
+  if (diffMin < 60) return `ha ${diffMin} min`;
+  const diffH = Math.floor(diffMin / 60);
+  if (diffH < 24) return `ha ${diffH}h`;
+  const diffD = Math.floor(diffH / 24);
+  return `ha ${diffD} dia${diffD > 1 ? 's' : ''}`;
+};
+
+const isOnline = (dateStr?: string): boolean => {
+  if (!dateStr) return false;
+  const now = new Date();
+  const date = new Date(dateStr);
+  return (now.getTime() - date.getTime()) < 30 * 60 * 1000;
+};
+
+const getStatusConfig = (status: string, lastUpdate?: string) => {
+  switch (status) {
+    case 'Furtada':
+      return { color: '#F44336', text: 'Furtada (rastreamento ativo)', icon: 'alert-circle' as const };
+    case 'Ativa':
+      if (isOnline(lastUpdate)) return { color: '#4CAF50', text: 'Ativa (monitorando)', icon: 'shield-checkmark' as const };
+      return { color: '#888', text: 'Sem sinal', icon: 'cloud-offline' as const };
+    default:
+      return { color: '#888', text: 'Sem sinal', icon: 'cloud-offline' as const };
+  }
+};
+
 export default function BikeDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -39,11 +72,8 @@ export default function BikeDetailsScreen() {
     try {
       const data = await bikeAPI.getOne(id as string);
       setBike(data);
-      // Selecionar primeira foto disponivel
       if (data.fotos && typeof data.fotos === 'object') {
-        const firstKey = Object.keys(data.fotos).find(
-          (k) => data.fotos[k as keyof typeof data.fotos]
-        );
+        const firstKey = Object.keys(data.fotos).find((k) => data.fotos[k as keyof typeof data.fotos]);
         if (firstKey) {
           setSelectedPhoto(data.fotos[firstKey as keyof typeof data.fotos] || null);
           setSelectedPhotoLabel(PHOTO_LABELS[firstKey] || firstKey);
@@ -57,16 +87,21 @@ export default function BikeDetailsScreen() {
     }
   };
 
-  useEffect(() => {
-    loadBike();
-  }, [id]);
+  useEffect(() => { loadBike(); }, [id]);
+
+  const handleTracking = () => {
+    if (bike?.link_rastreamento) {
+      Linking.openURL(bike.link_rastreamento);
+    } else {
+      Alert.alert('Sem rastreamento', 'Nenhum link de rastreamento cadastrado.');
+    }
+  };
 
   const handleAlertaFurto = () => {
     if (!bike) return;
-
     Alert.alert(
       'ALERTA DE FURTO',
-      `Confirma que a bicicleta ${bike.marca} ${bike.modelo} foi furtada?\n\nEsta acao:\n- Marcara a bike como FURTADA\n- Registrara data e hora\n- Dara acesso ao rastreamento`,
+      `Confirma que a ${bike.marca} ${bike.modelo} foi furtada?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -74,72 +109,33 @@ export default function BikeDetailsScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              const updatedBike = await bikeAPI.alertFurto(bike.id);
-              setBike(updatedBike);
-              Alert.alert(
-                'Alerta Acionado',
-                'Sua bicicleta foi marcada como FURTADA.\n\nRecomendamos:\n1. Abrir o rastreamento\n2. Registrar boletim na Delegacia Virtual SC\n3. Compartilhar informacoes',
-                [
-                  {
-                    text: 'Delegacia Virtual SC',
-                    onPress: () => Linking.openURL('https://delegaciavirtual.sc.gov.br/'),
-                  },
-                  {
-                    text: 'Ver Rastreamento',
-                    onPress: () => handleOpenTracking(),
-                  },
-                  { text: 'OK' },
-                ]
-              );
-            } catch (error: any) {
-              Alert.alert('Erro', error.message);
-            }
+              const updated = await bikeAPI.alertFurto(bike.id);
+              setBike(updated);
+              Alert.alert('Alerta Acionado', 'Bicicleta marcada como FURTADA.\nRecomendamos registrar B.O. na Delegacia Virtual.', [
+                { text: 'Delegacia Virtual SC', onPress: () => Linking.openURL('https://delegaciavirtual.sc.gov.br/') },
+                { text: 'OK' },
+              ]);
+            } catch (error: any) { Alert.alert('Erro', error.message); }
           },
         },
       ]
     );
-  };
-
-  const handleOpenTracking = () => {
-    if (bike?.link_rastreamento) {
-      Linking.openURL(bike.link_rastreamento);
-    } else {
-      Alert.alert('Link nao cadastrado', 'Voce ainda nao cadastrou um link de rastreamento para esta bicicleta.');
-    }
   };
 
   const handleShare = async () => {
     if (!bike) return;
-    const message = `BICICLETA FURTADA\n\n${bike.marca} ${bike.modelo}\nCor: ${bike.cor}\nSerie: ${bike.numero_serie}\n${bike.data_furto ? `Data do furto: ${format(new Date(bike.data_furto), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}` : ''}\n\n${bike.link_rastreamento ? `Rastreamento: ${bike.link_rastreamento}` : ''}`;
-    try {
-      await Share.share({ message });
-    } catch (error) {
-      console.error(error);
-    }
+    const msg = `BICICLETA FURTADA\n${bike.marca} ${bike.modelo}\nCor: ${bike.cor}\nSerie: ${bike.numero_serie}\n${bike.data_furto ? `Furto: ${format(new Date(bike.data_furto), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}` : ''}\n${bike.link_rastreamento || ''}`;
+    try { await Share.share({ message: msg }); } catch (e) { console.error(e); }
   };
 
   const handleDelete = () => {
     if (!bike) return;
-    Alert.alert(
-      'Excluir Bicicleta',
-      `Tem certeza que deseja excluir ${bike.marca} ${bike.modelo}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Excluir',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await bikeAPI.delete(bike.id);
-              Alert.alert('Sucesso', 'Bicicleta excluida com sucesso');
-              router.back();
-            } catch (error: any) {
-              Alert.alert('Erro', error.message);
-            }
-          },
-        },
-      ]
-    );
+    Alert.alert('Excluir Bicicleta', `Excluir ${bike.marca} ${bike.modelo}?`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Excluir', style: 'destructive', onPress: async () => {
+        try { await bikeAPI.delete(bike.id); router.back(); } catch (e: any) { Alert.alert('Erro', e.message); }
+      }},
+    ]);
   };
 
   if (loading || !bike) {
@@ -147,29 +143,20 @@ export default function BikeDetailsScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FFC107" />
-          <Text style={styles.loadingText}>Carregando...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const getStatusColor = () => {
-    switch (bike.status) {
-      case 'Ativa': return '#4CAF50';
-      case 'Furtada': return '#F44336';
-      case 'Recuperada': return '#2196F3';
-      default: return '#999';
-    }
-  };
+  const statusCfg = getStatusConfig(bike.status, bike.ultima_atualizacao);
+  const online = isOnline(bike.ultima_atualizacao);
+  const isFurtada = bike.status === 'Furtada';
 
-  // Obter fotos disponiveis
   const availablePhotos: { key: string; label: string; uri: string }[] = [];
   if (bike.fotos && typeof bike.fotos === 'object') {
     Object.entries(PHOTO_LABELS).forEach(([key, label]) => {
       const uri = bike.fotos[key as keyof typeof bike.fotos];
-      if (uri) {
-        availablePhotos.push({ key, label, uri });
-      }
+      if (uri) availablePhotos.push({ key, label, uri });
     });
   }
 
@@ -179,9 +166,9 @@ export default function BikeDetailsScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Detalhes da Bike</Text>
+        <Text style={styles.headerTitle}>Detalhes</Text>
         <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <Ionicons name="trash" size={24} color="#F44336" />
+          <Ionicons name="trash" size={22} color="#F44336" />
         </TouchableOpacity>
       </View>
 
@@ -191,41 +178,18 @@ export default function BikeDetailsScreen() {
           <View style={styles.imageSection}>
             {selectedPhoto && (
               <View>
-                <Image
-                  source={{ uri: selectedPhoto }}
-                  style={styles.mainImage}
-                  resizeMode="cover"
-                />
+                <Image source={{ uri: selectedPhoto }} style={styles.mainImage} resizeMode="cover" />
                 <View style={styles.photoLabelBadge}>
                   <Text style={styles.photoLabelText}>{selectedPhotoLabel}</Text>
                 </View>
               </View>
             )}
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbnailsScroll}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.thumbScroll}>
               <View style={styles.thumbnails}>
-                {availablePhotos.map((photo) => (
-                  <TouchableOpacity
-                    key={photo.key}
-                    onPress={() => {
-                      setSelectedPhoto(photo.uri);
-                      setSelectedPhotoLabel(photo.label);
-                    }}
-                    style={styles.thumbnailWrapper}
-                  >
-                    <Image
-                      source={{ uri: photo.uri }}
-                      style={[
-                        styles.thumbnail,
-                        selectedPhoto === photo.uri && styles.thumbnailActive,
-                      ]}
-                      resizeMode="cover"
-                    />
-                    <Text style={[
-                      styles.thumbnailLabel,
-                      selectedPhoto === photo.uri && styles.thumbnailLabelActive,
-                    ]}>
-                      {photo.label}
-                    </Text>
+                {availablePhotos.map((p) => (
+                  <TouchableOpacity key={p.key} onPress={() => { setSelectedPhoto(p.uri); setSelectedPhotoLabel(p.label); }} style={styles.thumbWrap}>
+                    <Image source={{ uri: p.uri }} style={[styles.thumb, selectedPhoto === p.uri && styles.thumbActive]} resizeMode="cover" />
+                    <Text style={[styles.thumbLabel, selectedPhoto === p.uri && styles.thumbLabelActive]}>{p.label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -234,103 +198,92 @@ export default function BikeDetailsScreen() {
         )}
 
         <View style={styles.content}>
-          {/* TITULO E STATUS */}
-          <View style={styles.titleSection}>
-            <Text style={styles.bikeTitle}>
-              {bike.marca} {bike.modelo}
-            </Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor() }]}>
-              <Text style={styles.statusText}>{bike.status}</Text>
+          {/* NOME + STATUS UNICO */}
+          <View style={styles.titleRow}>
+            <Text style={styles.bikeTitle}>{bike.marca} {bike.modelo}</Text>
+          </View>
+          <View style={[styles.statusBar, { backgroundColor: statusCfg.color + '20', borderColor: statusCfg.color }]}>
+            <Ionicons name={statusCfg.icon} size={20} color={statusCfg.color} />
+            <Text style={[styles.statusBarText, { color: statusCfg.color }]}>{statusCfg.text}</Text>
+            <View style={styles.statusBarRight}>
+              <View style={[styles.onlineDot, { backgroundColor: online ? '#4CAF50' : '#F44336' }]} />
+              <Text style={styles.updateText}>{getTimeAgo(bike.ultima_atualizacao)}</Text>
             </View>
           </View>
 
-          {/* BANNER DE FURTO */}
-          {bike.status === 'Furtada' && bike.data_furto && (
-            <View style={styles.alertBanner}>
-              <Ionicons name="alert-circle" size={24} color="#F44336" />
-              <View style={styles.alertContent}>
-                <Text style={styles.alertTitle}>BICICLETA FURTADA</Text>
-                <Text style={styles.alertDate}>
-                  {format(new Date(bike.data_furto), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}
-                </Text>
-              </View>
-            </View>
-          )}
+          {/* ACAO PRINCIPAL: RASTREAMENTO */}
+          <TouchableOpacity
+            style={[styles.mainActionBtn, isFurtada ? styles.mainActionFurtada : styles.mainActionAtiva]}
+            onPress={handleTracking}
+          >
+            <Ionicons name="location" size={24} color={isFurtada ? '#fff' : '#000'} />
+            <Text style={[styles.mainActionText, isFurtada ? styles.mainActionTextFurtada : styles.mainActionTextAtiva]}>
+              Ver localizacao
+            </Text>
+          </TouchableOpacity>
 
-          {/* BOTOES DE ACAO - FURTADA */}
-          {bike.status === 'Furtada' && (
-            <View style={styles.actionButtons}>
-              {bike.link_rastreamento && (
-                <TouchableOpacity style={styles.trackingButton} onPress={handleOpenTracking}>
-                  <Ionicons name="location" size={20} color="#000" />
-                  <Text style={styles.trackingButtonText}>Ver Rastreamento</Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                style={styles.policeButton}
-                onPress={() => Linking.openURL('https://delegaciavirtual.sc.gov.br/')}
-              >
-                <Ionicons name="shield-checkmark" size={20} color="#fff" />
-                <Text style={styles.policeButtonText}>Delegacia Virtual SC</Text>
+          {/* ACOES SECUNDARIAS SE FURTADA */}
+          {isFurtada && (
+            <View style={styles.secondaryActions}>
+              <TouchableOpacity style={styles.policeBtn} onPress={() => Linking.openURL('https://delegaciavirtual.sc.gov.br/')}>
+                <Ionicons name="shield-checkmark" size={18} color="#fff" />
+                <Text style={styles.policeBtnText}>Delegacia Virtual SC</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
-                <Ionicons name="share-social" size={20} color="#FFC107" />
-                <Text style={styles.shareButtonText}>Compartilhar</Text>
+              <TouchableOpacity style={styles.shareBtn} onPress={handleShare}>
+                <Ionicons name="share-social" size={18} color="#FFC107" />
+                <Text style={styles.shareBtnText}>Compartilhar</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* BOTAO DE ALERTA - ATIVA */}
+          {/* ALERTA DE FURTO SE ATIVA */}
           {bike.status === 'Ativa' && (
-            <TouchableOpacity style={styles.alertFurtoButton} onPress={handleAlertaFurto}>
-              <Ionicons name="alert-circle" size={24} color="#fff" />
-              <Text style={styles.alertFurtoButtonText}>ACIONAR ALERTA DE FURTO</Text>
+            <TouchableOpacity style={styles.alertBtn} onPress={handleAlertaFurto}>
+              <Ionicons name="alert-circle" size={22} color="#fff" />
+              <Text style={styles.alertBtnText}>ACIONAR ALERTA DE FURTO</Text>
             </TouchableOpacity>
           )}
 
-          {/* INFORMACOES */}
+          {/* DETALHES COMPLETOS */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Informacoes</Text>
-
+            <Text style={styles.sectionTitle}>Detalhes</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Cor</Text>
               <Text style={styles.infoValue}>{bike.cor}</Text>
             </View>
-
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Tipo</Text>
+              <Text style={styles.infoLabel}>Categoria</Text>
               <Text style={styles.infoValue}>{bike.tipo}</Text>
             </View>
-
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Numero de Serie</Text>
               <Text style={styles.infoValue}>{bike.numero_serie}</Text>
             </View>
-
             {bike.caracteristicas && (
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Caracteristicas</Text>
                 <Text style={styles.infoValue}>{bike.caracteristicas}</Text>
               </View>
             )}
-
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Cadastrada em</Text>
-              <Text style={styles.infoValue}>
-                {format(new Date(bike.created_at), 'dd/MM/yyyy', { locale: ptBR })}
-              </Text>
+              <Text style={styles.infoValue}>{format(new Date(bike.created_at), 'dd/MM/yyyy', { locale: ptBR })}</Text>
             </View>
+            {bike.data_furto && (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Data do furto</Text>
+                <Text style={[styles.infoValue, { color: '#F44336' }]}>{format(new Date(bike.data_furto), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}</Text>
+              </View>
+            )}
           </View>
 
-          {/* RASTREAMENTO */}
+          {/* RASTREAMENTO LINK */}
           {bike.link_rastreamento && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Rastreamento</Text>
-              <TouchableOpacity style={styles.trackingLinkButton} onPress={handleOpenTracking}>
-                <Ionicons name="open-outline" size={20} color="#FFC107" />
-                <Text style={styles.trackingLinkText} numberOfLines={1}>
-                  {bike.link_rastreamento}
-                </Text>
+              <TouchableOpacity style={styles.trackingLink} onPress={handleTracking}>
+                <Ionicons name="open-outline" size={18} color="#FFC107" />
+                <Text style={styles.trackingLinkText} numberOfLines={1}>{bike.link_rastreamento}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -339,11 +292,7 @@ export default function BikeDetailsScreen() {
           {bike.nota_fiscal && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Nota Fiscal</Text>
-              <Image
-                source={{ uri: bike.nota_fiscal }}
-                style={styles.notaFiscalImage}
-                resizeMode="contain"
-              />
+              <Image source={{ uri: bike.nota_fiscal }} style={styles.nfImage} resizeMode="contain" />
             </View>
           )}
         </View>
@@ -353,263 +302,79 @@ export default function BikeDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
+  container: { flex: 1, backgroundColor: '#1a1a1a' },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#000',
-    borderBottomWidth: 2,
-    borderBottomColor: '#FFC107',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 16, backgroundColor: '#000', borderBottomWidth: 2, borderBottomColor: '#FFC107',
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  deleteButton: {
-    width: 44,
-    height: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  loadingText: {
-    color: '#999',
-    fontSize: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 32,
-  },
-  imageSection: {
-    backgroundColor: '#000',
-  },
-  mainImage: {
-    width: '100%',
-    height: 280,
-  },
+  backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
+  deleteButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 32 },
+  imageSection: { backgroundColor: '#000' },
+  mainImage: { width: '100%', height: 260 },
   photoLabelBadge: {
-    position: 'absolute',
-    bottom: 12,
-    left: 12,
-    backgroundColor: 'rgba(0,0,0,0.8)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: '#FFC107',
+    position: 'absolute', bottom: 12, left: 12, backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6, borderWidth: 1, borderColor: '#FFC107',
   },
-  photoLabelText: {
-    color: '#FFC107',
-    fontSize: 12,
-    fontWeight: '600',
+  photoLabelText: { color: '#FFC107', fontSize: 12, fontWeight: '600' },
+  thumbScroll: { backgroundColor: '#000' },
+  thumbnails: { flexDirection: 'row', padding: 8, gap: 8 },
+  thumbWrap: { alignItems: 'center' },
+  thumb: { width: 56, height: 56, borderRadius: 8, borderWidth: 2, borderColor: 'transparent' },
+  thumbActive: { borderColor: '#FFC107' },
+  thumbLabel: { color: '#666', fontSize: 9, marginTop: 4, textAlign: 'center' },
+  thumbLabelActive: { color: '#FFC107' },
+  content: { padding: 16 },
+  titleRow: { marginBottom: 12 },
+  bikeTitle: { fontSize: 24, fontWeight: 'bold', color: '#fff' },
+  statusBar: {
+    flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 10,
+    borderWidth: 1, marginBottom: 16, gap: 8,
   },
-  thumbnailsScroll: {
-    backgroundColor: '#000',
+  statusBarText: { fontSize: 14, fontWeight: '600', flex: 1 },
+  statusBarRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  onlineDot: { width: 8, height: 8, borderRadius: 4 },
+  updateText: { fontSize: 12, color: '#999' },
+  mainActionBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    padding: 18, borderRadius: 12, gap: 10, marginBottom: 12,
   },
-  thumbnails: {
-    flexDirection: 'row',
-    padding: 8,
-    gap: 8,
+  mainActionFurtada: { backgroundColor: '#F44336' },
+  mainActionAtiva: { backgroundColor: '#FFC107' },
+  mainActionText: { fontSize: 18, fontWeight: 'bold' },
+  mainActionTextFurtada: { color: '#fff' },
+  mainActionTextAtiva: { color: '#000' },
+  secondaryActions: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  policeBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#2196F3', padding: 14, borderRadius: 10, gap: 6,
   },
-  thumbnailWrapper: {
-    alignItems: 'center',
+  policeBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
+  shareBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#000', padding: 14, borderRadius: 10, borderWidth: 2, borderColor: '#FFC107', gap: 6,
   },
-  thumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: 'transparent',
+  shareBtnText: { color: '#FFC107', fontWeight: 'bold', fontSize: 13 },
+  alertBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#F44336', padding: 16, borderRadius: 12, gap: 8, marginBottom: 16,
   },
-  thumbnailActive: {
-    borderColor: '#FFC107',
-  },
-  thumbnailLabel: {
-    color: '#666',
-    fontSize: 10,
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  thumbnailLabelActive: {
-    color: '#FFC107',
-  },
-  content: {
-    padding: 16,
-  },
-  titleSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  bikeTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginLeft: 8,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  alertBanner: {
-    flexDirection: 'row',
-    backgroundColor: '#2a1a1a',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    alignItems: 'center',
-    gap: 12,
-    borderWidth: 1,
-    borderColor: '#F44336',
-  },
-  alertContent: {
-    flex: 1,
-  },
-  alertTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#F44336',
-  },
-  alertDate: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 4,
-  },
-  actionButtons: {
-    gap: 12,
-    marginBottom: 16,
-  },
-  trackingButton: {
-    backgroundColor: '#FFC107',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  trackingButtonText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  policeButton: {
-    backgroundColor: '#2196F3',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    gap: 8,
-  },
-  policeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  shareButton: {
-    backgroundColor: '#000',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#FFC107',
-    gap: 8,
-  },
-  shareButtonText: {
-    color: '#FFC107',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  alertFurtoButton: {
-    backgroundColor: '#F44336',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 8,
-  },
-  alertFurtoButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  alertBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   section: {
-    backgroundColor: '#000',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#333',
+    backgroundColor: '#000', padding: 16, borderRadius: 12, marginBottom: 16,
+    borderWidth: 1, borderColor: '#333',
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#FFC107',
-    marginBottom: 16,
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#FFC107', marginBottom: 16 },
+  infoRow: { marginBottom: 16 },
+  infoLabel: { fontSize: 12, color: '#999', marginBottom: 4 },
+  infoValue: { fontSize: 16, color: '#fff', fontWeight: '500' },
+  trackingLink: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12,
+    backgroundColor: '#1a1a1a', borderRadius: 8,
   },
-  infoRow: {
-    marginBottom: 16,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: '#999',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  trackingLinkButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 12,
-    backgroundColor: '#1a1a1a',
-    borderRadius: 8,
-  },
-  trackingLinkText: {
-    flex: 1,
-    fontSize: 14,
-    color: '#FFC107',
-    fontWeight: '500',
-  },
-  notaFiscalImage: {
-    width: '100%',
-    height: 300,
-    borderRadius: 8,
-    backgroundColor: '#111',
-  },
+  trackingLinkText: { flex: 1, fontSize: 14, color: '#FFC107', fontWeight: '500' },
+  nfImage: { width: '100%', height: 280, borderRadius: 8, backgroundColor: '#111' },
 });
