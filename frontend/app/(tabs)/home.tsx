@@ -9,6 +9,8 @@ import {
   Linking,
   Image,
   Alert,
+  Share,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -16,6 +18,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { bikeAPI } from '../../utils/api';
 import { Bike } from '../../types';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 const isOnline = (dateStr?: string): boolean => {
   if (!dateStr) return false;
@@ -88,6 +92,13 @@ export default function HomeScreen() {
     return msg;
   };
 
+  const buildShareMessage = (bike: Bike): string => {
+    const linkRastreamento = bike.link_rastreamento || 'Nao cadastrado';
+    const caracteristicas = bike.caracteristicas || 'Nao informadas';
+    const msg = `🚨 FURTO DETECTADO 🚨\n\nBicicleta produto de furto em monitoramento:\n\nMarca/Modelo: ${bike.marca} ${bike.modelo}\nCor: ${bike.cor}\nN. de Serie: ${bike.numero_serie}\n\n🔎 Caracteristicas:\n${caracteristicas}\n\n📍 Ultima localizacao:\n${linkRastreamento}\n\n🕒 Atualizacao recente\n\nSituacao: possivel circulacao na area\n\nApoio para averiguacao e possivel recuperacao.`;
+    return msg;
+  };
+
   const openWhatsApp = (bike: Bike) => {
     const message = buildWhatsAppMessage(bike);
     const encoded = encodeURIComponent(message);
@@ -97,10 +108,46 @@ export default function HomeScreen() {
     });
   };
 
+  const shareWithImage = async (bike: Bike) => {
+    try {
+      const message = buildShareMessage(bike);
+
+      // Buscar a foto principal (lateral_direita > frente > qualquer uma)
+      const fotos = bike.fotos || {};
+      const fotoBase64 = fotos.lateral_direita || fotos.lateral_esquerda || fotos.frente || fotos.tras || fotos.numero_quadro || null;
+
+      if (fotoBase64 && await Sharing.isAvailableAsync()) {
+        // Salvar imagem base64 em arquivo temporario
+        const fileUri = FileSystem.cacheDirectory + 'bike_alerta.jpg';
+        // Remover prefixo data:image se existir
+        const base64Data = fotoBase64.includes(',') ? fotoBase64.split(',')[1] : fotoBase64;
+        await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'image/jpeg',
+          dialogTitle: message,
+        });
+      } else {
+        // Sem imagem: compartilhar apenas texto
+        await Share.share({ message });
+      }
+    } catch (error: any) {
+      // Fallback para compartilhamento simples de texto
+      try {
+        const message = buildShareMessage(bike);
+        await Share.share({ message });
+      } catch (e) {
+        console.error('Erro ao compartilhar:', e);
+      }
+    }
+  };
+
   const confirmAlerta = (bike: Bike) => {
     Alert.alert(
       'CONFIRMAR ALERTA DE FURTO',
-      `Deseja marcar a bicicleta "${bike.marca} ${bike.modelo}" como furtada e enviar alerta via WhatsApp?`,
+      `Deseja marcar a bicicleta "${bike.marca} ${bike.modelo}" como furtada e enviar alerta?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -110,12 +157,31 @@ export default function HomeScreen() {
             try {
               await bikeAPI.alertFurto(bike.id);
               loadBikes();
-              openWhatsApp(bike);
+              // Mostrar opcoes de compartilhamento
+              showShareOptions(bike);
             } catch (error: any) {
               Alert.alert('Erro', error.message);
             }
           },
         },
+      ]
+    );
+  };
+
+  const showShareOptions = (bike: Bike) => {
+    Alert.alert(
+      'Alerta Acionado!',
+      'Bicicleta marcada como FURTADA. Como deseja enviar o alerta?',
+      [
+        {
+          text: 'WhatsApp Direto',
+          onPress: () => openWhatsApp(bike),
+        },
+        {
+          text: 'Compartilhar com Foto',
+          onPress: () => shareWithImage(bike),
+        },
+        { text: 'Depois' },
       ]
     );
   };
@@ -218,6 +284,22 @@ export default function HomeScreen() {
               <Ionicons name="location" size={20} color="#fff" />
               <Text style={styles.alertButtonText}>Ver Localizacao</Text>
             </TouchableOpacity>
+            <View style={styles.shareRow}>
+              <TouchableOpacity style={styles.whatsappSmallBtn} onPress={() => {
+                const furtada = bikes.find(b => b.status === 'Furtada');
+                if (furtada) openWhatsApp(furtada);
+              }}>
+                <Ionicons name="logo-whatsapp" size={18} color="#fff" />
+                <Text style={styles.shareSmallText}>WhatsApp</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.shareSmallBtn} onPress={() => {
+                const furtada = bikes.find(b => b.status === 'Furtada');
+                if (furtada) shareWithImage(furtada);
+              }}>
+                <Ionicons name="share-social" size={18} color="#FFC107" />
+                <Text style={styles.shareSmallTextYellow}>Compartilhar com Foto</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -334,6 +416,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336', padding: 14, borderRadius: 8, marginTop: 8, gap: 8,
   },
   alertButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
+  shareRow: { flexDirection: 'row', gap: 10, marginTop: 10 },
+  whatsappSmallBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#25D366', padding: 12, borderRadius: 8, gap: 6,
+  },
+  shareSmallBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#000', padding: 12, borderRadius: 8, gap: 6,
+    borderWidth: 1, borderColor: '#FFC107',
+  },
+  shareSmallText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
+  shareSmallTextYellow: { color: '#FFC107', fontWeight: 'bold', fontSize: 12 },
   section: { padding: 16 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#FFC107', marginBottom: 16 },
   actionCard: {
