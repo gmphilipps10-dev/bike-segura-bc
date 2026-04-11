@@ -8,6 +8,7 @@ import {
   RefreshControl,
   Image,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
@@ -69,6 +70,20 @@ export default function HomeScreen() {
       confirmAlerta(bikesAtivas[0]);
       return;
     }
+
+    if (Platform.OS === 'web') {
+      // No web, usar prompt simples pois Alert.alert com múltiplos botões não funciona bem
+      const nomes = bikesAtivas.map((b, i) => `${i + 1} - ${b.marca} ${b.modelo}`).join('\n');
+      const escolha = window.prompt(`Selecione a bicicleta furtada (digite o numero):\n\n${nomes}`);
+      if (escolha) {
+        const idx = parseInt(escolha) - 1;
+        if (idx >= 0 && idx < bikesAtivas.length) {
+          confirmAlerta(bikesAtivas[idx]);
+        }
+      }
+      return;
+    }
+
     Alert.alert(
       'Selecione a bicicleta furtada',
       '',
@@ -94,6 +109,22 @@ export default function HomeScreen() {
   };
 
   const confirmAlerta = (bike: Bike) => {
+    const doAlerta = async () => {
+      try {
+        await bikeAPI.alertFurto(bike.id);
+        loadBikes();
+        openWhatsApp(bike);
+      } catch (error: any) {
+        Alert.alert('Erro', error.message);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      const ok = window.confirm(`Deseja marcar "${bike.marca} ${bike.modelo}" como furtada e enviar alerta via WhatsApp?`);
+      if (ok) doAlerta();
+      return;
+    }
+
     Alert.alert(
       'CONFIRMAR ALERTA DE FURTO',
       `Deseja marcar a bicicleta "${bike.marca} ${bike.modelo}" como furtada e enviar alerta via WhatsApp?`,
@@ -102,15 +133,7 @@ export default function HomeScreen() {
         {
           text: 'Confirmar',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await bikeAPI.alertFurto(bike.id);
-              loadBikes();
-              openWhatsApp(bike);
-            } catch (error: any) {
-              Alert.alert('Erro', error.message);
-            }
-          },
+          onPress: doAlerta,
         },
       ]
     );

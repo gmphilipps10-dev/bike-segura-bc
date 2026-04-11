@@ -58,6 +58,31 @@ export default function AddBikeScreen() {
   };
 
   const pickPhoto = async (key: PhotoKey) => {
+    if (Platform.OS === 'web') {
+      // No web, abrir galeria direto (sem Alert com múltiplos botões)
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: 'images',
+          allowsEditing: false,
+          quality: 0.7,
+          base64: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          if (result.assets[0].base64) {
+            const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+            setFotos((prev) => ({ ...prev, [key]: base64Image }));
+          } else if (result.assets[0].uri) {
+            // Fallback: usar URI diretamente
+            setFotos((prev) => ({ ...prev, [key]: result.assets[0].uri }));
+          }
+        }
+      } catch (e: any) {
+        Alert.alert('Erro', 'Nao foi possivel selecionar a foto.');
+      }
+      return;
+    }
+
+    // Mobile: mostrar opções Camera/Galeria
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permissao negada', 'Precisamos de acesso a galeria para adicionar fotos.');
@@ -108,6 +133,30 @@ export default function AddBikeScreen() {
   };
 
   const pickNotaFiscal = async () => {
+    if (Platform.OS === 'web') {
+      // No web, abrir galeria direto
+      try {
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: 'images',
+          allowsEditing: false,
+          quality: 0.7,
+          base64: true,
+        });
+        if (!result.canceled && result.assets[0]) {
+          if (result.assets[0].base64) {
+            setNotaFiscal(`data:image/jpeg;base64,${result.assets[0].base64}`);
+          } else if (result.assets[0].uri) {
+            setNotaFiscal(result.assets[0].uri);
+          }
+          setNotaFiscalType('image');
+        }
+      } catch (e: any) {
+        Alert.alert('Erro', 'Nao foi possivel selecionar o arquivo.');
+      }
+      return;
+    }
+
+    // Mobile: mostrar opções
     Alert.alert(
       'Nota Fiscal',
       'Escolha uma opcao:',
