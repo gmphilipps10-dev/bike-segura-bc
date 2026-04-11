@@ -188,14 +188,9 @@ export default function BikeDetailsScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes</Text>
-        <View style={styles.headerActions}>
-          <TouchableOpacity onPress={() => router.push(`/edit-bike?id=${bike?.id}`)} style={styles.editButton}>
-            <Ionicons name="create-outline" size={22} color="#FFC107" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-            <Ionicons name="trash" size={22} color="#F44336" />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+          <Ionicons name="trash" size={22} color="#F44336" />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -309,6 +304,15 @@ export default function BikeDetailsScreen() {
                 <Text style={[styles.infoValue, { color: '#F44336' }]}>{format(new Date(bike.data_furto), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}</Text>
               </View>
             )}
+
+            {/* BOTAO EDITAR DENTRO DA SECAO */}
+            <TouchableOpacity
+              style={styles.editBikeBtn}
+              onPress={() => router.push({ pathname: '/edit-bike', params: { id: bike.id } })}
+            >
+              <Ionicons name="create-outline" size={22} color="#000" />
+              <Text style={styles.editBikeBtnText}>EDITAR CADASTRO</Text>
+            </TouchableOpacity>
           </View>
 
           {/* RASTREAMENTO LINK */}
@@ -344,8 +348,11 @@ const styles = StyleSheet.create({
   backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   deleteButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  editButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  editBikeBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#FFC107', padding: 16, borderRadius: 10, gap: 10, marginTop: 16,
+  },
+  editBikeBtnText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 32 },
