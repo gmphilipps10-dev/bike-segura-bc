@@ -77,9 +77,8 @@ export default function AddBikeScreen() {
               return;
             }
             const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: true,
-              aspect: [4, 3],
-              quality: 0.4,
+              allowsEditing: false,
+              quality: 0.7,
               base64: true,
             });
             if (!result.canceled && result.assets[0].base64) {
@@ -93,9 +92,8 @@ export default function AddBikeScreen() {
           onPress: async () => {
             const result = await ImagePicker.launchImageLibraryAsync({
               mediaTypes: 'images',
-              allowsEditing: true,
-              aspect: [4, 3],
-              quality: 0.4,
+              allowsEditing: false,
+              quality: 0.7,
               base64: true,
             });
             if (!result.canceled && result.assets[0].base64) {
@@ -125,7 +123,7 @@ export default function AddBikeScreen() {
               }
               const result = await ImagePicker.launchCameraAsync({
                 allowsEditing: false,
-                quality: 0.4,
+                quality: 0.7,
                 base64: true,
               });
               if (!result.canceled && result.assets[0].base64) {
@@ -149,7 +147,7 @@ export default function AddBikeScreen() {
               const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: 'images',
                 allowsEditing: false,
-                quality: 0.4,
+                quality: 0.7,
                 base64: true,
               });
               if (!result.canceled && result.assets[0].base64) {
