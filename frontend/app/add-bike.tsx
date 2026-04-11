@@ -15,6 +15,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 import { Ionicons } from '@expo/vector-icons';
 import { bikeAPI } from '../utils/api';
 import { BikePhotos } from '../types';
@@ -49,6 +51,7 @@ export default function AddBikeScreen() {
   });
   const [fotos, setFotos] = useState<BikePhotos>({});
   const [notaFiscal, setNotaFiscal] = useState<string | null>(null);
+  const [notaFiscalType, setNotaFiscalType] = useState<'image' | 'pdf'>('image');
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -107,12 +110,6 @@ export default function AddBikeScreen() {
   };
 
   const pickNotaFiscal = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permissao negada', 'Precisamos de acesso a galeria.');
-      return;
-    }
-
     Alert.alert(
       'Nota Fiscal',
       'Escolha uma opcao:',
@@ -120,32 +117,69 @@ export default function AddBikeScreen() {
         {
           text: 'Camera',
           onPress: async () => {
-            const camStatus = await ImagePicker.requestCameraPermissionsAsync();
-            if (camStatus.status !== 'granted') {
-              Alert.alert('Permissao negada', 'Precisamos de acesso a camera.');
-              return;
-            }
-            const result = await ImagePicker.launchCameraAsync({
-              allowsEditing: false,
-              quality: 0.4,
-              base64: true,
-            });
-            if (!result.canceled && result.assets[0].base64) {
-              setNotaFiscal(`data:image/jpeg;base64,${result.assets[0].base64}`);
+            try {
+              const camStatus = await ImagePicker.requestCameraPermissionsAsync();
+              if (camStatus.status !== 'granted') {
+                Alert.alert('Permissao negada', 'Precisamos de acesso a camera.');
+                return;
+              }
+              const result = await ImagePicker.launchCameraAsync({
+                allowsEditing: false,
+                quality: 0.4,
+                base64: true,
+              });
+              if (!result.canceled && result.assets[0].base64) {
+                setNotaFiscal(`data:image/jpeg;base64,${result.assets[0].base64}`);
+                setNotaFiscalType('image');
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', error.message);
             }
           },
         },
         {
-          text: 'Galeria',
+          text: 'Galeria (Foto)',
           onPress: async () => {
-            const result = await ImagePicker.launchImageLibraryAsync({
-              mediaTypes: 'images',
-              allowsEditing: false,
-              quality: 0.4,
-              base64: true,
-            });
-            if (!result.canceled && result.assets[0].base64) {
-              setNotaFiscal(`data:image/jpeg;base64,${result.assets[0].base64}`);
+            try {
+              const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+              if (status !== 'granted') {
+                Alert.alert('Permissao negada', 'Precisamos de acesso a galeria.');
+                return;
+              }
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: 'images',
+                allowsEditing: false,
+                quality: 0.4,
+                base64: true,
+              });
+              if (!result.canceled && result.assets[0].base64) {
+                setNotaFiscal(`data:image/jpeg;base64,${result.assets[0].base64}`);
+                setNotaFiscalType('image');
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', error.message);
+            }
+          },
+        },
+        {
+          text: 'Arquivo (PDF)',
+          onPress: async () => {
+            try {
+              const result = await DocumentPicker.getDocumentAsync({
+                type: ['application/pdf', 'image/*'],
+                copyToCacheDirectory: true,
+              });
+              if (!result.canceled && result.assets && result.assets[0]) {
+                const asset = result.assets[0];
+                const fileBase64 = await FileSystem.readAsStringAsync(asset.uri, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                const mimeType = asset.mimeType || 'application/pdf';
+                setNotaFiscal(`data:${mimeType};base64,${fileBase64}`);
+                setNotaFiscalType(mimeType.includes('pdf') ? 'pdf' : 'image');
+              }
+            } catch (error: any) {
+              Alert.alert('Erro', error.message);
             }
           },
         },
@@ -340,15 +374,22 @@ export default function AddBikeScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Nota Fiscal (Opcional)</Text>
             <Text style={styles.sectionSubtitle}>
-              Anexe uma foto da nota fiscal para comprovar a propriedade
+              Anexe uma foto ou PDF da nota fiscal
             </Text>
 
             {notaFiscal ? (
               <View style={styles.nfPreview}>
-                <Image source={{ uri: notaFiscal }} style={styles.nfImage} resizeMode="contain" />
+                {notaFiscalType === 'pdf' ? (
+                  <View style={styles.nfPdfPreview}>
+                    <Ionicons name="document-text" size={48} color="#FFC107" />
+                    <Text style={styles.nfPdfText}>PDF anexado</Text>
+                  </View>
+                ) : (
+                  <Image source={{ uri: notaFiscal }} style={styles.nfImage} resizeMode="contain" />
+                )}
                 <TouchableOpacity
                   style={styles.nfRemoveBtn}
-                  onPress={() => setNotaFiscal(null)}
+                  onPress={() => { setNotaFiscal(null); setNotaFiscalType('image'); }}
                 >
                   <Ionicons name="trash" size={20} color="#F44336" />
                   <Text style={styles.nfRemoveText}>Remover</Text>
@@ -578,6 +619,19 @@ const styles = StyleSheet.create({
     height: 250,
     borderRadius: 8,
     backgroundColor: '#000',
+  },
+  nfPdfPreview: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
+    padding: 32,
+    borderRadius: 8,
+    gap: 8,
+  },
+  nfPdfText: {
+    color: '#FFC107',
+    fontSize: 16,
+    fontWeight: '600',
   },
   nfRemoveBtn: {
     flexDirection: 'row',
