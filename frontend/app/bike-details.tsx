@@ -7,7 +7,6 @@ import {
   ScrollView,
   Alert,
   Image,
-  Linking,
   Share,
   ActivityIndicator,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { bikeAPI } from '../utils/api';
 import { Bike } from '../types';
+import { openExternalLink } from '../utils/linking';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -91,7 +91,7 @@ export default function BikeDetailsScreen() {
 
   const handleTracking = () => {
     if (bike?.link_rastreamento) {
-      Linking.openURL(bike.link_rastreamento);
+      openExternalLink(bike.link_rastreamento);
     } else {
       Alert.alert('Sem rastreamento', 'Nenhum link de rastreamento cadastrado.');
     }
@@ -112,7 +112,7 @@ export default function BikeDetailsScreen() {
               const updated = await bikeAPI.alertFurto(bike.id);
               setBike(updated);
               Alert.alert('Alerta Acionado', 'Bicicleta marcada como FURTADA.\nRecomendamos registrar B.O. na Delegacia Virtual.', [
-                { text: 'Delegacia Virtual SC', onPress: () => Linking.openURL('https://delegaciavirtual.sc.gov.br/') },
+                { text: 'Delegacia Virtual SC', onPress: () => openExternalLink('https://delegaciavirtual.sc.gov.br/') },
                 { text: 'OK' },
               ]);
             } catch (error: any) { Alert.alert('Erro', error.message); }
@@ -246,7 +246,7 @@ export default function BikeDetailsScreen() {
           {/* ACOES SECUNDARIAS SE FURTADA */}
           {isFurtada && (
             <View style={styles.secondaryActions}>
-              <TouchableOpacity style={styles.policeBtn} onPress={() => Linking.openURL('https://delegaciavirtual.sc.gov.br/')}>
+              <TouchableOpacity style={styles.policeBtn} onPress={() => openExternalLink('https://delegaciavirtual.sc.gov.br/')}>
                 <Ionicons name="shield-checkmark" size={18} color="#fff" />
                 <Text style={styles.policeBtnText}>Delegacia Virtual SC</Text>
               </TouchableOpacity>

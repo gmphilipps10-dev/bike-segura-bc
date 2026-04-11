@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Linking,
   Image,
   Alert,
 } from 'react-native';
@@ -16,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { bikeAPI } from '../../utils/api';
 import { Bike } from '../../types';
+import { openWhatsAppLink, openExternalLink } from '../../utils/linking';
 
 const isOnline = (dateStr?: string): boolean => {
   if (!dateStr) return false;
@@ -90,11 +90,7 @@ export default function HomeScreen() {
 
   const openWhatsApp = (bike: Bike) => {
     const message = buildWhatsAppMessage(bike);
-    const encoded = encodeURIComponent(message);
-    const url = `https://wa.me/5547992458380?text=${encoded}`;
-    Linking.openURL(url).catch(() => {
-      Alert.alert('Erro', 'Nao foi possivel abrir o WhatsApp. Verifique se esta instalado.');
-    });
+    openWhatsAppLink('5547992458380', message);
   };
 
   const confirmAlerta = (bike: Bike) => {
@@ -236,7 +232,7 @@ export default function HomeScreen() {
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.actionCard} onPress={() => Linking.openURL('https://delegaciavirtual.sc.gov.br/')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => openExternalLink('https://delegaciavirtual.sc.gov.br/')}>
             <View style={[styles.actionIcon, { backgroundColor: '#2196F3' }]}>
               <Ionicons name="shield-checkmark" size={24} color="#fff" />
             </View>

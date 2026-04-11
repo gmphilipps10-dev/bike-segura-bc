@@ -10,9 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.bikesegurabc.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Tirar fotos da bicicleta",
-        "NSPhotoLibraryUsageDescription": "Selecionar fotos da bicicleta"
+        "NSPhotoLibraryUsageDescription": "Selecionar fotos da bicicleta",
+        "LSApplicationQueriesSchemes": ["whatsapp", "https", "http", "tel"]
       }
     },
     "android": {
