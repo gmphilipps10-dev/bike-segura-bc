@@ -344,9 +344,54 @@ export default function AddBikeScreen() {
               placeholderTextColor="#666"
             />
 
-            <Text style={styles.label}>Tipo *</Text>
+            <Text style={styles.label}>Categoria *</Text>
+            <Text style={[styles.sectionSubtitle, { marginBottom: 8 }]}>Bicicletas</Text>
             <View style={styles.typeButtons}>
-              {['Urbana', 'MTB', 'Speed', 'Eletrica'].map((tipo) => (
+              {['Urbana', 'MTB', 'Speed/Road', 'BMX', 'Gravel', 'Dobravel', 'Infantil'].map((tipo) => (
+                <TouchableOpacity
+                  key={tipo}
+                  style={[
+                    styles.typeButton,
+                    formData.tipo === tipo && styles.typeButtonActive,
+                  ]}
+                  onPress={() => updateField('tipo', tipo)}
+                >
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      formData.tipo === tipo && styles.typeButtonTextActive,
+                    ]}
+                  >
+                    {tipo}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.sectionSubtitle, { marginBottom: 8, marginTop: 12 }]}>Eletricas e Motorizados</Text>
+            <View style={styles.typeButtons}>
+              {['Bike Eletrica', 'Patinete Eletrico', 'Monociclo', 'Ciclomotor/Scooter'].map((tipo) => (
+                <TouchableOpacity
+                  key={tipo}
+                  style={[
+                    styles.typeButton,
+                    formData.tipo === tipo && styles.typeButtonActive,
+                  ]}
+                  onPress={() => updateField('tipo', tipo)}
+                >
+                  <Text
+                    style={[
+                      styles.typeButtonText,
+                      formData.tipo === tipo && styles.typeButtonTextActive,
+                    ]}
+                  >
+                    {tipo}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={[styles.sectionSubtitle, { marginBottom: 8, marginTop: 12 }]}>Outro</Text>
+            <View style={styles.typeButtons}>
+              {['Outra'].map((tipo) => (
                 <TouchableOpacity
                   key={tipo}
                   style={[

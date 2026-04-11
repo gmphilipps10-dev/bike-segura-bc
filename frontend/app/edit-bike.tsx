@@ -17,7 +17,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { bikeAPI } from '../utils/api';
 import { Bike } from '../types';
 
-const TIPOS_BIKE = ['Mountain Bike', 'Speed/Road', 'Urbana', 'BMX', 'Eletrica', 'Gravel', 'Dobravel', 'Infantil', 'Outra'];
+const TIPOS_BICICLETA = ['Urbana', 'MTB', 'Speed/Road', 'BMX', 'Gravel', 'Dobravel', 'Infantil'];
+const TIPOS_ELETRICO = ['Bike Eletrica', 'Patinete Eletrico', 'Monociclo', 'Ciclomotor/Scooter'];
+const TIPOS_OUTRO = ['Outra'];
 
 export default function EditBikeScreen() {
   const router = useRouter();
@@ -162,9 +164,38 @@ export default function EditBikeScreen() {
           {/* Tipo */}
           <View style={styles.field}>
             <Text style={styles.label}>Categoria</Text>
+            <Text style={styles.hint}>Bicicletas</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={styles.tipoContainer}>
-                {TIPOS_BIKE.map((t) => (
+                {TIPOS_BICICLETA.map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.tipoChip, tipo === t && styles.tipoChipActive]}
+                    onPress={() => setTipo(t)}
+                  >
+                    <Text style={[styles.tipoChipText, tipo === t && styles.tipoChipTextActive]}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            <Text style={[styles.hint, { marginTop: 10 }]}>Eletricas e Motorizados</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tipoContainer}>
+                {TIPOS_ELETRICO.map((t) => (
+                  <TouchableOpacity
+                    key={t}
+                    style={[styles.tipoChip, tipo === t && styles.tipoChipActive]}
+                    onPress={() => setTipo(t)}
+                  >
+                    <Text style={[styles.tipoChipText, tipo === t && styles.tipoChipTextActive]}>{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            <Text style={[styles.hint, { marginTop: 10 }]}>Outro</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={styles.tipoContainer}>
+                {TIPOS_OUTRO.map((t) => (
                   <TouchableOpacity
                     key={t}
                     style={[styles.tipoChip, tipo === t && styles.tipoChipActive]}
