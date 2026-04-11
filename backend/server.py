@@ -256,6 +256,45 @@ async def update_foto_perfil(data: UpdateFotoPerfil, current_user: dict = Depend
         "foto_perfil": updated_user.get("foto_perfil")
     }
 
+# ============ ADMIN ROUTES ============
+
+ADMIN_EMAIL = "gmphilipps10@gmail.com"
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(current_user: dict = Depends(get_current_user)):
+    if current_user["email"] != ADMIN_EMAIL:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito ao administrador"
+        )
+    
+    total_users = await db.users.count_documents({})
+    total_bikes = await db.bikes.count_documents({})
+    total_bikes_furtadas = await db.bikes.count_documents({"status": "Furtada"})
+    total_bikes_ativas = await db.bikes.count_documents({"status": "Ativa"})
+    total_bikes_recuperadas = await db.bikes.count_documents({"status": "Recuperada"})
+    
+    # Ultimos 5 usuarios cadastrados
+    recent_users_cursor = db.users.find(
+        {}, {"nome_completo": 1, "email": 1, "created_at": 1}
+    ).sort("created_at", -1).limit(5)
+    recent_users = []
+    async for u in recent_users_cursor:
+        recent_users.append({
+            "nome": u.get("nome_completo", ""),
+            "email": u.get("email", ""),
+            "data": str(u.get("created_at", ""))
+        })
+    
+    return {
+        "total_users": total_users,
+        "total_bikes": total_bikes,
+        "bikes_ativas": total_bikes_ativas,
+        "bikes_furtadas": total_bikes_furtadas,
+        "bikes_recuperadas": total_bikes_recuperadas,
+        "recent_users": recent_users
+    }
+
 # ============ BIKE ROUTES ============
 
 @api_router.post("/bikes", response_model=BikeResponse)

@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../contexts/AuthContext';
-import { authAPI } from '../../utils/api';
+import { authAPI, adminAPI } from '../../utils/api';
 import { User } from '../../types';
 
 export default function ProfileScreen() {
@@ -25,11 +25,19 @@ export default function ProfileScreen() {
   const [modalTitle, setModalTitle] = useState('');
   const [modalContent, setModalContent] = useState('');
   const [updatingPhoto, setUpdatingPhoto] = useState(false);
+  const [adminStats, setAdminStats] = useState<any>(null);
 
   const loadUserData = async () => {
     try {
       const userData = await authAPI.getMe();
       setUser(userData);
+      // Verificar se e admin e carregar stats
+      try {
+        const stats = await adminAPI.getStats();
+        if (stats) setAdminStats(stats);
+      } catch (e) {
+        // Nao e admin, ignora
+      }
     } catch (error) {
       console.error(error);
     } finally {
@@ -238,6 +246,49 @@ export default function ProfileScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre o App</Text>
+
+          {adminStats && (
+            <View style={styles.adminPanel}>
+              <View style={styles.adminHeader}>
+                <Ionicons name="shield" size={20} color="#FFC107" />
+                <Text style={styles.adminTitle}>Painel Administrador</Text>
+              </View>
+
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{adminStats.total_users}</Text>
+                  <Text style={styles.statLabel}>Usuarios</Text>
+                </View>
+                <View style={styles.statCard}>
+                  <Text style={styles.statNumber}>{adminStats.total_bikes}</Text>
+                  <Text style={styles.statLabel}>Bikes</Text>
+                </View>
+                <View style={[styles.statCard, styles.statCardGreen]}>
+                  <Text style={styles.statNumber}>{adminStats.bikes_ativas}</Text>
+                  <Text style={styles.statLabel}>Ativas</Text>
+                </View>
+                <View style={[styles.statCard, styles.statCardRed]}>
+                  <Text style={styles.statNumber}>{adminStats.bikes_furtadas}</Text>
+                  <Text style={styles.statLabel}>Furtadas</Text>
+                </View>
+              </View>
+
+              {adminStats.recent_users && adminStats.recent_users.length > 0 && (
+                <View style={styles.recentUsers}>
+                  <Text style={styles.recentUsersTitle}>Ultimos cadastros</Text>
+                  {adminStats.recent_users.map((u: any, i: number) => (
+                    <View key={i} style={styles.recentUserRow}>
+                      <Ionicons name="person-circle" size={20} color="#FFC107" />
+                      <View style={styles.recentUserInfo}>
+                        <Text style={styles.recentUserName}>{u.nome}</Text>
+                        <Text style={styles.recentUserEmail}>{u.email}</Text>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          )}
 
           <TouchableOpacity style={styles.menuItem} onPress={handleComoFunciona}>
             <View style={styles.menuIcon}>
@@ -464,6 +515,88 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#999',
     marginTop: 4,
+  },
+  adminPanel: {
+    backgroundColor: '#000',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FFC107',
+  },
+  adminHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  adminTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#FFC107',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  statCardGreen: {
+    borderColor: '#4CAF50',
+  },
+  statCardRed: {
+    borderColor: '#F44336',
+  },
+  statNumber: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 4,
+  },
+  recentUsers: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  recentUsersTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFC107',
+    marginBottom: 12,
+  },
+  recentUserRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#222',
+  },
+  recentUserInfo: {
+    flex: 1,
+  },
+  recentUserName: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: '500',
+  },
+  recentUserEmail: {
+    fontSize: 12,
+    color: '#999',
   },
   modalOverlay: {
     flex: 1,

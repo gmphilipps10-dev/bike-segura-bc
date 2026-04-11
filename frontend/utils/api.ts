@@ -72,6 +72,21 @@ export const authAPI = {
   },
 };
 
+export const adminAPI = {
+  getStats: async (): Promise<any> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/admin/stats`, {
+      headers,
+    });
+    if (!response.ok) {
+      if (response.status === 403) return null;
+      const error = await response.json();
+      throw new Error(error.detail || 'Erro ao buscar estatisticas');
+    }
+    return response.json();
+  },
+};
+
 export const bikeAPI = {
   create: async (data: {
     marca: string;
