@@ -67,6 +67,8 @@ export default function BikeDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [selectedPhotoLabel, setSelectedPhotoLabel] = useState<string>('');
+  const [showRecuperar, setShowRecuperar] = useState(false);
+  const [recuperarLoading, setRecuperarLoading] = useState(false);
 
   const loadBike = async () => {
     try {
@@ -123,24 +125,21 @@ export default function BikeDetailsScreen() {
   };
 
   const handleRecuperar = () => {
+    setShowRecuperar(true);
+  };
+
+  const doRecuperar = async () => {
     if (!bike) return;
-    Alert.alert(
-      'RECUPERAR BICICLETA',
-      `Confirma que a ${bike.marca} ${bike.modelo} foi recuperada e deseja voltar ao status normal?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Confirmar Recuperacao',
-          onPress: async () => {
-            try {
-              const updated = await bikeAPI.recuperar(bike.id);
-              setBike(updated);
-              Alert.alert('Bike Recuperada!', 'Status atualizado para ATIVA com sucesso.');
-            } catch (error: any) { Alert.alert('Erro', error.message); }
-          },
-        },
-      ]
-    );
+    setRecuperarLoading(true);
+    try {
+      const updated = await bikeAPI.recuperar(bike.id);
+      setBike(updated);
+      setShowRecuperar(false);
+    } catch (error: any) {
+      Alert.alert('Erro', error.message);
+    } finally {
+      setRecuperarLoading(false);
+    }
   };
 
   const handleShare = async () => {
@@ -335,6 +334,31 @@ export default function BikeDetailsScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* MODAL RECUPERAR */}
+      {showRecuperar && bike && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalBox}>
+            <Ionicons name="checkmark-circle" size={40} color="#4CAF50" style={{ alignSelf: 'center' }} />
+            <Text style={styles.modalTitle}>Recuperar Bicicleta</Text>
+            <Text style={styles.modalDesc}>
+              Confirma que "{bike.marca} {bike.modelo}" foi recuperada e deseja voltar ao status normal?
+            </Text>
+            <TouchableOpacity
+              style={[styles.modalConfirmBtn, recuperarLoading && { opacity: 0.6 }]}
+              onPress={doRecuperar}
+              disabled={recuperarLoading}
+            >
+              <Text style={styles.modalConfirmText}>
+                {recuperarLoading ? 'Atualizando...' : 'CONFIRMAR RECUPERACAO'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShowRecuperar(false)}>
+              <Text style={styles.modalCancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -425,4 +449,24 @@ const styles = StyleSheet.create({
   },
   trackingLinkText: { flex: 1, fontSize: 14, color: '#FFC107', fontWeight: '500' },
   nfImage: { width: '100%', height: 280, borderRadius: 8, backgroundColor: '#111' },
+  modalOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center',
+    padding: 24, zIndex: 100,
+  },
+  modalBox: {
+    backgroundColor: '#1a1a1a', borderRadius: 16, padding: 24,
+    width: '100%', maxWidth: 400, borderWidth: 2, borderColor: '#4CAF50',
+  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff', textAlign: 'center', marginTop: 12, marginBottom: 8 },
+  modalDesc: { fontSize: 14, color: '#ccc', textAlign: 'center', marginBottom: 20, lineHeight: 20 },
+  modalConfirmBtn: {
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#4CAF50', padding: 16, borderRadius: 12, marginBottom: 8,
+  },
+  modalConfirmText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
+  modalCancelBtn: {
+    alignItems: 'center', padding: 14, borderRadius: 12, backgroundColor: '#333',
+  },
+  modalCancelText: { color: '#999', fontSize: 14, fontWeight: '600' },
 });
