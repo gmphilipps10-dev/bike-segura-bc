@@ -122,6 +122,27 @@ export default function BikeDetailsScreen() {
     );
   };
 
+  const handleRecuperar = () => {
+    if (!bike) return;
+    Alert.alert(
+      'RECUPERAR BICICLETA',
+      `Confirma que a ${bike.marca} ${bike.modelo} foi recuperada e deseja voltar ao status normal?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Confirmar Recuperacao',
+          onPress: async () => {
+            try {
+              const updated = await bikeAPI.recuperar(bike.id);
+              setBike(updated);
+              Alert.alert('Bike Recuperada!', 'Status atualizado para ATIVA com sucesso.');
+            } catch (error: any) { Alert.alert('Erro', error.message); }
+          },
+        },
+      ]
+    );
+  };
+
   const handleShare = async () => {
     if (!bike) return;
     const msg = `BICICLETA FURTADA\n${bike.marca} ${bike.modelo}\nCor: ${bike.cor}\nSerie: ${bike.numero_serie}\n${bike.data_furto ? `Furto: ${format(new Date(bike.data_furto), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })}` : ''}\n${bike.link_rastreamento || ''}`;
@@ -234,6 +255,14 @@ export default function BikeDetailsScreen() {
                 <Text style={styles.shareBtnText}>Compartilhar</Text>
               </TouchableOpacity>
             </View>
+          )}
+
+          {/* RECUPERAR BIKE SE FURTADA */}
+          {isFurtada && (
+            <TouchableOpacity style={styles.recuperarBtn} onPress={handleRecuperar}>
+              <Ionicons name="checkmark-circle" size={22} color="#fff" />
+              <Text style={styles.recuperarBtnText}>MARCAR COMO RECUPERADA</Text>
+            </TouchableOpacity>
           )}
 
           {/* ALERTA DE FURTO SE ATIVA */}
@@ -363,6 +392,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#F44336', padding: 16, borderRadius: 12, gap: 8, marginBottom: 16,
   },
   alertBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  recuperarBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#4CAF50', padding: 16, borderRadius: 12, gap: 8, marginBottom: 16,
+  },
+  recuperarBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
   section: {
     backgroundColor: '#000', padding: 16, borderRadius: 12, marginBottom: 16,
     borderWidth: 1, borderColor: '#333',

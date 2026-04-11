@@ -683,6 +683,43 @@ async def alert_furto(bike_id: str, current_user: dict = Depends(get_current_use
     
     return updated_bike
 
+@api_router.post("/bikes/{bike_id}/recuperar")
+async def recuperar_bike(bike_id: str, current_user: dict = Depends(get_current_user)):
+    try:
+        bike = await db.bikes.find_one({"_id": ObjectId(bike_id)})
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bicicleta não encontrada"
+        )
+    
+    if not bike:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bicicleta não encontrada"
+        )
+    
+    if bike["proprietario_id"] != str(current_user["_id"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Você não tem permissão para alterar esta bicicleta"
+        )
+    
+    await db.bikes.update_one(
+        {"_id": ObjectId(bike_id)},
+        {"$set": {
+            "status": "Ativa",
+            "data_furto": None,
+            "ultima_atualizacao": datetime.utcnow().isoformat()
+        }}
+    )
+    
+    updated_bike = await db.bikes.find_one({"_id": ObjectId(bike_id)})
+    updated_bike["id"] = str(updated_bike["_id"])
+    del updated_bike["_id"]
+    
+    return updated_bike
+
 # Include the router in the main app
 app.include_router(api_router)
 

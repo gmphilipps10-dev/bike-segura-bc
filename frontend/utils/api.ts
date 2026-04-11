@@ -190,4 +190,17 @@ export const bikeAPI = {
     }
     return response.json();
   },
+
+  recuperar: async (id: string): Promise<Bike> => {
+    const headers = await getAuthHeaders();
+    const response = await fetch(`${API_URL}/bikes/${id}/recuperar`, {
+      method: 'POST',
+      headers,
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'Erro ao recuperar bicicleta');
+    }
+    return response.json();
+  },
 };
