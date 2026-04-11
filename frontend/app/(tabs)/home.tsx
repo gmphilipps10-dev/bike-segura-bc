@@ -82,28 +82,35 @@ export default function HomeScreen() {
     );
   };
 
+  const buildWhatsAppMessage = (bike: Bike): string => {
+    const linkRastreamento = bike.link_rastreamento || 'Nao cadastrado';
+    const msg = `🚨 ALERTA DE FURTO 🚨\n\nBike: ${bike.marca} ${bike.modelo}\nMarca/Modelo: ${bike.marca} ${bike.modelo}\nCor: ${bike.cor}\nSerie: ${bike.numero_serie}\n\nUltima localizacao:\n${linkRastreamento}\n\nBike cadastrada no sistema Bike Segura BC.\nSolicito apoio para verificacao.`;
+    return msg;
+  };
+
+  const openWhatsApp = (bike: Bike) => {
+    const message = buildWhatsAppMessage(bike);
+    const encoded = encodeURIComponent(message);
+    const url = `https://wa.me/5547992458380?text=${encoded}`;
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Erro', 'Nao foi possivel abrir o WhatsApp. Verifique se esta instalado.');
+    });
+  };
+
   const confirmAlerta = (bike: Bike) => {
     Alert.alert(
       'CONFIRMAR ALERTA DE FURTO',
-      `${bike.marca} ${bike.modelo} foi furtada?`,
+      `Deseja marcar a bicicleta "${bike.marca} ${bike.modelo}" como furtada e enviar alerta via WhatsApp?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Confirmar Furto',
+          text: 'Confirmar',
           style: 'destructive',
           onPress: async () => {
             try {
               await bikeAPI.alertFurto(bike.id);
               loadBikes();
-              Alert.alert(
-                'Alerta Acionado',
-                'Bicicleta marcada como FURTADA.\nRastreamento ativado.',
-                [
-                  { text: 'Delegacia Virtual SC', onPress: () => Linking.openURL('https://delegaciavirtual.sc.gov.br/') },
-                  { text: 'Ver Bikes', onPress: () => router.push('/(tabs)/bikes') },
-                  { text: 'OK' },
-                ]
-              );
+              openWhatsApp(bike);
             } catch (error: any) {
               Alert.alert('Erro', error.message);
             }
@@ -185,13 +192,14 @@ export default function HomeScreen() {
         )}
 
         {/* BOTAO ALERTA DE FURTO */}
-        {totalBikes > 0 && furtadas === 0 && (
+        {totalBikes > 0 && (
           <TouchableOpacity style={styles.alertFurtoBtn} onPress={handleAlertaFurto}>
             <Ionicons name="alert-circle" size={28} color="#fff" />
             <View style={styles.alertFurtoBtnContent}>
-              <Text style={styles.alertFurtoBtnTitle}>Alerta de Furto</Text>
-              <Text style={styles.alertFurtoBtnSub}>Toque em caso de furto da sua bike</Text>
+              <Text style={styles.alertFurtoBtnTitle}>ALERTAR FURTO</Text>
+              <Text style={styles.alertFurtoBtnSub}>Alerta via WhatsApp + Rastreamento</Text>
             </View>
+            <Ionicons name="logo-whatsapp" size={24} color="#fff" />
           </TouchableOpacity>
         )}
 
