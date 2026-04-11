@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BIKE SEGURA BC - Painel Administrativo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #111; color: #fff; min-height: 100vh; }
+  
+  /* Login */
+  .login-overlay { position: fixed; inset: 0; background: #111; display: flex; align-items: center; justify-content: center; z-index: 100; }
+  .login-box { background: #1a1a1a; padding: 40px; border-radius: 16px; border: 2px solid #FFC107; width: 90%; max-width: 400px; text-align: center; }
+  .login-box h1 { color: #FFC107; font-size: 24px; margin-bottom: 8px; }
+  .login-box p { color: #999; font-size: 14px; margin-bottom: 24px; }
+  .login-box input { width: 100%; padding: 14px; border: 1px solid #333; border-radius: 8px; background: #000; color: #fff; font-size: 16px; margin-bottom: 12px; }
+  .login-box input::placeholder { color: #666; }
+  .login-box button { width: 100%; padding: 14px; background: #FFC107; color: #000; font-weight: bold; font-size: 16px; border: none; border-radius: 8px; cursor: pointer; }
+  .login-box button:hover { background: #e6ad00; }
+  .login-error { color: #F44336; font-size: 14px; margin-top: 8px; display: none; }
+
+  /* Header */
+  .header { background: #000; padding: 20px 24px; border-bottom: 3px solid #FFC107; display: flex; align-items: center; justify-content: space-between; }
+  .header h1 { color: #FFC107; font-size: 22px; }
+  .header .badge { background: #FFC107; color: #000; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }
+  .logout-btn { background: none; border: 1px solid #F44336; color: #F44336; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+  .logout-btn:hover { background: #F44336; color: #fff; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; padding: 24px; }
+  .stat-card { background: #000; border: 1px solid #333; border-radius: 12px; padding: 24px; text-align: center; }
+  .stat-card.green { border-color: #4CAF50; }
+  .stat-card.red { border-color: #F44336; }
+  .stat-card.yellow { border-color: #FFC107; }
+  .stat-card.blue { border-color: #2196F3; }
+  .stat-number { font-size: 36px; font-weight: bold; color: #FFC107; }
+  .stat-card.green .stat-number { color: #4CAF50; }
+  .stat-card.red .stat-number { color: #F44336; }
+  .stat-card.blue .stat-number { color: #2196F3; }
+  .stat-label { font-size: 13px; color: #999; margin-top: 8px; }
+
+  /* Table */
+  .section { padding: 0 24px 24px; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .section h2 { color: #FFC107; font-size: 20px; }
+  .search-input { padding: 10px 16px; border: 1px solid #333; border-radius: 8px; background: #000; color: #fff; font-size: 14px; width: 300px; }
+  .search-input::placeholder { color: #666; }
+  
+  .table-container { overflow-x: auto; border-radius: 12px; border: 1px solid #333; }
+  table { width: 100%; border-collapse: collapse; background: #000; }
+  th { background: #1a1a1a; color: #FFC107; padding: 14px 16px; text-align: left; font-size: 13px; font-weight: 600; border-bottom: 2px solid #333; white-space: nowrap; }
+  td { padding: 14px 16px; border-bottom: 1px solid #222; font-size: 14px; vertical-align: middle; }
+  tr:hover td { background: #111; }
+  
+  .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
+  .status-ativo { background: #1a3a1a; color: #4CAF50; }
+  .status-pendente { background: #3a3a1a; color: #FFC107; }
+  .status-vencido { background: #3a1a1a; color: #F44336; }
+  .status-cancelado { background: #2a2a2a; color: #999; }
+  
+  .action-btn { padding: 8px 14px; border-radius: 6px; border: none; font-size: 12px; font-weight: bold; cursor: pointer; margin: 2px; }
+  .btn-pagar { background: #4CAF50; color: #fff; }
+  .btn-pagar:hover { background: #388E3C; }
+  .btn-cancelar { background: #F44336; color: #fff; }
+  .btn-cancelar:hover { background: #C62828; }
+  
+  .receita-card { background: linear-gradient(135deg, #1a1a00, #2a2a00); border: 2px solid #FFC107; border-radius: 12px; padding: 24px; margin: 0 24px 24px; display: flex; align-items: center; gap: 24px; }
+  .receita-card .valor { font-size: 32px; font-weight: bold; color: #FFC107; }
+  .receita-card .desc { color: #999; font-size: 14px; }
+
+  /* Loading */
+  .loading { text-align: center; padding: 60px; color: #FFC107; font-size: 18px; }
+  
+  /* Modal */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 50; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #1a1a1a; border: 2px solid #FFC107; border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; }
+  .modal h3 { color: #FFC107; margin-bottom: 16px; }
+  .modal p { color: #ccc; margin-bottom: 8px; font-size: 14px; }
+  .modal .actions { display: flex; gap: 12px; margin-top: 24px; }
+  .modal .actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
+  .modal .btn-confirm { background: #4CAF50; color: #fff; }
+  .modal .btn-close { background: #333; color: #fff; }
+  
+  @media (max-width: 768px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 16px; }
+    .stat-card { padding: 16px; }
+    .stat-number { font-size: 24px; }
+    .section { padding: 0 16px 16px; }
+    .search-input { width: 100%; }
+    .section-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .receita-card { margin: 0 16px 16px; flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h1>BIKE SEGURA BC</h1>
+    <p>Painel Administrativo</p>
+    <input type="email" id="loginEmail" placeholder="Email do administrador">
+    <input type="password" id="loginPassword" placeholder="Senha">
+    <button onclick="doLogin()">Entrar</button>
+    <div class="login-error" id="loginError">Email ou senha incorretos</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none">
+  <div class="header">
+    <div>
+      <h1>BIKE SEGURA BC</h1>
+      <span class="badge">ADMIN</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  </div>
+
+  <div id="loadingState" class="loading">Carregando dados...</div>
+
+  <div id="content" style="display:none">
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card yellow">
+        <div class="stat-number" id="totalUsers">0</div>
+        <div class="stat-label">Total de Usuarios</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-number" id="bikesAtivas">0</div>
+        <div class="stat-label">Bikes Ativas</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-number" id="bikesFurtadas">0</div>
+        <div class="stat-label">Bikes Furtadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number" id="totalBikes">0</div>
+        <div class="stat-label">Total de Bikes</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-number" id="pgtoAtivos">0</div>
+        <div class="stat-label">Pagamentos Ativos</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-number" id="pgtoPendentes">0</div>
+        <div class="stat-label">Pagamentos Pendentes</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-number" id="pgtoVencidos">0</div>
+        <div class="stat-label">Pagamentos Vencidos</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-number" id="receitaMensal">R$ 0</div>
+        <div class="stat-label">Receita Mensal Est.</div>
+      </div>
+    </div>
+
+    <!-- USERS TABLE -->
+    <div class="section">
+      <div class="section-header">
+        <h2>Usuarios Cadastrados</h2>
+        <input type="text" class="search-input" placeholder="Buscar por nome ou email..." oninput="filterUsers(this.value)">
+      </div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Contato</th>
+              <th>Cadastro</th>
+              <th>Bikes</th>
+              <th>Pagamento</th>
+              <th>Vencimento</th>
+              <th>Acoes</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modalTitle">Confirmar</h3>
+    <p id="modalText"></p>
+    <div class="actions">
+      <button class="btn-close" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" id="modalConfirm">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let token = localStorage.getItem('admin_token');
+let allUsers = [];
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+  errorEl.style.display = 'none';
+  
+  try {
+    const res = await fetch(API + '/auth/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, senha: password })
+    });
+    if (!res.ok) { errorEl.style.display = 'block'; return; }
+    const data = await res.json();
+    token = data.access_token;
+    localStorage.setItem('admin_token', token);
+    showDashboard();
+  } catch (e) { errorEl.style.display = 'block'; }
+}
+
+function doLogout() {
+  token = null;
+  localStorage.removeItem('admin_token');
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('loginOverlay').style.display = 'flex';
+}
+
+async function showDashboard() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('content').style.display = 'none';
+  
+  try {
+    const headers = { 'Authorization': 'Bearer ' + token };
+    const [dashRes, usersRes] = await Promise.all([
+      fetch(API + '/admin/dashboard', { headers }),
+      fetch(API + '/admin/users', { headers })
+    ]);
+    
+    if (dashRes.status === 401 || dashRes.status === 403 || usersRes.status === 401 || usersRes.status === 403) {
+      doLogout(); return;
+    }
+    
+    const dash = await dashRes.json();
+    const users = await usersRes.json();
+    allUsers = users;
+    
+    document.getElementById('totalUsers').textContent = dash.total_users;
+    document.getElementById('bikesAtivas').textContent = dash.bikes_ativas;
+    document.getElementById('bikesFurtadas').textContent = dash.bikes_furtadas;
+    document.getElementById('totalBikes').textContent = dash.total_bikes;
+    document.getElementById('pgtoAtivos').textContent = dash.pagamentos_ativos;
+    document.getElementById('pgtoPendentes').textContent = dash.pagamentos_pendentes;
+    document.getElementById('pgtoVencidos').textContent = dash.pagamentos_vencidos;
+    document.getElementById('receitaMensal').textContent = 'R$ ' + dash.receita_mensal_estimada.toFixed(2);
+    
+    renderUsers(users);
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('content').style.display = 'block';
+  } catch (e) {
+    console.error(e);
+    document.getElementById('loadingState').textContent = 'Erro ao carregar dados';
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('pt-BR');
+  } catch { return '-'; }
+}
+
+function getStatusClass(status) {
+  switch (status) {
+    case 'ativo': return 'status-ativo';
+    case 'pendente': return 'status-pendente';
+    case 'vencido': return 'status-vencido';
+    case 'cancelado': return 'status-cancelado';
+    default: return 'status-pendente';
+  }
+}
+
+function getStatusLabel(status) {
+  switch (status) {
+    case 'ativo': return 'Ativo';
+    case 'pendente': return 'Pendente';
+    case 'vencido': return 'Vencido';
+    case 'cancelado': return 'Cancelado';
+    default: return 'Pendente';
+  }
+}
+
+function renderUsers(users) {
+  const tbody = document.getElementById('usersTable');
+  tbody.innerHTML = users.map(u => {
+    const pgto = u.pagamento || {};
+    const status = pgto.status || 'pendente';
+    const isAtivo = status === 'ativo';
+    
+    return `<tr>
+      <td><strong>${u.nome}</strong><br><small style="color:#999">${u.email}</small></td>
+      <td><small>${u.telefone || '-'}</small></td>
+      <td>${formatDate(u.data_inicio)}</td>
+      <td>${u.total_bikes} <small style="color:#F44336">${u.bikes_furtadas > 0 ? '(' + u.bikes_furtadas + ' furtada' + (u.bikes_furtadas > 1 ? 's' : '') + ')' : ''}</small></td>
+      <td><span class="status-badge ${getStatusClass(status)}">${getStatusLabel(status)}</span></td>
+      <td>${isAtivo ? formatDate(pgto.data_vencimento) : '-'}</td>
+      <td>
+        ${!isAtivo ? `<button class="action-btn btn-pagar" onclick="marcarPago('${u.id}', '${u.nome}')">Marcar Pago</button>` : ''}
+        ${isAtivo ? `<button class="action-btn btn-cancelar" onclick="cancelarPgto('${u.id}', '${u.nome}')">Cancelar</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers(query) {
+  const q = query.toLowerCase();
+  const filtered = allUsers.filter(u => 
+    u.nome.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+  );
+  renderUsers(filtered);
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+}
+
+function marcarPago(userId, nome) {
+  document.getElementById('modalTitle').textContent = 'Confirmar Pagamento';
+  document.getElementById('modalText').textContent = `Marcar pagamento de "${nome}" como ATIVO por 1 ano?`;
+  document.getElementById('modalConfirm').onclick = async () => {
+    closeModal();
+    try {
+      await fetch(API + `/admin/users/${userId}/pagamento`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: 'manual' })
+      });
+      showDashboard();
+    } catch (e) { alert('Erro: ' + e.message); }
+  };
+  document.getElementById('modal').classList.add('active');
+}
+
+function cancelarPgto(userId, nome) {
+  document.getElementById('modalTitle').textContent = 'Cancelar Pagamento';
+  document.getElementById('modalText').textContent = `Cancelar pagamento de "${nome}"?`;
+  document.getElementById('modalConfirm').onclick = async () => {
+    closeModal();
+    try {
+      await fetch(API + `/admin/users/${userId}/cancelar-pagamento`, {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      showDashboard();
+    } catch (e) { alert('Erro: ' + e.message); }
+  };
+  document.getElementById('modal').classList.add('active');
+}
+
+// Auto-login if token exists
+if (token) { showDashboard(); }
+</script>
+</body>
+</html>

@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import HTMLResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -260,14 +261,22 @@ async def update_foto_perfil(data: UpdateFotoPerfil, current_user: dict = Depend
 # ============ ADMIN ROUTES ============
 
 ADMIN_EMAIL = "gmphilipps10@gmail.com"
+VALOR_PLANO_ANUAL = 49.90  # Valor anual do plano
+
+async def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        if email != ADMIN_EMAIL:
+            raise HTTPException(status_code=403, detail="Acesso restrito")
+        return email
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token invalido")
 
 @api_router.get("/admin/stats")
 async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     if current_user["email"] != ADMIN_EMAIL:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso restrito ao administrador"
-        )
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito ao administrador")
     
     total_users = await db.users.count_documents({})
     total_bikes = await db.bikes.count_documents({})
@@ -275,7 +284,6 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
     total_bikes_ativas = await db.bikes.count_documents({"status": "Ativa"})
     total_bikes_recuperadas = await db.bikes.count_documents({"status": "Recuperada"})
     
-    # Ultimos 5 usuarios cadastrados
     recent_users_cursor = db.users.find(
         {}, {"nome_completo": 1, "email": 1, "created_at": 1}
     ).sort("created_at", -1).limit(5)
@@ -288,13 +296,111 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
         })
     
     return {
-        "total_users": total_users,
-        "total_bikes": total_bikes,
-        "bikes_ativas": total_bikes_ativas,
-        "bikes_furtadas": total_bikes_furtadas,
-        "bikes_recuperadas": total_bikes_recuperadas,
-        "recent_users": recent_users
+        "total_users": total_users, "total_bikes": total_bikes,
+        "bikes_ativas": total_bikes_ativas, "bikes_furtadas": total_bikes_furtadas,
+        "bikes_recuperadas": total_bikes_recuperadas, "recent_users": recent_users
     }
+
+@api_router.get("/admin/users")
+async def get_admin_users(admin_email: str = Depends(verify_admin)):
+    users_cursor = db.users.find({}).sort("created_at", -1)
+    users = []
+    async for u in users_cursor:
+        user_id = str(u["_id"])
+        bike_count = await db.bikes.count_documents({"proprietario_id": user_id})
+        bikes_furtadas = await db.bikes.count_documents({"proprietario_id": user_id, "status": "Furtada"})
+        
+        pagamento = u.get("pagamento", {})
+        status_pgto = pagamento.get("status", "pendente")
+        data_venc = pagamento.get("data_vencimento")
+        if data_venc and status_pgto == "ativo":
+            try:
+                venc = datetime.fromisoformat(data_venc)
+                if venc < datetime.utcnow():
+                    status_pgto = "vencido"
+                    await db.users.update_one({"_id": u["_id"]}, {"$set": {"pagamento.status": "vencido"}})
+            except:
+                pass
+        
+        users.append({
+            "id": user_id,
+            "nome": u.get("nome_completo", ""),
+            "email": u.get("email", ""),
+            "cpf": u.get("cpf", ""),
+            "telefone": u.get("telefone", ""),
+            "data_inicio": u.get("created_at", ""),
+            "total_bikes": bike_count,
+            "bikes_furtadas": bikes_furtadas,
+            "pagamento": {
+                "status": status_pgto,
+                "data_inicio": pagamento.get("data_inicio"),
+                "data_vencimento": data_venc,
+                "tipo": pagamento.get("tipo", "pendente"),
+                "valor": pagamento.get("valor", VALOR_PLANO_ANUAL),
+            }
+        })
+    return users
+
+@api_router.put("/admin/users/{user_id}/pagamento")
+async def update_user_pagamento(user_id: str, data: dict, admin_email: str = Depends(verify_admin)):
+    try:
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+    except:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+    
+    now = datetime.utcnow()
+    tipo = data.get("tipo", "manual")
+    
+    pagamento = {
+        "status": "ativo",
+        "data_inicio": now.isoformat(),
+        "data_vencimento": (now + timedelta(days=365)).isoformat(),
+        "tipo": tipo,
+        "valor": VALOR_PLANO_ANUAL,
+        "ultima_atualizacao": now.isoformat()
+    }
+    
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"pagamento": pagamento}}
+    )
+    return {"message": "Pagamento atualizado", "pagamento": pagamento}
+
+@api_router.put("/admin/users/{user_id}/cancelar-pagamento")
+async def cancelar_pagamento(user_id: str, admin_email: str = Depends(verify_admin)):
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"pagamento.status": "cancelado"}}
+    )
+    return {"message": "Pagamento cancelado"}
+
+@api_router.get("/admin/dashboard")
+async def get_admin_dashboard(admin_email: str = Depends(verify_admin)):
+    total_users = await db.users.count_documents({})
+    total_bikes = await db.bikes.count_documents({})
+    furtadas = await db.bikes.count_documents({"status": "Furtada"})
+    ativas = await db.bikes.count_documents({"status": "Ativa"})
+    
+    pgto_ativos = await db.users.count_documents({"pagamento.status": "ativo"})
+    pgto_pendentes = await db.users.count_documents({"$or": [{"pagamento": {"$exists": False}}, {"pagamento.status": "pendente"}]})
+    pgto_vencidos = await db.users.count_documents({"pagamento.status": "vencido"})
+    
+    return {
+        "total_users": total_users, "total_bikes": total_bikes,
+        "bikes_furtadas": furtadas, "bikes_ativas": ativas,
+        "pagamentos_ativos": pgto_ativos, "pagamentos_pendentes": pgto_pendentes + (total_users - pgto_ativos - pgto_vencidos),
+        "pagamentos_vencidos": pgto_vencidos,
+        "receita_mensal_estimada": pgto_ativos * (VALOR_PLANO_ANUAL / 12),
+    }
+
+@api_router.get("/admin/panel", response_class=HTMLResponse)
+async def admin_panel():
+    html_path = ROOT_DIR / "admin_panel.html"
+    if html_path.exists():
+        return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>Painel não encontrado</h1>", status_code=404)
 
 # ============ BIKE ROUTES ============
 
