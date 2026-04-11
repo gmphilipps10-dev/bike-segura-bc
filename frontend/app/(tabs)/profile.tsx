@@ -173,30 +173,25 @@ export default function ProfileScreen() {
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.profileHeader}>
-          <TouchableOpacity onPress={pickProfilePhoto} disabled={updatingPhoto}>
-            {updatingPhoto ? (
-              <View style={styles.avatar}>
-                <ActivityIndicator size="large" color="#FFC107" />
-              </View>
-            ) : user?.foto_perfil ? (
-              <View>
-                <Image source={{ uri: user.foto_perfil }} style={styles.avatarImage} />
-                <View style={styles.cameraBadge}>
-                  <Ionicons name="camera" size={16} color="#000" />
-                </View>
-              </View>
-            ) : (
-              <View>
-                <View style={styles.avatar}>
-                  <Ionicons name="person" size={48} color="#FFC107" />
-                </View>
-                <View style={styles.cameraBadge}>
-                  <Ionicons name="camera" size={16} color="#000" />
-                </View>
-              </View>
-            )}
+          {updatingPhoto ? (
+            <View style={styles.avatar}>
+              <ActivityIndicator size="large" color="#FFC107" />
+            </View>
+          ) : user?.foto_perfil ? (
+            <Image source={{ uri: user.foto_perfil }} style={styles.avatarImage} />
+          ) : (
+            <View style={styles.avatar}>
+              <Ionicons name="person" size={48} color="#FFC107" />
+            </View>
+          )}
+          <TouchableOpacity
+            style={styles.changePhotoButton}
+            onPress={pickProfilePhoto}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="camera" size={18} color="#000" />
+            <Text style={styles.changePhotoText}>Alterar Foto</Text>
           </TouchableOpacity>
-          <Text style={styles.photoHint}>Toque para alterar a foto</Text>
           <Text style={styles.userName}>{user?.nome_completo}</Text>
           <Text style={styles.userEmail}>{user?.email}</Text>
         </View>
@@ -338,7 +333,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#333',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
     borderWidth: 3,
     borderColor: '#FFC107',
   },
@@ -346,27 +341,24 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    marginBottom: 16,
+    marginBottom: 8,
     borderWidth: 3,
     borderColor: '#FFC107',
   },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: 16,
-    right: 0,
-    backgroundColor: '#FFC107',
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
+  changePhotoButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#000',
+    backgroundColor: '#FFC107',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    marginBottom: 16,
+    gap: 6,
   },
-  photoHint: {
-    fontSize: 12,
-    color: '#FFC107',
-    marginBottom: 12,
+  changePhotoText: {
+    color: '#000',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   userName: {
     fontSize: 22,
