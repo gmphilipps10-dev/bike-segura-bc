@@ -21,13 +21,13 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black" />
         <meta name="apple-mobile-web-app-title" content="Bike Segura BC" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
 
         {/* General */}
         <meta name="application-name" content="Bike Segura BC" />
         <meta name="description" content="Segurança e recuperação de bicicletas e veículos elétricos" />
-        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2" />
 
         <ScrollViewStyleReset />
         <style
