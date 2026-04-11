@@ -188,9 +188,14 @@ export default function BikeDetailsScreen() {
           <Ionicons name="arrow-back" size={24} color="#FFC107" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Detalhes</Text>
-        <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
-          <Ionicons name="trash" size={22} color="#F44336" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity onPress={() => router.push(`/edit-bike?id=${bike?.id}`)} style={styles.editButton}>
+            <Ionicons name="create-outline" size={22} color="#FFC107" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleDelete} style={styles.deleteButton}>
+            <Ionicons name="trash" size={22} color="#F44336" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
@@ -339,6 +344,8 @@ const styles = StyleSheet.create({
   backButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
   deleteButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  editButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 32 },
