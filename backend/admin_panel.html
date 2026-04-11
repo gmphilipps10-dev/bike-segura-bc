@@ -63,6 +63,8 @@
   .btn-pagar:hover { background: #388E3C; }
   .btn-cancelar { background: #F44336; color: #fff; }
   .btn-cancelar:hover { background: #C62828; }
+  .btn-historico { background: #2196F3; color: #fff; }
+  .btn-historico:hover { background: #1565C0; }
   
   .receita-card { background: linear-gradient(135deg, #1a1a00, #2a2a00); border: 2px solid #FFC107; border-radius: 12px; padding: 24px; margin: 0 24px 24px; display: flex; align-items: center; gap: 24px; }
   .receita-card .valor { font-size: 32px; font-weight: bold; color: #FFC107; }
@@ -75,12 +77,38 @@
   .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 50; }
   .modal-overlay.active { display: flex; }
   .modal { background: #1a1a1a; border: 2px solid #FFC107; border-radius: 16px; padding: 32px; max-width: 500px; width: 90%; }
-  .modal h3 { color: #FFC107; margin-bottom: 16px; }
+  .modal h3 { color: #FFC107; margin-bottom: 16px; font-size: 18px; }
   .modal p { color: #ccc; margin-bottom: 8px; font-size: 14px; }
   .modal .actions { display: flex; gap: 12px; margin-top: 24px; }
   .modal .actions button { flex: 1; padding: 12px; border-radius: 8px; border: none; font-size: 14px; font-weight: bold; cursor: pointer; }
   .modal .btn-confirm { background: #4CAF50; color: #fff; }
+  .modal .btn-confirm:hover { background: #388E3C; }
   .modal .btn-close { background: #333; color: #fff; }
+  .modal .btn-close:hover { background: #444; }
+  
+  /* Form fields inside modal */
+  .modal-field { margin-bottom: 16px; }
+  .modal-field label { display: block; color: #FFC107; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .modal-field input, .modal-field select { width: 100%; padding: 12px; border: 1px solid #333; border-radius: 8px; background: #000; color: #fff; font-size: 15px; }
+  .modal-field input::placeholder { color: #666; }
+  .modal-field input:focus, .modal-field select:focus { outline: none; border-color: #FFC107; }
+  .modal-field .hint { color: #666; font-size: 12px; margin-top: 4px; }
+  
+  /* History Modal */
+  .modal-lg { max-width: 700px; max-height: 80vh; overflow-y: auto; }
+  .history-list { list-style: none; padding: 0; }
+  .history-item { background: #000; border: 1px solid #333; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .history-item .h-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .history-item .h-date { color: #999; font-size: 13px; }
+  .history-item .h-action { font-weight: 600; font-size: 14px; }
+  .h-action.ativado { color: #4CAF50; }
+  .h-action.cancelado { color: #F44336; }
+  .history-item .h-details { display: flex; gap: 16px; flex-wrap: wrap; }
+  .history-item .h-detail { font-size: 13px; color: #ccc; }
+  .history-item .h-detail span { color: #FFC107; font-weight: 600; }
+  .history-empty { text-align: center; padding: 40px; color: #666; font-size: 15px; }
+  
+  .valor-display { color: #4CAF50; font-weight: bold; }
   
   @media (max-width: 768px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 16px; }
@@ -90,6 +118,7 @@
     .search-input { width: 100%; }
     .section-header { flex-direction: column; gap: 12px; align-items: flex-start; }
     .receita-card { margin: 0 16px 16px; flex-direction: column; text-align: center; }
+    .modal-lg { max-width: 95%; }
   }
 </style>
 </head>
@@ -156,6 +185,14 @@
       </div>
     </div>
 
+    <!-- RECEITA ANUAL -->
+    <div class="receita-card">
+      <div>
+        <div class="valor" id="receitaAnual">R$ 0,00</div>
+        <div class="desc">Receita Anual Total (planos ativos)</div>
+      </div>
+    </div>
+
     <!-- USERS TABLE -->
     <div class="section">
       <div class="section-header">
@@ -171,6 +208,7 @@
               <th>Cadastro</th>
               <th>Bikes</th>
               <th>Pagamento</th>
+              <th>Valor</th>
               <th>Vencimento</th>
               <th>Acoes</th>
             </tr>
@@ -182,14 +220,63 @@
   </div>
 </div>
 
-<!-- MODAL -->
-<div class="modal-overlay" id="modal">
+<!-- MODAL PAGAMENTO -->
+<div class="modal-overlay" id="modalPagamento">
   <div class="modal">
-    <h3 id="modalTitle">Confirmar</h3>
-    <p id="modalText"></p>
+    <h3 id="modalPagTitle">Registrar Pagamento</h3>
+    <p id="modalPagUser" style="color:#ccc; margin-bottom:16px;"></p>
+    
+    <div class="modal-field">
+      <label>Valor do Plano (R$)</label>
+      <input type="number" id="modalValor" placeholder="Ex: 49.90" step="0.01" min="0" value="49.90">
+      <div class="hint">Informe o valor conforme o plano escolhido pelo usuario</div>
+    </div>
+    
+    <div class="modal-field">
+      <label>Descricao do Plano</label>
+      <input type="text" id="modalDescricao" placeholder="Ex: Plano Anual Premium, Plano Basico...">
+    </div>
+    
+    <div class="modal-field">
+      <label>Tipo de Pagamento</label>
+      <select id="modalTipo">
+        <option value="pix">PIX</option>
+        <option value="cartao">Cartao de Credito</option>
+        <option value="boleto">Boleto</option>
+        <option value="dinheiro">Dinheiro</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="manual" selected>Manual</option>
+      </select>
+    </div>
+    
     <div class="actions">
-      <button class="btn-close" onclick="closeModal()">Cancelar</button>
-      <button class="btn-confirm" id="modalConfirm">Confirmar</button>
+      <button class="btn-close" onclick="closeModalPag()">Cancelar</button>
+      <button class="btn-confirm" id="modalPagConfirm">Confirmar Pagamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CANCELAR -->
+<div class="modal-overlay" id="modalCancelar">
+  <div class="modal">
+    <h3>Cancelar Pagamento</h3>
+    <p id="modalCancelText" style="color:#ccc;"></p>
+    <div class="actions">
+      <button class="btn-close" onclick="closeModalCancel()">Voltar</button>
+      <button class="btn-confirm" id="modalCancelConfirm" style="background:#F44336;">Confirmar Cancelamento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL HISTORICO -->
+<div class="modal-overlay" id="modalHistorico">
+  <div class="modal modal-lg">
+    <h3 id="historicoTitle">Historico de Pagamentos</h3>
+    <div id="historicoContent">
+      <div class="loading">Carregando historico...</div>
+    </div>
+    <div class="actions" style="margin-top:16px;">
+      <button class="btn-close" onclick="closeModalHistorico()" style="flex:1;">Fechar</button>
     </div>
   </div>
 </div>
@@ -229,7 +316,7 @@ async function doLogin() {
     const data = await res.json();
     token = data.access_token;
     
-    // Testar se e admin antes de mostrar dashboard
+    // Testar se e admin
     const testRes = await fetch(API + '/admin/dashboard', {
       headers: { 'Authorization': 'Bearer ' + token }
     });
@@ -300,7 +387,8 @@ async function showDashboard() {
     document.getElementById('pgtoAtivos').textContent = dash.pagamentos_ativos;
     document.getElementById('pgtoPendentes').textContent = dash.pagamentos_pendentes;
     document.getElementById('pgtoVencidos').textContent = dash.pagamentos_vencidos;
-    document.getElementById('receitaMensal').textContent = 'R$ ' + dash.receita_mensal_estimada.toFixed(2);
+    document.getElementById('receitaMensal').textContent = 'R$ ' + (dash.receita_mensal_estimada || 0).toFixed(2);
+    document.getElementById('receitaAnual').textContent = 'R$ ' + (dash.receita_anual_total || 0).toFixed(2);
     
     renderUsers(users);
     document.getElementById('loadingState').style.display = 'none';
@@ -316,6 +404,19 @@ function formatDate(dateStr) {
     const d = new Date(dateStr);
     return d.toLocaleDateString('pt-BR');
   } catch { return '-'; }
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  } catch { return '-'; }
+}
+
+function formatMoney(val) {
+  if (val === null || val === undefined) return 'R$ 0,00';
+  return 'R$ ' + parseFloat(val).toFixed(2).replace('.', ',');
 }
 
 function getStatusClass(status) {
@@ -338,12 +439,27 @@ function getStatusLabel(status) {
   }
 }
 
+function getActionLabel(acao) {
+  switch (acao) {
+    case 'pagamento_ativado': return 'Pagamento Ativado';
+    case 'pagamento_cancelado': return 'Pagamento Cancelado';
+    default: return acao;
+  }
+}
+
+function getActionClass(acao) {
+  if (acao === 'pagamento_ativado') return 'ativado';
+  if (acao === 'pagamento_cancelado') return 'cancelado';
+  return '';
+}
+
 function renderUsers(users) {
   const tbody = document.getElementById('usersTable');
   tbody.innerHTML = users.map(u => {
     const pgto = u.pagamento || {};
     const status = pgto.status || 'pendente';
     const isAtivo = status === 'ativo';
+    const valor = pgto.valor || 0;
     
     return `<tr>
       <td><strong>${u.nome}</strong><br><small style="color:#999">${u.email}</small></td>
@@ -351,10 +467,12 @@ function renderUsers(users) {
       <td>${formatDate(u.data_inicio)}</td>
       <td>${u.total_bikes} <small style="color:#F44336">${u.bikes_furtadas > 0 ? '(' + u.bikes_furtadas + ' furtada' + (u.bikes_furtadas > 1 ? 's' : '') + ')' : ''}</small></td>
       <td><span class="status-badge ${getStatusClass(status)}">${getStatusLabel(status)}</span></td>
+      <td><span class="valor-display">${isAtivo ? formatMoney(valor) : '-'}</span>${pgto.descricao ? '<br><small style="color:#999">' + pgto.descricao + '</small>' : ''}</td>
       <td>${isAtivo ? formatDate(pgto.data_vencimento) : '-'}</td>
-      <td>
-        ${!isAtivo ? `<button class="action-btn btn-pagar" onclick="marcarPago('${u.id}', '${u.nome}')">Marcar Pago</button>` : ''}
-        ${isAtivo ? `<button class="action-btn btn-cancelar" onclick="cancelarPgto('${u.id}', '${u.nome}')">Cancelar</button>` : ''}
+      <td style="white-space:nowrap;">
+        ${!isAtivo ? `<button class="action-btn btn-pagar" onclick="abrirModalPag('${u.id}', '${u.nome.replace(/'/g, "\\'")}')">Marcar Pago</button>` : ''}
+        ${isAtivo ? `<button class="action-btn btn-cancelar" onclick="abrirModalCancel('${u.id}', '${u.nome.replace(/'/g, "\\'")}')">Cancelar</button>` : ''}
+        <button class="action-btn btn-historico" onclick="abrirHistorico('${u.id}', '${u.nome.replace(/'/g, "\\'")}')">Historico</button>
       </td>
     </tr>`;
   }).join('');
@@ -368,41 +486,126 @@ function filterUsers(query) {
   renderUsers(filtered);
 }
 
-function closeModal() {
-  document.getElementById('modal').classList.remove('active');
-}
+// ============ MODAL PAGAMENTO ============
 
-function marcarPago(userId, nome) {
-  document.getElementById('modalTitle').textContent = 'Confirmar Pagamento';
-  document.getElementById('modalText').textContent = `Marcar pagamento de "${nome}" como ATIVO por 1 ano?`;
-  document.getElementById('modalConfirm').onclick = async () => {
-    closeModal();
+function abrirModalPag(userId, nome) {
+  document.getElementById('modalPagTitle').textContent = 'Registrar Pagamento';
+  document.getElementById('modalPagUser').textContent = 'Usuario: ' + nome;
+  document.getElementById('modalValor').value = '49.90';
+  document.getElementById('modalDescricao').value = '';
+  document.getElementById('modalTipo').value = 'manual';
+  
+  document.getElementById('modalPagConfirm').onclick = async () => {
+    const valor = parseFloat(document.getElementById('modalValor').value) || 0;
+    const descricao = document.getElementById('modalDescricao').value.trim();
+    const tipo = document.getElementById('modalTipo').value;
+    
+    if (valor <= 0) {
+      alert('Informe um valor valido para o plano.');
+      return;
+    }
+    
+    closeModalPag();
     try {
-      await fetch(API + `/admin/users/${userId}/pagamento`, {
+      const res = await fetch(API + `/admin/users/${userId}/pagamento`, {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo: 'manual' })
+        body: JSON.stringify({ tipo: tipo, valor: valor, descricao: descricao })
       });
+      if (!res.ok) {
+        const err = await res.json();
+        alert('Erro: ' + (err.detail || 'Falha ao atualizar'));
+        return;
+      }
       showDashboard();
     } catch (e) { alert('Erro: ' + e.message); }
   };
-  document.getElementById('modal').classList.add('active');
+  
+  document.getElementById('modalPagamento').classList.add('active');
 }
 
-function cancelarPgto(userId, nome) {
-  document.getElementById('modalTitle').textContent = 'Cancelar Pagamento';
-  document.getElementById('modalText').textContent = `Cancelar pagamento de "${nome}"?`;
-  document.getElementById('modalConfirm').onclick = async () => {
-    closeModal();
+function closeModalPag() {
+  document.getElementById('modalPagamento').classList.remove('active');
+}
+
+// ============ MODAL CANCELAR ============
+
+function abrirModalCancel(userId, nome) {
+  document.getElementById('modalCancelText').textContent = 'Tem certeza que deseja cancelar o pagamento de "' + nome + '"?';
+  
+  document.getElementById('modalCancelConfirm').onclick = async () => {
+    closeModalCancel();
     try {
-      await fetch(API + `/admin/users/${userId}/cancelar-pagamento`, {
+      const res = await fetch(API + `/admin/users/${userId}/cancelar-pagamento`, {
         method: 'PUT',
         headers: { 'Authorization': 'Bearer ' + token }
       });
+      if (!res.ok) {
+        const err = await res.json();
+        alert('Erro: ' + (err.detail || 'Falha ao cancelar'));
+        return;
+      }
       showDashboard();
     } catch (e) { alert('Erro: ' + e.message); }
   };
-  document.getElementById('modal').classList.add('active');
+  
+  document.getElementById('modalCancelar').classList.add('active');
+}
+
+function closeModalCancel() {
+  document.getElementById('modalCancelar').classList.remove('active');
+}
+
+// ============ MODAL HISTORICO ============
+
+async function abrirHistorico(userId, nome) {
+  document.getElementById('historicoTitle').textContent = 'Historico de Pagamentos - ' + nome;
+  document.getElementById('historicoContent').innerHTML = '<div class="loading">Carregando historico...</div>';
+  document.getElementById('modalHistorico').classList.add('active');
+  
+  try {
+    const res = await fetch(API + `/admin/users/${userId}/historico-pagamentos`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (!res.ok) {
+      document.getElementById('historicoContent').innerHTML = '<div class="history-empty">Erro ao carregar historico</div>';
+      return;
+    }
+    
+    const historico = await res.json();
+    
+    if (historico.length === 0) {
+      document.getElementById('historicoContent').innerHTML = '<div class="history-empty">Nenhum registro de pagamento encontrado para este usuario.</div>';
+      return;
+    }
+    
+    let html = '<ul class="history-list">';
+    historico.forEach(h => {
+      html += `
+        <li class="history-item">
+          <div class="h-header">
+            <span class="h-action ${getActionClass(h.acao)}">${getActionLabel(h.acao)}</span>
+            <span class="h-date">${formatDateTime(h.data)}</span>
+          </div>
+          <div class="h-details">
+            <div class="h-detail">Valor: <span>${formatMoney(h.valor)}</span></div>
+            <div class="h-detail">Tipo: <span>${h.tipo || '-'}</span></div>
+            ${h.descricao ? `<div class="h-detail">Plano: <span>${h.descricao}</span></div>` : ''}
+            <div class="h-detail">Status: <span>${h.status_anterior} → ${h.status_novo}</span></div>
+          </div>
+        </li>`;
+    });
+    html += '</ul>';
+    
+    document.getElementById('historicoContent').innerHTML = html;
+  } catch (e) {
+    document.getElementById('historicoContent').innerHTML = '<div class="history-empty">Erro: ' + e.message + '</div>';
+  }
+}
+
+function closeModalHistorico() {
+  document.getElementById('modalHistorico').classList.remove('active');
 }
 
 // Auto-login if token exists

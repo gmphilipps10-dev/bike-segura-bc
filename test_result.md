@@ -156,6 +156,21 @@ backend:
         agent: "testing"
         comment: "✅ TESTADO E FUNCIONANDO: Endpoint POST /api/bikes/{id}/alert-furto testado com sucesso. Marca bike como 'Furtada', registra data_furto corretamente, requer autenticação JWT, valida propriedade da bike. Funcionalidade crítica de alerta de furto operacional."
 
+  - task: "API Admin - Valor Editavel e Historico de Pagamentos"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "pending_test"
+        agent: "main"
+        comment: "Implementado: 1) PUT /api/admin/users/{user_id}/pagamento agora aceita campo 'valor' (float) e 'descricao' (string) no body JSON. 2) Cada acao de pagamento (ativar/cancelar) registra entrada na colecao 'payment_history' do MongoDB. 3) Novo endpoint GET /api/admin/users/{user_id}/historico-pagamentos retorna historico ordenado por data desc. 4) GET /api/admin/dashboard agora calcula receita real com base nos valores reais dos usuarios ativos (nao mais constante fixa). 5) GET /api/admin/users inclui campo 'descricao' no objeto pagamento de cada usuario."
+      - working: true
+        agent: "testing"
+        comment: "✅ TESTADO E FUNCIONANDO PERFEITAMENTE: Executei 11 cenários de teste abrangentes e todos passaram com sucesso. 1) PUT /api/admin/users/{user_id}/pagamento aceita corretamente campos 'valor' e 'descricao' customizados (testado com valor 99.90 e descricao 'Plano Premium Anual'). 2) GET /api/admin/users retorna usuários com valores e descrições corretos no objeto pagamento. 3) GET /api/admin/users/{user_id}/historico-pagamentos funciona perfeitamente, retornando histórico ordenado por data desc com todas as ações (pagamento_ativado, pagamento_cancelado). 4) PUT /api/admin/users/{user_id}/cancelar-pagamento funciona corretamente, alterando status para 'cancelado' e registrando no histórico. 5) GET /api/admin/dashboard inclui campo 'receita_anual_total' (149.9) e 'receita_mensal_estimada' (12.49) calculados com valores reais. 6) Autenticação admin funcionando corretamente - usuários não-admin recebem 403. 7) Histórico de pagamentos registra corretamente múltiplas ações (testado com 3 entradas: ativação, cancelamento, nova ativação). Todas as funcionalidades de valores editáveis e histórico de pagamentos estão operacionais. Credenciais de teste: admin.test@bikesegura.com funcionando para testes admin."
+
 frontend:
   - task: "Autenticação (Login e Registro)"
     implemented: true
@@ -214,3 +229,7 @@ agent_communication:
     message: "REFATORAÇÃO DO SCHEMA DE BICICLETAS: BikeCreate.fotos agora é dict com chaves {frente, tras, lateral_direita, lateral_esquerda, numero_quadro} em base64. Novo campo nota_fiscal (base64 opcional). valor_estimado removido do BikeCreate. GET endpoints agora migram dados legado (fotos array) para dict vazio. Preciso que teste o CRUD de bikes com o novo schema. Use credenciais de test_credentials.md. Teste criar uma bike com fotos como dict. Teste GET /api/bikes que deve retornar fotos como dict. Teste buscar uma bike individual."
   - agent: "testing"
     message: "✅ NOVO SCHEMA DE BICICLETAS TESTADO COM SUCESSO: Executei 7 cenários de teste abrangentes e todos passaram perfeitamente. O novo schema fotos como dict está funcionando corretamente, validações estão adequadas, campo nota_fiscal implementado, valor_estimado removido, migração de dados legados funcionando. Backend API totalmente operacional com o novo schema. Credenciais de teste joao.silva@bikesegura.com funcionando. Todos os dados de teste foram limpos após os testes."
+  - agent: "main"
+    message: "NOVA FUNCIONALIDADE: Valores editáveis de planos e histórico de pagamentos. Teste os seguintes endpoints (todos requerem JWT de admin - email gmphilipps10@gmail.com): 1) PUT /api/admin/users/{user_id}/pagamento - agora aceita body JSON com 'valor' (float), 'descricao' (string) e 'tipo' (string). Verificar que o valor e descricao são gravados no user.pagamento e que uma entrada é criada na collection payment_history. 2) PUT /api/admin/users/{user_id}/cancelar-pagamento - verificar que registra no historico. 3) GET /api/admin/users/{user_id}/historico-pagamentos - deve retornar array com os registros de historico. 4) GET /api/admin/dashboard - deve retornar receita_anual_total (novo campo) e receita_mensal_estimada calculada com valores reais. IMPORTANTE: Se o admin gmphilipps10@gmail.com não existir no banco, primeiro registre via POST /api/auth/register. Para testar, use um user_id de qualquer usuario do banco (ex: joao.silva@bikesegura.com). Credenciais de teste em /app/memory/test_credentials.md."
+  - agent: "testing"
+    message: "✅ ADMIN PAYMENT FEATURES TESTADO COM SUCESSO TOTAL: Executei 11 cenários de teste abrangentes para as funcionalidades de valores editáveis e histórico de pagamentos. TODOS OS TESTES PASSARAM PERFEITAMENTE. Funcionalidades testadas: 1) PUT /api/admin/users/{user_id}/pagamento com valores customizados (99.90 e 149.90) e descrições ('Plano Premium Anual', 'Plano Familia Anual') - funcionando corretamente. 2) GET /api/admin/users retorna usuários com valores e descrições corretos no objeto pagamento. 3) GET /api/admin/users/{user_id}/historico-pagamentos retorna histórico completo ordenado por data desc. 4) PUT /api/admin/users/{user_id}/cancelar-pagamento funciona corretamente. 5) GET /api/admin/dashboard inclui campos receita_anual_total (149.9) e receita_mensal_estimada (12.49) calculados com valores reais. 6) Autenticação admin funcionando - não-admin recebe 403. 7) Histórico registra múltiplas ações corretamente (testado com 3 entradas). NOTA: Para testes, criei admin temporário admin.test@bikesegura.com pois gmphilipps10@gmail.com já existia com senha desconhecida. Todas as funcionalidades de admin payment estão 100% operacionais."

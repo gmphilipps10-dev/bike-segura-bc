@@ -261,7 +261,7 @@ async def update_foto_perfil(data: UpdateFotoPerfil, current_user: dict = Depend
 # ============ ADMIN ROUTES ============
 
 ADMIN_EMAIL = "gmphilipps10@gmail.com"
-VALOR_PLANO_ANUAL = 49.90  # Valor anual do plano
+VALOR_PLANO_ANUAL_PADRAO = 49.90  # Valor padrão do plano anual
 
 async def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
@@ -346,7 +346,8 @@ async def get_admin_users(admin_email: str = Depends(verify_admin)):
                 "data_inicio": pagamento.get("data_inicio"),
                 "data_vencimento": data_venc,
                 "tipo": pagamento.get("tipo", "pendente"),
-                "valor": pagamento.get("valor", VALOR_PLANO_ANUAL),
+                "valor": pagamento.get("valor", VALOR_PLANO_ANUAL_PADRAO),
+                "descricao": pagamento.get("descricao", ""),
             }
         })
     return users
@@ -362,13 +363,22 @@ async def update_user_pagamento(user_id: str, data: dict, admin_email: str = Dep
     
     now = datetime.utcnow()
     tipo = data.get("tipo", "manual")
+    valor = data.get("valor", VALOR_PLANO_ANUAL_PADRAO)
+    descricao = data.get("descricao", "")
+    
+    # Tentar converter valor para float
+    try:
+        valor = float(valor)
+    except (ValueError, TypeError):
+        valor = VALOR_PLANO_ANUAL_PADRAO
     
     pagamento = {
         "status": "ativo",
         "data_inicio": now.isoformat(),
         "data_vencimento": (now + timedelta(days=365)).isoformat(),
         "tipo": tipo,
-        "valor": VALOR_PLANO_ANUAL,
+        "valor": valor,
+        "descricao": descricao,
         "ultima_atualizacao": now.isoformat()
     }
     
@@ -376,14 +386,55 @@ async def update_user_pagamento(user_id: str, data: dict, admin_email: str = Dep
         {"_id": ObjectId(user_id)},
         {"$set": {"pagamento": pagamento}}
     )
+    
+    # Registrar no historico de pagamentos
+    historico_entry = {
+        "user_id": user_id,
+        "user_nome": user.get("nome_completo", ""),
+        "user_email": user.get("email", ""),
+        "acao": "pagamento_ativado",
+        "valor": valor,
+        "tipo": tipo,
+        "descricao": descricao,
+        "status_anterior": user.get("pagamento", {}).get("status", "pendente"),
+        "status_novo": "ativo",
+        "data": now.isoformat(),
+        "admin_email": admin_email
+    }
+    await db.payment_history.insert_one(historico_entry)
+    
     return {"message": "Pagamento atualizado", "pagamento": pagamento}
 
 @api_router.put("/admin/users/{user_id}/cancelar-pagamento")
 async def cancelar_pagamento(user_id: str, admin_email: str = Depends(verify_admin)):
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario nao encontrado")
+    
+    now = datetime.utcnow()
+    pagamento_atual = user.get("pagamento", {})
+    
     await db.users.update_one(
         {"_id": ObjectId(user_id)},
-        {"$set": {"pagamento.status": "cancelado"}}
+        {"$set": {"pagamento.status": "cancelado", "pagamento.ultima_atualizacao": now.isoformat()}}
     )
+    
+    # Registrar no historico
+    historico_entry = {
+        "user_id": user_id,
+        "user_nome": user.get("nome_completo", ""),
+        "user_email": user.get("email", ""),
+        "acao": "pagamento_cancelado",
+        "valor": pagamento_atual.get("valor", 0),
+        "tipo": pagamento_atual.get("tipo", ""),
+        "descricao": "Cancelamento pelo administrador",
+        "status_anterior": pagamento_atual.get("status", "pendente"),
+        "status_novo": "cancelado",
+        "data": now.isoformat(),
+        "admin_email": admin_email
+    }
+    await db.payment_history.insert_one(historico_entry)
+    
     return {"message": "Pagamento cancelado"}
 
 @api_router.get("/admin/dashboard")
@@ -397,13 +448,33 @@ async def get_admin_dashboard(admin_email: str = Depends(verify_admin)):
     pgto_pendentes = await db.users.count_documents({"$or": [{"pagamento": {"$exists": False}}, {"pagamento.status": "pendente"}]})
     pgto_vencidos = await db.users.count_documents({"pagamento.status": "vencido"})
     
+    # Calcular receita real a partir dos valores dos usuarios ativos
+    receita_total_anual = 0
+    async for u in db.users.find({"pagamento.status": "ativo"}):
+        valor = u.get("pagamento", {}).get("valor", VALOR_PLANO_ANUAL_PADRAO)
+        try:
+            receita_total_anual += float(valor)
+        except (ValueError, TypeError):
+            receita_total_anual += VALOR_PLANO_ANUAL_PADRAO
+    
     return {
         "total_users": total_users, "total_bikes": total_bikes,
         "bikes_furtadas": furtadas, "bikes_ativas": ativas,
         "pagamentos_ativos": pgto_ativos, "pagamentos_pendentes": pgto_pendentes + (total_users - pgto_ativos - pgto_vencidos),
         "pagamentos_vencidos": pgto_vencidos,
-        "receita_mensal_estimada": pgto_ativos * (VALOR_PLANO_ANUAL / 12),
+        "receita_mensal_estimada": receita_total_anual / 12,
+        "receita_anual_total": receita_total_anual,
     }
+
+@api_router.get("/admin/users/{user_id}/historico-pagamentos")
+async def get_historico_pagamentos(user_id: str, admin_email: str = Depends(verify_admin)):
+    historico = []
+    cursor = db.payment_history.find({"user_id": user_id}).sort("data", -1)
+    async for entry in cursor:
+        entry["id"] = str(entry["_id"])
+        del entry["_id"]
+        historico.append(entry)
+    return historico
 
 @api_router.get("/admin/panel", response_class=HTMLResponse)
 async def admin_panel():
