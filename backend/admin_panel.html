@@ -196,26 +196,71 @@
 
 <script>
 const API = '/api';
-let token = localStorage.getItem('admin_token');
+let token = null;
 let allUsers = [];
 
+// Limpar token antigo ao abrir a pagina
+localStorage.removeItem('admin_token');
+
 async function doLogin() {
-  const email = document.getElementById('loginEmail').value;
+  const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   const errorEl = document.getElementById('loginError');
   errorEl.style.display = 'none';
   
+  if (!email || !password) {
+    errorEl.textContent = 'Preencha email e senha';
+    errorEl.style.display = 'block';
+    return;
+  }
+  
   try {
     const res = await fetch(API + '/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, senha: password })
+      body: JSON.stringify({ email: email, senha: password })
     });
-    if (!res.ok) { errorEl.style.display = 'block'; return; }
+    
+    if (!res.ok) {
+      errorEl.textContent = 'Email ou senha incorretos';
+      errorEl.style.display = 'block';
+      return;
+    }
+    
     const data = await res.json();
     token = data.access_token;
+    
+    // Testar se e admin antes de mostrar dashboard
+    const testRes = await fetch(API + '/admin/dashboard', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    
+    if (testRes.status === 403) {
+      errorEl.textContent = 'Este email nao tem permissao de administrador';
+      errorEl.style.display = 'block';
+      token = null;
+      return;
+    }
+    
+    if (testRes.status === 401) {
+      errorEl.textContent = 'Erro de autenticacao. Tente novamente';
+      errorEl.style.display = 'block';
+      token = null;
+      return;
+    }
+    
+    if (!testRes.ok) {
+      errorEl.textContent = 'Erro ao acessar painel: ' + testRes.status;
+      errorEl.style.display = 'block';
+      token = null;
+      return;
+    }
+    
     localStorage.setItem('admin_token', token);
     showDashboard();
-  } catch (e) { errorEl.style.display = 'block'; }
+  } catch (e) {
+    errorEl.textContent = 'Erro de conexao: ' + e.message;
+    errorEl.style.display = 'block';
+  }
 }
 
 function doLogout() {
@@ -229,6 +274,7 @@ async function showDashboard() {
   document.getElementById('loginOverlay').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   document.getElementById('loadingState').style.display = 'block';
+  document.getElementById('loadingState').textContent = 'Carregando dados...';
   document.getElementById('content').style.display = 'none';
   
   try {
@@ -238,8 +284,9 @@ async function showDashboard() {
       fetch(API + '/admin/users', { headers })
     ]);
     
-    if (dashRes.status === 401 || dashRes.status === 403 || usersRes.status === 401 || usersRes.status === 403) {
-      doLogout(); return;
+    if (dashRes.status === 401 || dashRes.status === 403) {
+      doLogout();
+      return;
     }
     
     const dash = await dashRes.json();
@@ -259,8 +306,7 @@ async function showDashboard() {
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('content').style.display = 'block';
   } catch (e) {
-    console.error(e);
-    document.getElementById('loadingState').textContent = 'Erro ao carregar dados';
+    document.getElementById('loadingState').textContent = 'Erro: ' + e.message;
   }
 }
 

@@ -266,8 +266,18 @@ VALOR_PLANO_ANUAL = 49.90  # Valor anual do plano
 async def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        email = payload.get("sub")
-        if email != ADMIN_EMAIL:
+        user_id = payload.get("sub")
+        if not user_id:
+            raise HTTPException(status_code=401, detail="Token invalido")
+        
+        user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=401, detail="Usuario nao encontrado")
+        
+        email = user.get("email", "").strip().lower()
+        admin = ADMIN_EMAIL.strip().lower()
+        
+        if email != admin:
             raise HTTPException(status_code=403, detail="Acesso restrito")
         return email
     except JWTError:
