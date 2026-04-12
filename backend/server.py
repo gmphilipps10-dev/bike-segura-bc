@@ -325,7 +325,7 @@ async def get_admin_users(admin_email: str = Depends(verify_admin)):
     async for doc in db.bikes.aggregate(pipeline):
         bike_counts[doc["_id"]] = {"total": doc["total"], "furtadas": doc["furtadas"]}
     
-    users_cursor = db.users.find({}).sort("created_at", -1).limit(500)
+    users_cursor = db.users.find({}).sort("created_at", -1)
     users = []
     async for u in users_cursor:
         user_id = str(u["_id"])
