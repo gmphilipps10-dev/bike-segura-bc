@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Bike Segura BC" />
+  <meta name="description" content="Seguranca e recuperacao de bicicletas" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+  <title>Bike Segura BC</title>
+  <style>
+    body{margin:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+    #app-loading{position:fixed;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;}
+    #app-loading img{width:200px;height:auto;margin-bottom:24px;}
+    .spinner{width:40px;height:40px;border:3px solid #333;border-top:3px solid #FFC107;border-radius:50%;animation:spin 1s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+  </style>
+</head>
+<body>
+  <div id="app-loading">
+    <img src="/logo.jpg" alt="Bike Segura BC" />
+    <div class="spinner"></div>
+  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    var checkReady=setInterval(function(){var r=document.getElementById('root');if(r&&r.children.length>0){var l=document.getElementById('app-loading');if(l)l.style.display='none';clearInterval(checkReady);}},200);
+    setTimeout(function(){var l=document.getElementById('app-loading');if(l)l.style.display='none';},10000);
+  </script>
+</body>
+</html>
