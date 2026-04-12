@@ -9,6 +9,7 @@
     "start": "yarn build && npx serve dist -l 3000 -s --no-clipboard"
   },
   "dependencies": {
+    "expo": "^55.0.14",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",

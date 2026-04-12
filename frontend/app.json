@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "name": "Bike Segura BC",
+    "slug": "bike-segura-bc",
+    "version": "1.0.0",
+    "platforms": ["web"],
+    "web": {
+      "bundler": "metro",
+      "output": "static"
+    }
+  }
+}
