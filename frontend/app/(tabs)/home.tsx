@@ -151,14 +151,6 @@ export default function HomeScreen() {
               <Text style={styles.statLabel}>Furtadas</Text>
             </View>
           )}
-
-          {offline > 0 && furtadas === 0 && (
-            <View style={styles.statCard}>
-              <Ionicons name="cloud-offline" size={28} color="#888" />
-              <Text style={styles.statNumber}>{offline}</Text>
-              <Text style={styles.statLabel}>Offline</Text>
-            </View>
-          )}
         </View>
 
         {/* Cadastrar primeira bike */}
