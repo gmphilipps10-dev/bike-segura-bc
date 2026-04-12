@@ -59,9 +59,8 @@ export default function HomeScreen() {
   };
 
   const totalBikes = bikes.length;
-  const monitorando = bikes.filter((b) => b.status === 'Ativa' && isOnline(b.ultima_atualizacao)).length;
+  const monitorando = bikes.filter((b) => b.status === 'Ativa').length;
   const furtadas = bikes.filter((b) => b.status === 'Furtada').length;
-  const offline = bikes.filter((b) => b.status !== 'Furtada' && !isOnline(b.ultima_atualizacao)).length;
 
   const handleAlertaFurto = () => {
     const bikesAtivas = bikes.filter((b) => b.status === 'Ativa');

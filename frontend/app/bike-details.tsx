@@ -53,10 +53,9 @@ const getStatusConfig = (status: string, lastUpdate?: string) => {
     case 'Furtada':
       return { color: '#F44336', text: 'Furtada (rastreamento ativo)', icon: 'alert-circle' as const };
     case 'Ativa':
-      if (isOnline(lastUpdate)) return { color: '#4CAF50', text: 'Ativa (monitorando)', icon: 'shield-checkmark' as const };
-      return { color: '#888', text: 'Sem sinal', icon: 'cloud-offline' as const };
+      return { color: '#4CAF50', text: 'Ativa (monitorando)', icon: 'shield-checkmark' as const };
     default:
-      return { color: '#888', text: 'Sem sinal', icon: 'cloud-offline' as const };
+      return { color: '#4CAF50', text: 'Ativa', icon: 'shield-checkmark' as const };
   }
 };
 
