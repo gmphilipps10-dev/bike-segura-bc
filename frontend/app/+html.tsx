@@ -50,7 +50,66 @@ export default function Root({ children }: PropsWithChildren) {
           backgroundColor: "#000000",
         }}
       >
+        {/* Loading Screen - aparece enquanto o React carrega */}
+        <div
+          id="app-loading"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "#000000",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+          }}
+        >
+          <img
+            src="/logo.jpg"
+            alt="Bike Segura BC"
+            style={{ width: "200px", height: "auto", marginBottom: "24px" }}
+          />
+          <div
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "3px solid #333",
+              borderTop: "3px solid #FFC107",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+            }}
+          />
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `@keyframes spin { to { transform: rotate(360deg); } }`,
+            }}
+          />
+        </div>
+
         {children}
+
+        {/* Esconder loading quando React renderizar */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              var checkReady = setInterval(function() {
+                var root = document.getElementById('root');
+                if (root && root.children.length > 1) {
+                  var loader = document.getElementById('app-loading');
+                  if (loader) loader.style.display = 'none';
+                  clearInterval(checkReady);
+                }
+              }, 300);
+              setTimeout(function() {
+                var loader = document.getElementById('app-loading');
+                if (loader) loader.style.display = 'none';
+              }, 15000);
+            `,
+          }}
+        />
 
         {/* PWA Install Prompt Script */}
         <script
