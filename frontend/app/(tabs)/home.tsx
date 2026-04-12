@@ -31,7 +31,7 @@ export default function HomeScreen() {
   const [bikes, setBikes] = useState<Bike[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [alertStep, setAlertStep] = useState<'none' | 'select' | 'confirm'>('none');
+  const [alertStep, setAlertStep] = useState<'none' | 'select' | 'confirm' | 'no-bikes'>('none');
   const [selectedBike, setSelectedBike] = useState<Bike | null>(null);
   const [alertLoading, setAlertLoading] = useState(false);
 
@@ -65,7 +65,9 @@ export default function HomeScreen() {
   const handleAlertaFurto = () => {
     const bikesAtivas = bikes.filter((b) => b.status === 'Ativa');
     if (bikesAtivas.length === 0) {
-      Alert.alert('Sem bikes ativas', 'Nenhuma bicicleta ativa para acionar alerta.');
+      // Sem bikes ativas - mostrar no modal ao inves de Alert.alert
+      setSelectedBike(null);
+      setAlertStep('no-bikes');
       return;
     }
     if (bikesAtivas.length === 1) {
@@ -256,6 +258,19 @@ export default function HomeScreen() {
       {alertStep !== 'none' && (
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
+            {alertStep === 'no-bikes' && (
+              <>
+                <Ionicons name="information-circle" size={40} color="#FFC107" style={{ alignSelf: 'center' }} />
+                <Text style={styles.modalTitle}>Sem bikes ativas</Text>
+                <Text style={styles.modalDesc}>
+                  Todas as suas bicicletas ja estao marcadas como furtadas. Para acionar um novo alerta, primeiro marque uma bike como recuperada na tela de detalhes.
+                </Text>
+                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => { setAlertStep('none'); }}>
+                  <Text style={styles.modalCancelText}>Entendi</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
             {alertStep === 'select' && (
               <>
                 <Ionicons name="warning" size={32} color="#F44336" style={{ alignSelf: 'center' }} />
