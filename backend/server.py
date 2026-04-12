@@ -313,12 +313,23 @@ async def get_admin_stats(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/admin/users")
 async def get_admin_users(admin_email: str = Depends(verify_admin)):
-    users_cursor = db.users.find({}).sort("created_at", -1)
+    # Buscar contagem de bikes por usuario em uma unica query
+    bike_counts = {}
+    pipeline = [
+        {"$group": {
+            "_id": "$proprietario_id",
+            "total": {"$sum": 1},
+            "furtadas": {"$sum": {"$cond": [{"$eq": ["$status", "Furtada"]}, 1, 0]}}
+        }}
+    ]
+    async for doc in db.bikes.aggregate(pipeline):
+        bike_counts[doc["_id"]] = {"total": doc["total"], "furtadas": doc["furtadas"]}
+    
+    users_cursor = db.users.find({}).sort("created_at", -1).limit(500)
     users = []
     async for u in users_cursor:
         user_id = str(u["_id"])
-        bike_count = await db.bikes.count_documents({"proprietario_id": user_id})
-        bikes_furtadas = await db.bikes.count_documents({"proprietario_id": user_id, "status": "Furtada"})
+        counts = bike_counts.get(user_id, {"total": 0, "furtadas": 0})
         
         pagamento = u.get("pagamento", {})
         status_pgto = pagamento.get("status", "pendente")
@@ -339,8 +350,8 @@ async def get_admin_users(admin_email: str = Depends(verify_admin)):
             "cpf": u.get("cpf", ""),
             "telefone": u.get("telefone", ""),
             "data_inicio": u.get("created_at", ""),
-            "total_bikes": bike_count,
-            "bikes_furtadas": bikes_furtadas,
+            "total_bikes": counts["total"],
+            "bikes_furtadas": counts["furtadas"],
             "pagamento": {
                 "status": status_pgto,
                 "data_inicio": pagamento.get("data_inicio"),
@@ -450,7 +461,7 @@ async def get_admin_dashboard(admin_email: str = Depends(verify_admin)):
     
     # Calcular receita real a partir dos valores dos usuarios ativos
     receita_total_anual = 0
-    async for u in db.users.find({"pagamento.status": "ativo"}):
+    async for u in db.users.find({"pagamento.status": "ativo"}, {"pagamento.valor": 1}):
         valor = u.get("pagamento", {}).get("valor", VALOR_PLANO_ANUAL_PADRAO)
         try:
             receita_total_anual += float(valor)
