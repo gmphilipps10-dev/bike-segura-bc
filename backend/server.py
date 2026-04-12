@@ -1,6 +1,7 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -735,22 +736,17 @@ async def recuperar_bike(bike_id: str, current_user: dict = Depends(get_current_
 app.include_router(api_router)
 
 # Health check endpoints for Kubernetes
-@app.get("/")
+@api_router.get("/status")
 async def root():
-    """Root endpoint for Kubernetes health checks"""
+    """Root endpoint for health checks"""
     return {"status": "online", "app": "BIKE SEGURA BC", "version": "1.0.0"}
 
-@app.get("/health")
+@api_router.get("/health")
 async def health_check():
     """Dedicated health check endpoint"""
     try:
-        # Test MongoDB connection
         await db.command("ping")
-        return {
-            "status": "healthy",
-            "database": "connected",
-            "app": "BIKE SEGURA BC"
-        }
+        return {"status": "healthy", "database": "connected", "app": "BIKE SEGURA BC"}
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
         raise HTTPException(status_code=503, detail="Service unavailable")
@@ -779,3 +775,42 @@ logger = logging.getLogger(__name__)
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+# ============ SERVE FRONTEND STATIC FILES ============
+# Serve PWA static files (built Vite app)
+STATIC_DIR = ROOT_DIR / "static_frontend"
+if STATIC_DIR.exists():
+    # Serve static assets (js, css, images, manifest, sw)
+    app.mount("/assets", StaticFiles(directory=str(STATIC_DIR / "assets")), name="static-assets")
+
+    @app.get("/manifest.json")
+    async def serve_manifest():
+        return FileResponse(str(STATIC_DIR / "manifest.json"), media_type="application/json")
+
+    @app.get("/sw.js")
+    async def serve_sw():
+        return FileResponse(str(STATIC_DIR / "sw.js"), media_type="application/javascript")
+
+    @app.get("/logo.jpg")
+    async def serve_logo():
+        return FileResponse(str(STATIC_DIR / "logo.jpg"), media_type="image/jpeg")
+
+    @app.get("/icon-192.png")
+    async def serve_icon192():
+        return FileResponse(str(STATIC_DIR / "icon-192.png"), media_type="image/png")
+
+    @app.get("/icon-512.png")
+    async def serve_icon512():
+        return FileResponse(str(STATIC_DIR / "icon-512.png"), media_type="image/png")
+
+    @app.get("/apple-touch-icon.png")
+    async def serve_apple_icon():
+        return FileResponse(str(STATIC_DIR / "apple-touch-icon.png"), media_type="image/png")
+
+    # SPA fallback - serve index.html for all non-API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        file_path = STATIC_DIR / full_path
+        if file_path.exists() and file_path.is_file():
+            return FileResponse(str(file_path))
+        return FileResponse(str(STATIC_DIR / "index.html"), media_type="text/html")

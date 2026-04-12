@@ -3,10 +3,12 @@
     "name": "Bike Segura BC",
     "slug": "bike-segura-bc",
     "version": "1.0.0",
-    "platforms": ["web"],
-    "web": {
-      "bundler": "metro",
-      "output": "static"
+    "platforms": ["ios", "android", "web"],
+    "ios": {
+      "bundleIdentifier": "com.bikesegurabc.app"
+    },
+    "android": {
+      "package": "com.bikesegurabc.app"
     }
   }
 }
