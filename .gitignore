@@ -1,8 +1,11 @@
 node_modules/
 dist/
 .expo/
+.metro-cache/
 __pycache__/
 *.pyc
-.env
-.venv/
 *.log
+.emergent/
+backend_test.py
+backend_edge_test.py
+backend/static_frontend/bike-segura-bc.zip
