@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
+# Remove .env to use environment variables from DigitalOcean
 COPY backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
 
@@ -32,6 +33,7 @@ RUN cp -r frontend/dist backend/static_frontend && \
     cp frontend/public/sw.js backend/static_frontend/ 2>/dev/null || true
 
 # Copy backend
+RUN rm -f backend/.env
 COPY backend/ ./backend/
 
 WORKDIR /app/backend
