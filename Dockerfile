@@ -41,3 +41,4 @@ WORKDIR /app/backend
 EXPOSE 8001
 
 CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001"]
+# Force rebuild - 2026-04-21
