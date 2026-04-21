@@ -21,7 +21,7 @@ if os.environ.get('ENVIRONMENT') != 'production':
     load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection with Atlas-friendly settings
-mongo_url = os.environ['MONGO_URL']
+mongo_url = os.environ['MONGO_URI']
 client = AsyncIOMotorClient(
     mongo_url,
     serverSelectionTimeoutMS=5000,  # 5 second timeout for server selection
