@@ -16,7 +16,9 @@ from jose import JWTError, jwt
 from bson import ObjectId
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env', override=False)
+# Only load .env in development
+if os.environ.get('ENVIRONMENT') != 'production':
+    load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection with Atlas-friendly settings
 mongo_url = os.environ['MONGO_URL']
