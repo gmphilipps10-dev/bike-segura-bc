@@ -15,7 +15,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from bson import ObjectId
 
-ROOT_DIR = Path(__file__).parent
+ROOT_DIR = Path(__file__).resolve().parent.parent # Aponta para raiz
 # Only load .env in development
 if os.environ.get('ENVIRONMENT') != 'production':
     load_dotenv(ROOT_DIR / '.env')
