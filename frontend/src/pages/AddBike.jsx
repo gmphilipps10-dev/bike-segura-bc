@@ -19,7 +19,17 @@ const TIPOS_RASTREAMENTO = [
 ];
 export default function AddBike() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ marca: '', modelo: '', cor: '', numero_serie: '', tipo: 'Urbana', caracteristicas: '', link_rastreamento: '', tipo_rastreamento: 'tag' });
+  const [form, setForm] = useState({ 
+    marca: '', 
+    modelo: '', 
+    cor: '', 
+    numero_serie: '', 
+    tipo: 'Urbana', 
+    caracteristicas: '',
+    link_rastreamento: '',
+    tipo_rastreamento: 'tag',
+    tag_plataforma: ''
+});
   const [fotos, setFotos] = useState({});
   const [notaFiscal, setNotaFiscal] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,8 +90,36 @@ export default function AddBike() {
           <div className="type-group-label">Eletricas e Motorizados</div>
           <div className="type-chips">{TIPOS_ELET.map((t) => <button key={t} className={`type-chip ${form.tipo===t?'active':''}`} onClick={() => update('tipo',t)}>{t}</button>)}</div>
         </div>
-
+        
         <div className="form-group"><label>Caracteristicas / Observacoes</label><textarea className="form-textarea" value={form.caracteristicas} onChange={(e) => update('caracteristicas', e.target.value)} placeholder="Acessorios, modificacoes..." /></div>
+        <div className="form-group">
+    <label>Tipo de Rastreamento *</label>
+    <div className="type-chips">
+        {TIPOS_RASTREAMENTO.map((t) => (
+            <button key={t.key} 
+                className={`type-chip ${form.tipo_rastreamento === t.key ? 'active' : ''}`} 
+                onClick={() => update('tipo_rastreamento', t.key)}>
+                {t.label}
+            </button>
+        ))}
+    </div>
+</div>
+
+{form.tipo_rastreamento === 'tag' && (
+    <div className="form-group">
+        <label>Plataforma da TAG</label>
+        <div className="type-chips">
+            <button className={`type-chip ${form.tag_plataforma === 'ios' ? 'active' : ''}`}
+                onClick={() => update('tag_plataforma', 'ios')}>
+                iOS (Apple)
+            </button>
+            <button className={`type-chip ${form.tag_plataforma === 'android' ? 'active' : ''}`}
+                onClick={() => update('tag_plataforma', 'android')}>
+                Android
+            </button>
+        </div>
+    </div>
+)}
         <div className="form-group"><label>Link de Rastreamento</label><input className="form-input" value={form.link_rastreamento} onChange={(e) => update('link_rastreamento', e.target.value)} placeholder="https://..." /><p className="hint">URL do rastreador GPS</p></div>
 
         <div className="form-group">
