@@ -100,6 +100,8 @@ class BikeCreate(BaseModel):
     fotos: dict  # {"frente": "base64", "tras": "base64", "lateral_direita": "base64", "lateral_esquerda": "base64", "numero_quadro": "base64"}
     tipo: str
     caracteristicas: Optional[str] = None
+    tipo_rastreamento: Optional[str] = 'tag'  # tag, gps, tag_gps
+    tag_plataforma: Optional[str] = None  # ios, android (para TAG QR Code)
     link_rastreamento: Optional[str] = None
     nota_fiscal: Optional[str] = None  # Base64 da nota fiscal (foto ou PDF)
 
