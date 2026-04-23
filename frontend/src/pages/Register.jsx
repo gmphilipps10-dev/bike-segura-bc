@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Register() {
-  const [form, setForm] = useState({ nome_completo: '', cpf: '', dataNascimento: '', telefone: '', email: '', senha: '' });
+  const [form, setForm] = useState({ nome_completo: '', cpf: '', data_nascimento: '', telefone: '', email: '', senha: '' });
   const [foto, setFoto] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,13 +24,22 @@ export default function Register() {
     if (!foto) { setError('Foto de perfil obrigatoria'); return; }
     setLoading(true);
     try {
-      await register({ ...form, foto_perfil: foto });
-      navigate('/');
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    const userData = {
+    nome_completo: form.nome_completo,
+    cpf: form.cpf,
+    data_nascimento: form.data_nascimento,
+    telefone: form.telefone,
+    email: form.email,
+    senha: form.senha,
+    foto_perfil: foto
+  };
+  await register(userData);
+  navigate('/');
+  } catch (err) {
+    setError(err.message);
+  } finally {
+    setLoading(false);
+  }
   };
 
   const update = (k, v) => setForm({ ...form, [k]: v });
