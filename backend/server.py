@@ -48,7 +48,23 @@ app = FastAPI(title="BIKE SEGURA BC API")
 api_router = APIRouter(prefix="/api")
 
 # ============ MODELS ============
+from datetime import datetime
 
+def parse_data_nascimento(data_str: str) -> str:
+    """Converte data do formato brasileiro (DD/MM/YYYY) para ISO (YYYY-MM-DD)"""
+    if not data_str:
+        return None
+    try:
+        # Tenta formato DD/MM/YYYY
+        dt = datetime.strptime(data_str, "%d/%m/%Y")
+        return dt.strftime("%Y-%m-%d")
+    except ValueError:
+        try:
+            # Tenta formato YYYY-MM-DD (já está no formato correto)
+            datetime.strptime(data_str, "%Y-%m-%d")
+            return data_str
+        except ValueError:
+            return None
 class UserRegister(BaseModel):
     nome_completo: str
     cpf: str
