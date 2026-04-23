@@ -12,10 +12,14 @@ const PHOTO_SLOTS = [
 ];
 const TIPOS_BIKE = ['Urbana','MTB','Speed/Road','BMX','Gravel','Dobravel','Infantil'];
 const TIPOS_ELET = ['Bike Eletrica','Patinete Eletrico','Monociclo','Ciclomotor/Scooter'];
-
+const TIPOS_RASTREAMENTO = [
+    { key: 'tag', label: 'TAG (QR Code/Placa)' },
+    { key: 'gps', label: 'Rastreador GPS' },
+    { key: 'tag_gps', label: 'TAG + GPS (Completo)' }
+];
 export default function AddBike() {
   const navigate = useNavigate();
-  const [form, setForm] = useState({ marca: '', modelo: '', cor: '', numero_serie: '', tipo: 'Urbana', caracteristicas: '', link_rastreamento: '' });
+  const [form, setForm] = useState({ marca: '', modelo: '', cor: '', numero_serie: '', tipo: 'Urbana', caracteristicas: '', link_rastreamento: '', tipo_rastreamento: 'tag' });
   const [fotos, setFotos] = useState({});
   const [notaFiscal, setNotaFiscal] = useState('');
   const [loading, setLoading] = useState(false);
