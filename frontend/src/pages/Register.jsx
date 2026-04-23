@@ -21,26 +21,36 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    if (!foto) { setError('Foto de perfil obrigatoria'); return; }
+    if (!foto) { setError('Foto de perfil obrigatória'); return; }
     setLoading(true);
     try {
-    const userData = {
-    nome_completo: form.nome_completo,
-    cpf: form.cpf,
-    data_nascimento: form.data_nascimento,
-    telefone: form.telefone,
-    email: form.email,
-    senha: form.senha,
-    foto_perfil: foto
-  };
-  await register(userData);
-  navigate('/');
-  } catch (err) {
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-  };
+        const userData = {
+            nome_completo: form.nome_completo,
+            cpf: form.cpf,
+            data_nascimento: form.data_nascimento,
+            telefone: form.telefone,
+            email: form.email,
+            senha: form.senha,
+            foto_perfil: foto
+        };
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || JSON.stringify(errorData));
+        }
+        const data = await response.json();
+        localStorage.setItem('token', data.access_token);
+        navigate('/');
+    } catch (err) {
+        setError(err.message || 'Erro ao cadastrar');
+    } finally {
+        setLoading(false);
+    }
+};
 
   const update = (k, v) => setForm({ ...form, [k]: v });
 
