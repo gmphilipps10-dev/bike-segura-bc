@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
+import { IoCardOutline } from 'react-icons/io5';
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
   const navigate = useNavigate();
@@ -44,6 +44,32 @@ export default function Profile() {
         <div className="profile-field"><span className="profile-field-label">Telefone</span><span className="profile-field-value">{user.telefone}</span></div>
         <div className="profile-field"><span className="profile-field-label">Email</span><span className="profile-field-value">{user.email}</span></div>
       </div>
+      <div className="profile-section" style={{marginTop: '20px', padding: '15px', background: '#1a1a1a', borderRadius: '12px', border: '1px solid #333'}}>
+    <h3 style={{color: '#FFD700', marginBottom: '10px', fontSize: '16px'}}>💳 Plano de Assinatura</h3>
+    <p style={{color: '#aaa', fontSize: '13px', marginBottom: '15px'}}>
+        Proteja sua bike com nossos planos de rastreamento
+    </p>
+    <button 
+        className="btn-edit" 
+        onClick={() => navigate('/plans')}
+        style={{
+            width: '100%',
+            padding: '12px',
+            background: '#FFD700',
+            color: '#000',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+        }}
+    >
+        <IoCardOutline /> Ver Planos
+    </button>
+</div>
       <button className="btn-logout" onClick={handleLogout}>Sair da Conta</button>
     </div>
   );
