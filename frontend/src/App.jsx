@@ -10,7 +10,7 @@ import AddBike from './pages/AddBike';
 import EditBike from './pages/EditBike';
 import Profile from './pages/Profile';
 import BottomNav from './components/BottomNav';
-
+import Plans from './pages/Plans';
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="loading-screen"><div className="spinner"></div></div>;
@@ -32,6 +32,7 @@ export default function App() {
         <Route path="/add-bike" element={<ProtectedRoute><AddBike /></ProtectedRoute>} />
         <Route path="/edit-bike/:id" element={<ProtectedRoute><EditBike /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/plans" element={<ProtectedRoute><Plans /></ProtectedRoute>} />
       </Routes>
       {user && <BottomNav />}
     </div>
