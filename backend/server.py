@@ -14,6 +14,12 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 from bson import ObjectId
+from backend.asaas_service import asaas_service
+from backend.billing_service import (
+    sync_customer, create_device_subscription, cancel_device_subscription,
+    can_monitor
+)
+from backend.billing_routes import billing_router
 
 ROOT_DIR = Path(__file__).resolve().parent.parent # Aponta para raiz
 # Only load .env in development
@@ -43,6 +49,8 @@ security = HTTPBearer()
 
 # Create the main app
 app = FastAPI(title="BIKE SEGURA BC API")
+# Incluir router de billing
+app.include_router(billing_router)
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
