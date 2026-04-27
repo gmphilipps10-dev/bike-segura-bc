@@ -32,10 +32,38 @@ const PLANOS = [
 export default function Plans() {
     const navigate = useNavigate();
 
-    const handleAssinar = (plano, periodicidade) => {
-    const valor = periodicidade === 'mensal' ? plano.mensal : plano.anual;
-    // Aqui vamos redirecionar para o Mercado Pago
-    alert(`Redirecionando para pagamento...\nPlano: ${plano.nome}\nPeriodicidade: ${periodicidade}\nValor: R$ ${valor.toFixed(2)}`);
+    const handleAssinar = async (plano, periodicidade) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('Você precisa estar logado para assinar um plano.');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/billing/subscribe', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                plano_key: plano.key,
+                periodicidade: periodicidade,
+                billing_cycle: periodicidade === 'mensal' ? 'MONTHLY' : 'ANNUAL'
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.payment_url) {
+            window.location.href = data.payment_url;
+        } else {
+            alert(data.detail || 'Erro ao criar assinatura. Tente novamente.');
+        }
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao conectar com o servidor. Tente novamente.');
+    }
 };
 
     return (
