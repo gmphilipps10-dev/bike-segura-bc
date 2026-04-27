@@ -1,16 +1,22 @@
 """
 Billing Routes - Endpoints para cobrança no Bike Segura BC
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import Optional
 from bson import ObjectId
+from jose import JWTError, jwt
+import os
 
 from asaas_service import asaas_service
 from billing_service import (
     sync_customer, create_device_subscription, cancel_device_subscription,
     can_monitor, PRICES
 )
+security = HTTPBearer()
+SECRET_KEY = os.environ.get('SECRET_KEY', 'sua-chave-secreta-aqui')
+ALGORITHM = "HS256"
 
 billing_router = APIRouter(prefix="/api/billing")
 
@@ -25,14 +31,27 @@ class CancelSubscriptionRequest(BaseModel):
 class WebhookPayload(BaseModel):
     event: dict
     payment: dict
+    async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Token inválido")
+        return user_id
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Token inválido")
 
 @billing_router.post("/subscriptions")
-async def create_subscription(request: SubscriptionRequest):
+async def create_subscription(
+    request: SubscriptionRequest,
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
     """Criar assinatura de serviço para uma bike"""
     try:
         from server import db
         # TODO: Pegar user_id do token JWT
-        user_id = "temp_user_id"  # Substituir quando auth estiver pronto
+        user_id = await get_current_user_id(credentials)
         result = await create_device_subscription(
             db, user_id, request.bike_id,
             request.billing_cycle, request.billing_type
