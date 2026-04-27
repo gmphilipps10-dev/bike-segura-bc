@@ -3,7 +3,7 @@ Billing Service - Lógica de cobrança do Bike Segura BC
 """
 from datetime import datetime, timedelta
 from bson import ObjectId
-from .asaas_service import asaas_service
+from asaas_service import asaas_service
 
 PRICES = {
     "SERVICE": {
