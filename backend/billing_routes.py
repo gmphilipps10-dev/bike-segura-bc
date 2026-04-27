@@ -6,8 +6,8 @@ from pydantic import BaseModel
 from typing import Optional
 from bson import ObjectId
 
-from .asaas_service import asaas_service
-from .billing_service import (
+from asaas_service import asaas_service
+from billing_service import (
     sync_customer, create_device_subscription, cancel_device_subscription,
     can_monitor, PRICES
 )
