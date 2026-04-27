@@ -40,24 +40,24 @@ export default function Plans() {
     }
 
     try {
-        const response = await fetch('/api/billing/subscribe', {
+        const response = await fetch('/api/billing/subscriptions', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-                plano_key: plano.key,
-                periodicidade: periodicidade,
-                billing_cycle: periodicidade === 'mensal' ? 'MONTHLY' : 'ANNUAL'
-            })
+    bike_id: 'temp_bike_id',
+    billing_cycle: periodicidade === 'mensal' ? 'MONTHLY' : 'ANNUAL',
+    billing_type: 'UNDEFINED'
+})
         });
 
         const data = await response.json();
 
-        if (response.ok && data.payment_url) {
-            window.location.href = data.payment_url;
-        } else {
+        if (response.ok && data.success) {
+    alert('Assinatura criada com sucesso! ID: ' + data.data.subscription_id);
+} else {
             alert(data.detail || 'Erro ao criar assinatura. Tente novamente.');
         }
     } catch (error) {
