@@ -33,10 +33,10 @@ export default function Plans() {
     const navigate = useNavigate();
 
     const handleAssinar = (plano, periodicidade) => {
-        const valor = periodicidade === 'mensal' ? plano.mensal : plano.anual;
-        // Aqui vamos redirecionar para o Mercado Pago
-        alert(`Redirecionando para pagamento...\nPlano: ${plano.nome}\nPeriodicidade: ${periodicidade}\nValor: R$ ${valor.toFixed(2)}`);
-    };
+    const valor = periodicidade === 'mensal' ? plano.mensal : plano.anual;
+    // Aqui vamos redirecionar para o Mercado Pago
+    alert(`Redirecionando para pagamento...\nPlano: ${plano.nome}\nPeriodicidade: ${periodicidade}\nValor: R$ ${valor.toFixed(2)}`);
+};
 
     return (
         <div>
