@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
-import { IoAlertCircle, IoWarning, IoLocation, IoBicycle, IoShieldCheckmark } from 'react-icons/io5';
+import { IoAlertCircle, IoWarning, IoLocation, IoBicycle, IoShieldCheckmark } from 'react-icons/io5'; 
 
 export default function Home() {
   const { user } = useAuth();
