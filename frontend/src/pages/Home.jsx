@@ -60,7 +60,7 @@ export default function Home() {
     }
     const b = selectedBike || equipamentosAtivos[0];
     if (!b) {
-      window.open('https://delegacia.sc.gov.br', '_blank');
+      window.open('https://delegaciavirtual.sc.gov.br/nova-ocorrencia', '_blank');
       return;
     }
     const dados = {
@@ -72,7 +72,7 @@ export default function Home() {
       data: new Date().toISOString()
     };
     const params = new URLSearchParams(dados).toString();
-    window.open(`https://delegacia.sc.gov.br/boletim?${params}`, '_blank');
+    window.open(`https://delegaciavirtual.sc.gov.br/nova-ocorrencia?${params}`, '_blank');
   };
 
   return (
@@ -146,12 +146,6 @@ export default function Home() {
         )}
       </div>
 
-      <div className="section">
-        <h3 className="section-title">Dicas de Seguranca</h3>
-        <div className="tip-card"><span className="tip-icon">📍</span><span className="tip-text">Cadastre o link do rastreador para acesso rapido</span></div>
-        <div className="tip-card"><span className="tip-icon">📷</span><span className="tip-text">Tire fotos de todos os angulos da sua bike</span></div>
-        <div className="tip-card"><span className="tip-icon">🔑</span><span className="tip-text">Anote o numero de serie em local seguro</span></div>
-      </div>
 
       {installPrompt && (
         <div className="install-banner">
