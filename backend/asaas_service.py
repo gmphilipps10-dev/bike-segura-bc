@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 ASAAS_API_KEY = os.environ.get("ASAAS_API_KEY", "")
 ASAAS_SANDBOX = os.environ.get("ASAAS_SANDBOX", "true").lower() == "true"
 
-BASE_URL = "https://sandbox.asaas.com/api/v3" if ASAAS_SANDBOX else "https://api.asaas.com/api/v3"
+BASE_URL = "https://sandbox.asaas.com/api/v3" if ASAAS_SANDBOX else "https://www.asaas.com/api/v3"
 
 HEADERS = {
     "access_token": ASAAS_API_KEY,
