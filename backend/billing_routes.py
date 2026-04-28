@@ -31,7 +31,7 @@ class CancelSubscriptionRequest(BaseModel):
 class WebhookPayload(BaseModel):
     event: dict
     payment: dict
-    async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)):
+async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         token = credentials.credentials
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
