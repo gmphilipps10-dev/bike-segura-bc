@@ -355,30 +355,4 @@ body{background:#1a1a1a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
   background: #1d4ed8;
 }
 
-/* Monitor Bar - Corrigido (sem verde) */
-.monitor-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background: #0a2a0a;
-  padding: 12px 16px;
-}
 
-.pulse {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #FFD700;
-  animation: pulse-anim 2s infinite;
-}
-
-@keyframes pulse-anim {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .4; }
-}
-
-.monitor-text {
-  color: #FFD700;
-  font-size: 13px;
-  font-weight: 600;
-}
