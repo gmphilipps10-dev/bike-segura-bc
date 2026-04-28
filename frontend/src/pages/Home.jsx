@@ -79,10 +79,16 @@ export default function Home() {
     <div>
       <div className="header"><img src="/logo.jpg" alt="Bike Segura BC" /></div>
       {totalBikes > 0 && (
-        <div className="monitor-bar"><div className="pulse"></div><span className="monitor-text">
-          {monitorando} equipamento{monitorando > 1 ? 's' : ''} monitorado{monitorando > 1 ? 's' : ''}
-        </span></div>
-      )}
+  <div className={`monitor-bar ${furtadas > 0 ? 'alerta' : ''}`}>
+    <div className="pulse"></div>
+    <span className="monitor-text">
+      {furtadas > 0 
+        ? `⚠️ ${furtadas} EQUIPAMENTO${furtadas > 1 ? 'S' : ''} FURTADO${furtadas > 1 ? 'S' : ''} - ${monitorando} monitorado${monitorando > 1 ? 's' : ''}`
+        : `${monitorando} equipamento${monitorando > 1 ? 's' : ''} monitorado${monitorando > 1 ? 's' : ''}`
+      }
+    </span>
+  </div>
+)}
       <div className="greeting-section">
         <h1 className="greeting">Olá, {firstName}!</h1>
         <p className="subtitle">Central de Monitoramento</p>
