@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IoCheckmarkCircle, IoArrowBack } from 'react-icons/io5';
 
@@ -31,6 +31,36 @@ const PLANOS = [
 
 export default function Plans() {
     const navigate = useNavigate();
+    const [bikes, setBikes] = useState([]);
+    const [selectedBike, setSelectedBike] = useState(null);
+    const [loadingBikes, setLoadingBikes] = useState(true);
+    useEffect(() => {
+        const fetchBikes = async () => {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                setLoadingBikes(false);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/bikes', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    setBikes(data || []);
+                }
+            } catch (error) {
+                console.error('Erro ao buscar bikes:', error);
+            } finally {
+                setLoadingBikes(false);
+            }
+        };
+        
+        fetchBikes();
+    }, []);
 
     const handleAssinar = async (plano, periodicidade) => {
     const token = localStorage.getItem('token');
@@ -38,6 +68,10 @@ export default function Plans() {
         alert('Você precisa estar logado para assinar um plano.');
         return;
     }
+        if (!selectedBike) {
+    alert('Selecione uma bike primeiro.');
+    return;
+}
 
     try {
         const response = await fetch('/api/billing/subscriptions', {
@@ -47,7 +81,7 @@ export default function Plans() {
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-    bike_id: 'temp_bike_id',
+    bike_id: selectedBike.id,
     billing_cycle: periodicidade === 'mensal' ? 'MONTHLY' : 'ANNUAL',
     billing_type: 'UNDEFINED'
 })
@@ -72,6 +106,49 @@ export default function Plans() {
                 <button className="back-btn" onClick={() => navigate(-1)}><IoArrowBack /></button>
                 <h2>Planos Bike Segura BC</h2>
             </div>
+            {loadingBikes ? (
+    <p style={{textAlign: 'center', color: '#fff'}}>Carregando suas bikes...</p>
+) : bikes.length === 0 ? (
+    <div style={{textAlign: 'center', padding: '20px', color: '#fff'}}>
+        <p>Você não tem bikes cadastradas.</p>
+        <button 
+            onClick={() => navigate('/cadastrar')}
+            style={{
+                padding: '10px 20px',
+                backgroundColor: '#FFD700',
+                color: '#000',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                marginTop: '10px'
+            }}
+        >
+            Cadastrar Bike
+        </button>
+    </div>
+) : (
+    <div style={{marginBottom: '20px'}}>
+        <h3 style={{color: '#FFD700', marginBottom: '10px'}}>Selecione a bike para proteger:</h3>
+        {bikes.map(bike => (
+            <div 
+                key={bike.id}
+                onClick={() => setSelectedBike(bike)}
+                style={{
+                    padding: '15px',
+                    margin: '10px 0',
+                    border: selectedBike?.id === bike.id ? '2px solid #FFD700' : '1px solid #555',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    backgroundColor: selectedBike?.id === bike.id ? '#333' : 'transparent',
+                    color: '#fff'
+                }}
+            >
+                <p><strong>{bike.modelo || 'Bike'}</strong> - {bike.marca}</p>
+                <p style={{fontSize: '12px', color: '#aaa'}}>Cor: {bike.cor} | Série: {bike.numero_serie}</p>
+            </div>
+        ))}
+    </div>
+)}
             <div className="page-content">
                 <p style={{textAlign: 'center', marginBottom: '20px', color: '#aaa'}}>
                     Escolha o plano ideal para proteger sua bike
