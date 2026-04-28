@@ -13,7 +13,7 @@ export default function Home() {
   const [alertLoading, setAlertLoading] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
 
-  const loadBikes = () => api.getBikes().then(setBikes).catch(() => {});
+  const loadBikes = () => api.getBikes().then(setBikes).catch(() => {}); 
   useEffect(() => { loadBikes(); }, []);
 
   useEffect(() => {
