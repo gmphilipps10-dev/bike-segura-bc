@@ -86,14 +86,6 @@ body{background:#1a1a1a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 .greeting{font-size:28px;font-weight:bold;color:#FFC107;}
 .subtitle{font-size:14px;color:#fff;margin-top:4px;}
 
-/* Stats */
-.stats-row{display:flex;gap:12px;padding:0 16px 16px;justify-content:center;}
-.stat-card{flex:1;background:#000;border:1px solid #333;border-radius:12px;padding:16px;text-align:center;max-width:150px;}
-.stat-card.danger{border-color:#F44336;}
-.stat-icon{font-size:28px;margin-bottom:4px;}
-.stat-number{font-size:24px;font-weight:bold;color:#FFC107;}
-.stat-label{font-size:12px;color:#999;margin-top:4px;}
-
 /* Alert Furto Button */
 .alert-furto-btn{display:flex;align-items:center;gap:12px;background:#B71C1C;margin:0 16px 16px;padding:16px;border-radius:12px;border:none;color:#fff;cursor:pointer;width:calc(100% - 32px);}
 .alert-furto-btn .btn-content{flex:1;text-align:left;}
@@ -117,11 +109,6 @@ body{background:#1a1a1a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 .action-content{flex:1;}
 .action-title{font-size:15px;font-weight:600;color:#fff;}
 .action-subtitle{font-size:12px;color:#999;margin-top:2px;}
-
-/* Tip Cards */
-.tip-card{display:flex;align-items:center;gap:12px;padding:12px;background:#000;border-radius:8px;margin-bottom:8px;}
-.tip-icon{color:#FFC107;font-size:18px;flex-shrink:0;}
-.tip-text{color:#ccc;font-size:13px;}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;padding:24px;z-index:100;}
