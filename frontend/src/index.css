@@ -169,3 +169,180 @@ body{background:#1a1a1a;color:#fff;font-family:-apple-system,BlinkMacSystemFont,
 .scroll-content{padding-bottom:20px;}
 .page-content{padding:16px;}
 .hint{font-size:12px;color:#666;margin-top:4px;}
+/* ============================================
+   NOVOS ESTILOS - HOME REDESIGN 2026
+   ============================================ */
+
+/* Equipamentos List */
+.equipamentos-list {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.equipamento-card {
+  background: #242424;
+  border: 1px solid #333;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.equipamento-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.equipamento-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.equipamento-info {
+  flex: 1;
+}
+
+.equipamento-nome {
+  font-size: 15px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.equipamento-categoria {
+  font-size: 12px;
+  color: #999;
+  margin-top: 2px;
+}
+
+.equipamento-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #FFD700;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FFD700;
+}
+
+/* Botão Rastrear */
+.btn-rastrear {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #FFD700;
+  color: #0a0a0a;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-rastrear:hover {
+  background: #e6c200;
+}
+
+/* Botão Alerta Furto - Atualizado */
+.alert-furto-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #DC2626;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 16px 20px;
+  width: calc(100% - 32px);
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.alert-furto-btn .btn-content {
+  flex: 1;
+  text-align: center;
+}
+
+.alert-furto-btn .btn-title {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+/* Botão Delegacia Virtual */
+.delegacia-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #2563EB;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 0 16px 16px;
+  width: calc(100% - 32px);
+  cursor: pointer;
+}
+
+.delegacia-btn .btn-content {
+  flex: 1;
+  text-align: center;
+}
+
+.delegacia-btn .btn-title {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.delegacia-btn .btn-subtitle {
+  font-size: 12px;
+  color: #93C5FD;
+  margin-top: 2px;
+}
+
+.delegacia-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Monitor Bar - Corrigido (sem verde) */
+.monitor-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #0a2a0a;
+  padding: 12px 16px;
+}
+
+.pulse {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #FFD700;
+  animation: pulse-anim 2s infinite;
+}
+
+@keyframes pulse-anim {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+.monitor-text {
+  color: #FFD700;
+  font-size: 13px;
+  font-weight: 600;
+}
