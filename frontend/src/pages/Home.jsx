@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { api } from '../utils/api';
-import { IoAlertCircle, IoWarning, IoLocation, IoBicycle, IoShieldCheckmark } from 'react-icons/io5'; 
+import { IoAlertCircle, IoWarning, IoLocation, IoBicycle, IoShieldCheckmark, IoShareSocial, IoPeople } from 'react-icons/io5';
 
 export default function Home() {
   const { user } = useAuth();
@@ -13,7 +13,7 @@ export default function Home() {
   const [alertLoading, setAlertLoading] = useState(false);
   const [installPrompt, setInstallPrompt] = useState(null);
 
-  const loadBikes = () => api.getBikes().then(setBikes).catch(() => {}); 
+  const loadBikes = () => api.getBikes().then(setBikes).catch(() => {});
   useEffect(() => { loadBikes(); }, []);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function Home() {
   const equipamentosAtivos = bikes.filter((b) => b.status === 'Ativa');
   const monitorando = equipamentosAtivos.length;
   const furtadas = bikes.filter((b) => b.status === 'Furtada').length;
-  const firstName = user?.nome_completo?.split(' ')[0] || 'Usuario';
+  const firstName = user?.nome_completo?.split(' ')[0] || 'Usuário';
 
   const handleAlerta = () => {
     const ativas = bikes.filter((b) => b.status === 'Ativa');
@@ -79,26 +79,26 @@ export default function Home() {
     <div>
       <div className="header"><img src="/logo.jpg" alt="Bike Segura BC" /></div>
       {totalBikes > 0 && (
-  <div className={`monitor-bar ${furtadas > 0 ? 'alerta' : ''}`}>
-    <div className="pulse"></div>
-    <span className="monitor-text">
-      {furtadas > 0 
-        ? `⚠️ ${furtadas} EQUIPAMENTO${furtadas > 1 ? 'S' : ''} FURTADO${furtadas > 1 ? 'S' : ''} - ${monitorando} monitorado${monitorando > 1 ? 's' : ''}`
-        : `${monitorando} equipamento${monitorando > 1 ? 's' : ''} monitorado${monitorando > 1 ? 's' : ''}`
-      }
-    </span>
-  </div>
-)}
+        <div className={`monitor-bar ${furtadas > 0 ? 'alerta' : ''}`}>
+          <div className="pulse"></div>
+          <span className="monitor-text">
+            {furtadas > 0
+              ? `⚠️ ${furtadas} EQUIPAMENTO${furtadas > 1 ? 'S' : ''} FURTADO${furtadas > 1 ? 'S' : ''} - ${monitorando} monitorado${monitorando > 1 ? 's' : ''}`
+              : `${monitorando} equipamento${monitorando > 1 ? 's' : ''} monitorado${monitorando > 1 ? 's' : ''}`
+            }
+          </span>
+        </div>
+      )}
       <div className="greeting-section">
         <h1 className="greeting">Olá, {firstName}!</h1>
         <p className="subtitle">Central de Monitoramento</p>
       </div>
 
-      {/* Cards de equipamentos - dinâmicos */}
+      {/* Cards de equipamentos - AGORA CLICÁVEIS */}
       {equipamentosAtivos.length > 0 && (
         <div className="equipamentos-list">
           {equipamentosAtivos.map((bike) => (
-            <div key={bike.id} className="equipamento-card">
+            <div key={bike.id} className="equipamento-card" onClick={() => navigate(`/bike/${bike.id}`)} style={{cursor: 'pointer'}}>
               <div className="equipamento-header">
                 <div className="equipamento-icon">
                   <IoBicycle size={28} color="#FFD700" />
@@ -111,7 +111,7 @@ export default function Home() {
                   <span className="status-dot"></span> Ativa
                 </div>
               </div>
-              <button className="btn-rastrear" onClick={() => navigate(`/bike/${bike.id}`)}>
+              <button className="btn-rastrear" onClick={(e) => { e.stopPropagation(); navigate(`/bike/${bike.id}`); }}>
                 <IoLocation size={18} />
                 RASTREAR AGORA
               </button>
@@ -144,14 +144,42 @@ export default function Home() {
         </div>
       )}
 
+      {/* INDIQUE E GANHE! */}
       <div className="section">
-        <h3 className="section-title">Acesso Rapido</h3>
-        <button className="action-card" onClick={() => navigate('/bikes')}><div className="action-icon"><IoBicycle size={24} /></div><div className="action-content"><div className="action-title">Minhas Bicicletas</div><div className="action-subtitle">Ver e rastrear bikes cadastradas</div></div></button>
+        <h3 className="section-title">Indique e Ganhe!</h3>
+
+        {/* Card Indicar Amigo */}
+        <button className="action-card" onClick={() => {
+          const userId = user?.id || '';
+          const msg = encodeURIComponent(`🚲 *Bike Segura BC* - Proteja sua bicicleta!\n\nCadastre sua bike e tenha rastreamento em tempo real.\n\n👉 Indicação de: ${user?.nome_completo || 'Amigo'}\n\nAcesse: https://www.bikesegurabc.com.br/register?ref=${userId}`);
+          window.open(`https://wa.me/?text=${msg}`, '_blank');
+        }}>
+          <div className="action-icon"><IoShareSocial size={24} color="#25D366" /></div>
+          <div className="action-content">
+            <div className="action-title">Indicar Amigo</div>
+            <div className="action-subtitle">Compartilhe via WhatsApp</div>
+          </div>
+        </button>
+
+        {/* Card Minhas Indicações */}
+        <button className="action-card" onClick={() => navigate('/indicacoes')}>
+          <div className="action-icon"><IoPeople size={24} color="#FFC107" /></div>
+          <div className="action-content">
+            <div className="action-title">Minhas Indicações</div>
+            <div className="action-subtitle">Ver desconto acumulado</div>
+          </div>
+        </button>
+
         {totalBikes === 0 && (
-          <button className="action-card" onClick={() => navigate('/add-bike')}><div className="action-icon">+</div><div className="action-content"><div className="action-title">Cadastrar Bike</div><div className="action-subtitle">Adicione sua primeira bicicleta</div></div></button>
+          <button className="action-card" onClick={() => navigate('/add-bike')}>
+            <div className="action-icon">+</div>
+            <div className="action-content">
+              <div className="action-title">Cadastrar Bike</div>
+              <div className="action-subtitle">Adicione sua primeira bicicleta</div>
+            </div>
+          </button>
         )}
       </div>
-
 
       {installPrompt && (
         <div className="install-banner">
@@ -170,7 +198,7 @@ export default function Home() {
             {alertStep === 'no-bikes' && (<>
               <div className="modal-icon">!</div>
               <h3 className="modal-title">Sem bikes ativas</h3>
-              <p className="modal-desc">Todas as suas bicicletas ja estao marcadas como furtadas ou nao possuem rastreamento ativo.</p>
+              <p className="modal-desc">Todas as suas bicicletas já estão marcadas como furtadas ou não possuem rastreamento ativo.</p>
               <button className="btn-cancel" onClick={() => setAlertStep('none')}>Fechar</button>
             </>)}
             {alertStep === 'select' && (<>
