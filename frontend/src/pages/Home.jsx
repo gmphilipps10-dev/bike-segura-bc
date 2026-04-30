@@ -75,6 +75,24 @@ export default function Home() {
     window.open(`https://delegaciavirtual.sc.gov.br/nova-ocorrencia?${params}`, '_blank');
   };
 
+  // CORREÇÃO: Usar /login em vez de /register para evitar 404 no servidor
+  const compartilharIndicacao = () => {
+    const userId = user?.id || '';
+    const baseUrl = window.location.origin;
+
+    // O link vai para /login?ref=... e o usuário clica em "Criar conta"
+    // Isso evita o erro 404 do servidor ao acessar /register diretamente
+    const linkIndicacao = `${baseUrl}/login?ref=${userId}`;
+
+    const msg = encodeURIComponent(
+      `🚲 *Bike Segura BC* - Proteja sua bicicleta!\n\n` +
+      `Cadastre sua bike e tenha rastreamento em tempo real.\n\n` +
+      `👉 Indicação de: ${user?.nome_completo || 'Amigo'}\n\n` +
+      `Acesse: ${linkIndicacao}`
+    );
+    window.open(`https://wa.me/?text=${msg}`, '_blank');
+  };
+
   return (
     <div>
       <div className="header"><img src="/logo.jpg" alt="Bike Segura BC" /></div>
@@ -149,11 +167,7 @@ export default function Home() {
         <h3 className="section-title">Indique e Ganhe!</h3>
 
         {/* Card Indicar Amigo */}
-        <button className="action-card" onClick={() => {
-          const userId = user?.id || '';
-          const msg = encodeURIComponent(`🚲 *Bike Segura BC* - Proteja sua bicicleta!\n\nCadastre sua bike e tenha rastreamento em tempo real.\n\n👉 Indicação de: ${user?.nome_completo || 'Amigo'}\n\nAcesse: https://www.bikesegurabc.com.br/register?ref=${userId}`);
-          window.open(`https://wa.me/?text=${msg}`, '_blank');
-        }}>
+        <button className="action-card" onClick={compartilharIndicacao}>
           <div className="action-icon"><IoShareSocial size={24} color="#25D366" /></div>
           <div className="action-content">
             <div className="action-title">Indicar Amigo</div>
