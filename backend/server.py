@@ -842,3 +842,29 @@ if STATIC_DIR.exists():
         if file_path.exists() and file_path.is_file():
             return FileResponse(str(file_path))
         return FileResponse(str(STATIC_DIR / "index.html"), media_type="text/html")
+     
+    # ==========================================
+    # ROTAS DE INDICAÇÃO (INDIQUE E GANHE)
+    # ==========================================
+
+    class IndicacaoRequest(BaseModel):
+    indicado_por: Optional[str] = None
+
+    @api_router.get("/auth/minhas-indicacoes")
+    async def get_minhas_indicacoes(current_user: dict = Depends(get_current_user)):
+    user_id = str(current_user["_id"])
+    indicados_cursor = db.users.find({"indicado_por": user_id})
+    indicados = []
+    async for u in indicados_cursor:
+        indicados.append({
+            "id": str(u["_id"]),
+            "nome": u.get("nome_completo", ""),
+            "email": u.get("email", ""),
+            "data": u.get("created_at", "")
+        })
+    desconto = min(len(indicados) * 10, 100)
+    return {
+        "total_indicacoes": len(indicados),
+        "desconto_acumulado": desconto,
+        "indicados": indicados
+    }
