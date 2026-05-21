@@ -22,3 +22,4 @@ RUN npm install -g serve
 
 # Use serve with PORT env variable
 CMD serve -s dist -l ${PORT:-8080}
+
