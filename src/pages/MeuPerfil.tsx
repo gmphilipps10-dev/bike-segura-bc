@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, User, Mail, Phone, MapPin, Shield, Bell,
+  ArrowLeft, User, Mail, Phone, MapPin,
   Edit3, Save, LogOut, ChevronRight, Bike, CreditCard,
   Users, HelpCircle, FileText
 } from 'lucide-react';
@@ -27,12 +27,10 @@ export default function MeuPerfil() {
 
   const menuItems = [
     { icon: Bike, label: 'Meus Equipamentos', desc: '3 bikes cadastradas', path: '/equipamentos' },
-    { icon: CreditCard, label: 'Meu Plano', desc: 'Gratuito', path: '#' },
-    { icon: Users, label: 'Minhas Indicações', desc: '2 indicações realizadas', path: '#' },
-    { icon: Shield, label: 'Segurança', desc: 'Senha, 2FA', path: '#' },
-    { icon: Bell, label: 'Notificações', desc: 'Alertas e lembretes', path: '#' },
-    { icon: FileText, label: 'Termos e Políticas', desc: 'Leia nossos termos', path: '#' },
-    { icon: HelpCircle, label: 'Ajuda e Suporte', desc: 'Fale conosco', path: '#' },
+    { icon: CreditCard, label: 'Meu Plano', desc: 'Gratuito', path: '/planos' },
+    { icon: Users, label: 'Minhas Indicações', desc: '2 indicações realizadas', path: '/indicacoes' },
+    { icon: FileText, label: 'Termos e Políticas', desc: 'Termos de uso e privacidade', path: '/termos' },
+    { icon: HelpCircle, label: 'Ajuda e Suporte', desc: 'Perguntas frequentes e contato', path: '/ajuda' },
   ];
 
   return (
@@ -151,29 +149,16 @@ export default function MeuPerfil() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.25 + i * 0.05 }}
               >
-                {item.path !== '#' ? (
-                  <Link to={item.path} className="glass-card p-4 flex items-center gap-3 group cursor-pointer">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-yellow-500/20 flex items-center justify-center shrink-0 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all">
-                      <item.icon className="w-5 h-5 text-amber-400 group-hover:text-[#0c1222] transition-colors" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">{item.label}</p>
-                      <p className="text-slate-500 text-[11px]">{item.desc}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-600" />
-                  </Link>
-                ) : (
-                  <button className="w-full glass-card p-4 flex items-center gap-3 group cursor-pointer text-left">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-yellow-500/20 flex items-center justify-center shrink-0 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all">
-                      <item.icon className="w-5 h-5 text-amber-400 group-hover:text-[#0c1222] transition-colors" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-white text-sm font-medium">{item.label}</p>
-                      <p className="text-slate-500 text-[11px]">{item.desc}</p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-slate-600" />
-                  </button>
-                )}
+                <Link to={item.path} className="glass-card p-4 flex items-center gap-3 group cursor-pointer relative overflow-hidden">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-400/20 to-yellow-500/20 flex items-center justify-center shrink-0 group-hover:from-amber-400 group-hover:to-yellow-500 transition-all">
+                    <item.icon className="w-5 h-5 text-amber-400 group-hover:text-[#0c1222] transition-colors" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium truncate">{item.label}</p>
+                    <p className="text-slate-500 text-[11px] truncate">{item.desc}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-600 shrink-0" />
+                </Link>
               </motion.div>
             ))}
           </div>

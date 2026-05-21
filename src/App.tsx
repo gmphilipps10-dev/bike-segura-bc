@@ -11,6 +11,8 @@ import Planos from './pages/Planos';
 import Indicacoes from './pages/Indicacoes';
 import LojasParceiras from './pages/LojasParceiras';
 import AnuncieAqui from './pages/AnuncieAqui';
+import AjudaSuporte from './pages/AjudaSuporte';
+import TermosPoliticas from './pages/TermosPoliticas';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
           <Route path="/indicacoes" element={<Indicacoes />} />
           <Route path="/lojas" element={<LojasParceiras />} />
           <Route path="/anuncie" element={<AnuncieAqui />} />
+          <Route path="/ajuda" element={<AjudaSuporte />} />
+          <Route path="/termos" element={<TermosPoliticas />} />
         </Routes>
       </HashRouter>
     </BikeProvider>

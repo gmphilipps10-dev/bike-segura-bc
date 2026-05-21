@@ -225,9 +225,11 @@ export default function Home() {
             <p className="text-slate-400 text-sm">{greeting},</p>
             <h1 className="text-2xl font-bold text-gradient-gold">GIAN</h1>
           </div>
-          <motion.div whileTap={{ scale: 0.95 }} className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
-            <span className="text-[#0c1222] font-bold text-base">G</span>
-          </motion.div>
+          <Link to="/perfil">
+            <motion.div whileTap={{ scale: 0.95 }} className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
+              <span className="text-[#0c1222] font-bold text-base">G</span>
+            </motion.div>
+          </Link>
         </motion.header>
 
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="relative mb-6 rounded-3xl overflow-hidden">
