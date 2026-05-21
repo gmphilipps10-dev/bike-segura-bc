@@ -14,23 +14,12 @@ FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-RUN echo '#!/bin/sh\n\
-PORT=${PORT:-8080}\n\
-echo "Configuring nginx on port $PORT"\n\
-cat > /etc/nginx/conf.d/default.conf <<EOF\n\
-server {\n\
-    listen $PORT;\n\
-    listen 8001;\n\
-    location / {\n\
-        root /usr/share/nginx/html;\n\
-        index index.html;\n\
-        try_files \$uri \$uri/ /index.html;\n\
-    }\n\
-}\n\
-EOF\n\
-cat /etc/nginx/conf.d/default.conf\n\
-nginx -g "daemon off;"\n\
-' > /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
-
-ENTRYPOINT ["/doc
-er-entrypoint.sh"]
+RUN echo '#!/bin/sh' > /app-entrypoint.sh && \
+    echo 'PORT=${PORT:-8080}' >> /app-entrypoint.sh && \
+    echo 'echo "Configuring nginx on port $PORT"' >> /app-entrypoint.sh && \
+    echo 'cat > /etc/nginx/conf.d/default.conf <<EOF' >> /app-entrypoint.sh && \
+    echo 'server {' >> /app-entrypoint.sh && \
+    echo '    listen '$PORT';' >> /app-entrypoint.sh && \
+    echo '    listen 8001;' >> /app-entrypoint.sh && \
+    echo '    location / {' >> /app-entrypoint.sh && \
+    echo '        root /usr
