@@ -14,9 +14,8 @@ FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Use nginx template system for env variable substitution
-RUN mkdir -p /etc/nginx/templates
-RUN echo 'server { \
+RUN mkdir -p /etc/nginx/templates && \
+    echo 'server { \
     listen ${PORT}; \
     location / { \
         root /usr/share/nginx/html; \
