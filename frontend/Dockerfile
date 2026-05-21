@@ -14,9 +14,9 @@ FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx config for SPA routing
+# Copy nginx config for SPA routing - uses $PORT from environment
 RUN echo 'server { \
-    listen 80; \
+    listen $PORT; \
     location / { \
         root /usr/share/nginx/html; \
         index index.html; \
@@ -24,6 +24,5 @@ RUN echo 'server { \
     } \
 }' > /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+# Use envsubst to replace $PORT with actual value
+CMD sed -i "s/\$PORT/$PORT/g" /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"
