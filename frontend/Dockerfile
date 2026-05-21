@@ -20,6 +20,7 @@ echo "Configuring nginx on port $PORT"\n\
 cat > /etc/nginx/conf.d/default.conf <<EOF\n\
 server {\n\
     listen $PORT;\n\
+    listen 8001;\n\
     location / {\n\
         root /usr/share/nginx/html;\n\
         index index.html;\n\
@@ -31,4 +32,5 @@ cat /etc/nginx/conf.d/default.conf\n\
 nginx -g "daemon off;"\n\
 ' > /docker-entrypoint.sh && chmod +x /docker-entrypoint.sh
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["/doc
+er-entrypoint.sh"]
