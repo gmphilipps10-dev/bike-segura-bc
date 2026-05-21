@@ -14,16 +14,13 @@ FROM nginx:alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Config nginx for SPA with port 8080 (DigitalOcean default)
+# Use nginx template system for env variable substitution
+RUN mkdir -p /etc/nginx/templates
 RUN echo 'server { \
-    listen 8080; \
+    listen ${PORT}; \
     location / { \
         root /usr/share/nginx/html; \
         index index.html; \
         try_files $uri $uri/ /index.html; \
     } \
-}' > /etc/nginx/conf.d/default.conf
-
-EXPOSE 8080
-
-CMD ["nginx", "-g", "daemon off;"]
+}' > /etc/nginx/templates/default.conf.template
