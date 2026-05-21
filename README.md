@@ -1,73 +1,105 @@
-# React + TypeScript + Vite
+# Bike Segura BC
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-7.2-646CFF?logo=vite&logoColor=white" />
+</p>
 
-Currently, two official plugins are available:
+Aplicativo mobile-first para protecao e rastreamento de bicicletas e equipamentos autopropelidos em Balneario Camboriu, SC.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## Funcionalidades
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Tela | Descricao |
+|------|-----------|
+| **Login/Cadastro** | Autenticacao de usuarios com toggle entre entrar e criar conta |
+| **Home** | Dashboard com estatisticas, noticias, menu de navegacao e alerta de emergencia |
+| **Meus Equipamentos** | Lista de bikes cadastradas com status de protecao em tempo real |
+| **Cadastrar Bicicleta** | Formulario completo com fotos, dados, rastreamento e nota fiscal |
+| **Delegacia - Boletim de Ocorrencia** | Redirecionamento para Delegacia Virtual SC com dados do equipamento |
+| **Mapa** | Rastreamento em tempo real + Mapa de seguranca de areas (Balneario Camboriu) |
+| **Meu Perfil** | Dados pessoais editaveis, opcoes de conta e navegacao |
+| **Planos** | Prata (R$150/ano), Ouro (R$300/ano), Diamante (R$450/ano) |
+| **Minhas Indicacoes** | Sistema de desconto cumulativo: 10% por indicacao, ate 100% |
+| **Lojas Parceiras** | Diretorio de lojas com filtro por categoria e link de redirecionamento |
+| **Anuncie Aqui** | Marketplace para venda de equipamentos cadastrados no sistema |
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Stack Tecnologico
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **React 18** + **TypeScript**
+- **Vite** (build tool)
+- **Tailwind CSS** + **shadcn/ui**
+- **Framer Motion** (animacoes)
+- **React Router** (navegacao)
+- **Leaflet** (mapas interativos)
+- **Lucide React** (icones)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+---
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Como rodar localmente
+
+```bash
+# Clone o repositorio
+git clone https://github.com/seu-usuario/bike-segura-bc.git
+cd bike-segura-bc
+
+# Instale as dependencias
+npm install
+
+# Rode o servidor de desenvolvimento
+npm run dev
+
+# Build para producao
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Estrutura do Projeto
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
 ```
+src/
+  components/       # Componentes reutilizaveis
+    AlertaFurtoModal.tsx
+    BottomNav.tsx
+  context/          # Context API
+    BikeContext.tsx
+  pages/            # Telas do app
+    Login.tsx
+    Home.tsx
+    MeusEquipamentos.tsx
+    CadastrarNovo.tsx
+    DelegaciaVirtual.tsx
+    Mapa.tsx
+    MeuPerfil.tsx
+    Planos.tsx
+    Indicacoes.tsx
+    LojasParceiras.tsx
+    AnuncieAqui.tsx
+  App.tsx           # Rotas principais
+  main.tsx          # Entry point
+  index.css         # Estilos globais
+public/             # Assets estaticos
+```
+
+---
+
+## Configuracao do WhatsApp Business
+
+Para o botao "Emitir Alerta de Furto" funcionar com resposta automatica:
+
+1. Configure **Mensagem de Ausencia** no WhatsApp Business
+2. Texto sugerido:
+
+> Recebemos seu alerta de furto/roubo e ja encaminhamos para as forcas de seguranca e para nossa equipe de recuperacao. Envie uma foto do seu equipamento o mais breve possivel para auxiliar na recuperacao!
+
+---
+
+## Licenca
+
+Este projeto e de propriedade exclusiva do Bike Segura BC.
