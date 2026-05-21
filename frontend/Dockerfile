@@ -23,3 +23,4 @@ RUN npm install -g serve
 # Use serve with PORT env variable
 CMD serve -s dist -l ${PORT:-8080}
 
+# Deploy: Fri May 22 06:31:36 CST 2026
