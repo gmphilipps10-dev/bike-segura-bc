@@ -26,6 +26,7 @@ export default function Login() {
 
   const handleSubmit = async () => {
     setError('');
+    authCtx.clearError();
 
     if (isRegister) {
       // Validate register
@@ -35,7 +36,7 @@ export default function Login() {
       if (!form.password || form.password.length < 6) { setError('A senha deve ter pelo menos 6 caracteres'); return; }
 
       setLoading(true);
-      const success = register({
+      const success = await register({
         name: form.name,
         email: form.email,
         phone: form.phone,
@@ -51,7 +52,7 @@ export default function Login() {
       if (success) {
         navigate('/');
       } else {
-        setError('Este e-mail já está cadastrado');
+        setError(authCtx.error || 'Este e-mail já está cadastrado');
       }
     } else {
       // Validate login
@@ -59,13 +60,13 @@ export default function Login() {
       if (!form.password) { setError('Digite sua senha'); return; }
 
       setLoading(true);
-      const success = login(form.email, form.password);
+      const success = await login(form.email, form.password);
       setLoading(false);
 
       if (success) {
         navigate('/');
       } else {
-        setError('E-mail ou senha incorretos');
+        setError(authCtx.error || 'E-mail ou senha incorretos');
       }
     }
   };

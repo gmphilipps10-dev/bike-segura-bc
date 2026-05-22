@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { apiPost, apiGet, apiPut } from '../config/api';
 
 export interface UserData {
   id: string;
@@ -15,99 +16,126 @@ export interface UserData {
 interface AuthContextType {
   user: UserData | null;
   isLoggedIn: boolean;
-  login: (email: string, password: string) => boolean;
-  register: (data: Omit<UserData, 'id'> & { password: string }) => boolean;
+  token: string | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (data: Omit<UserData, 'id'> & { password: string }) => Promise<boolean>;
   logout: () => void;
-  updateUser: (data: Partial<UserData>) => void;
+  updateUser: (data: Partial<UserData>) => Promise<void>;
+  error: string;
+  clearError: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
-const STORAGE_KEY = 'bike_segura_auth';
-const USERS_KEY = 'bike_segura_users';
+const TOKEN_KEY = 'bike_segura_token';
+const USER_KEY = 'bike_segura_user';
+
+function loadToken(): string | null {
+  try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
 
 function loadUser(): UserData | null {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(USER_KEY);
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
   return null;
 }
 
-function loadUsers(): (UserData & { password: string })[] {
-  try {
-    const stored = localStorage.getItem(USERS_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch { /* ignore */ }
-  return [];
-}
-
-function saveUsers(users: (UserData & { password: string })[]) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-}
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserData | null>(loadUser);
+  const [token, setToken] = useState<string | null>(loadToken);
+  const [error, setError] = useState('');
 
-  const isLoggedIn = !!user;
+  const isLoggedIn = !!token && !!user;
 
   useEffect(() => {
-    if (user) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      localStorage.removeItem(STORAGE_KEY);
-    }
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  }, [token]);
+
+  useEffect(() => {
+    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(USER_KEY);
   }, [user]);
 
-  const login = (email: string, password: string): boolean => {
-    const users = loadUsers();
-    const found = users.find(u => u.email === email && u.password === password);
-    if (found) {
-      const { password: _, ...userData } = found;
-      setUser(userData);
-      return true;
-    }
-    const foundByPhone = users.find(u => u.phone === email && u.password === password);
-    if (foundByPhone) {
-      const { password: _, ...userData } = foundByPhone;
-      setUser(userData);
-      return true;
-    }
-    return false;
-  };
+  // Validate token on mount
+  useEffect(() => {
+    const validateToken = async () => {
+      const storedToken = loadToken();
+      if (!storedToken) return;
+      try {
+        const userData = await apiGet('/auth/me', storedToken);
+        setUser(userData);
+        setToken(storedToken);
+      } catch {
+        // Token invalid, clear it
+        logout();
+      }
+    };
+    validateToken();
+  }, []);
 
-  const register = (data: Omit<UserData, 'id'> & { password: string }): boolean => {
-    const users = loadUsers();
-    if (users.some(u => u.email === data.email)) {
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      setError('');
+      const data = await apiPost('/auth/login', { email, password });
+      setToken(data.token);
+      setUser(data.user);
+      return true;
+    } catch (err: any) {
+      const msg = err.message || 'Email ou senha incorretos';
+      // Try to parse error message from API
+      try {
+        const parsed = JSON.parse(msg);
+        setError(parsed.message || msg);
+      } catch {
+        setError(msg);
+      }
       return false;
     }
-    const newUser = { ...data, id: Date.now().toString() };
-    users.push(newUser);
-    saveUsers(users);
-    const { password: _, ...userData } = newUser;
-    setUser(userData);
-    return true;
+  };
+
+  const register = async (data: Omit<UserData, 'id'> & { password: string }): Promise<boolean> => {
+    try {
+      setError('');
+      const result = await apiPost('/auth/register', data);
+      setToken(result.token);
+      setUser(result.user);
+      return true;
+    } catch (err: any) {
+      const msg = err.message || 'Erro ao criar conta';
+      try {
+        const parsed = JSON.parse(msg);
+        setError(parsed.message || msg);
+      } catch {
+        setError(msg);
+      }
+      return false;
+    }
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+    setToken(null);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
   };
 
-  const updateUser = (data: Partial<UserData>) => {
-    if (!user) return;
-    const updated = { ...user, ...data };
-    setUser(updated);
-    const users = loadUsers();
-    const idx = users.findIndex(u => u.id === user.id);
-    if (idx >= 0) {
-      users[idx] = { ...users[idx], ...data };
-      saveUsers(users);
+  const updateUser = async (data: Partial<UserData>): Promise<void> => {
+    if (!token || !user) return;
+    try {
+      const updated = await apiPut('/auth/profile', data, token);
+      setUser(updated);
+    } catch (err: any) {
+      console.error('Update error:', err);
     }
   };
 
+  const clearError = () => setError('');
+
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, token, login, register, logout, updateUser, error, clearError }}>
       {children}
     </AuthContext.Provider>
   );
