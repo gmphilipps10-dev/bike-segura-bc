@@ -19,7 +19,6 @@ const photoSlots = [
   { key: 'latDir', label: 'Lat. Direita' },
   { key: 'latEsq', label: 'Lat. Esquerda' },
   { key: 'nQuadro', label: 'N. Quadro' },
-  { key: 'notaFiscal', label: 'Nota Fiscal' },
   { key: 'acessorios', label: 'Acessórios' },
 ];
 
@@ -126,7 +125,7 @@ export default function CadastrarNovo() {
             <div>
               <label className="text-slate-400 text-[11px] mb-1.5 block">Número de Série <span className="text-amber-400">*</span></label>
               <input
-                type="text" placeholder="Número gravado no quadro"
+                type="text" placeholder="Nº gravado no Quadro"
                 value={form.numeroSerie} onChange={e => handleChange('numeroSerie', e.target.value)}
                 className="w-full glass-card px-3 py-2.5 text-white text-sm placeholder:text-slate-600 outline-none focus:border-amber-400/50 transition-colors"
               />
@@ -238,7 +237,7 @@ export default function CadastrarNovo() {
 
         {/* ===== FOTOS ===== */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="glass-card p-5 mb-4">
-          {sectionHeader(<Camera className="w-4 h-4" />, 'Fotos da Bicicleta')}
+          {sectionHeader(<Camera className="w-4 h-4" />, 'Fotos do Equipamento')}
 
           <div className="grid grid-cols-2 gap-2.5">
             {photoSlots.map(slot => (
