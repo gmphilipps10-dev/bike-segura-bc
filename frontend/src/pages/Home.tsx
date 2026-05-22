@@ -57,19 +57,18 @@ function StatusBadge({ count }: { count: number }) {
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="flex items-center gap-2 mb-3 scale-50 origin-left"
+      className="flex items-center gap-1.5 mb-2"
     >
       <div className="relative">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center">
-          <Radio className="w-5 h-5 text-emerald-400" />
+        <div className="w-5 h-5 rounded-md bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <Radio className="w-2.5 h-2.5 text-emerald-400" />
         </div>
-        <span className="absolute inset-0 rounded-xl border border-emerald-400/40 animate-ping" style={{ animationDuration: '2s' }} />
-        <span className="absolute -inset-1.5 rounded-2xl border border-emerald-400/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-        <span className="absolute -inset-3 rounded-3xl border border-emerald-400/10 animate-ping" style={{ animationDuration: '3s', animationDelay: '1s' }} />
+        <span className="absolute inset-0 rounded-md border border-emerald-400/40 animate-ping" style={{ animationDuration: '2s' }} />
+        <span className="absolute -inset-0.5 rounded-lg border border-emerald-400/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
       </div>
       <div>
-        <p className="text-sm font-semibold text-white">{count} {count === 1 ? 'Equipamento Monitorado' : 'Equipamentos Monitorados'}</p>
-        <p className="text-xs text-emerald-400/80">Em tempo real</p>
+        <p className="text-[10px] font-semibold text-white">{count} {count === 1 ? 'Equipamento Monitorado' : 'Equipamentos Monitorados'}</p>
+        <p className="text-[9px] text-emerald-400/80">Em tempo real</p>
       </div>
     </motion.div>
   );
