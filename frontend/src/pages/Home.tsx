@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Bike, Plus, ShieldAlert, User, CreditCard, Users, Map, Store, Tag,
-  AlertTriangle, ChevronRight, Radio
+  AlertTriangle, ChevronRight, Radio, Share2
 } from 'lucide-react';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
@@ -41,7 +41,7 @@ const newsItems = [
 const menuItems = [
   { icon: Bike, label: 'Meus\nEquipamentos', color: 'from-amber-400 to-yellow-500', path: '/equipamentos' },
   { icon: Plus, label: 'Cadastrar\nNovo', color: 'from-emerald-400 to-teal-500', path: '/cadastrar' },
-  { icon: ShieldAlert, label: 'Delegacia Virtual\nBOLETIM DE OCORRÊNCIA', color: 'from-red-400 to-rose-500', path: '/delegacia' },
+  { icon: ShieldAlert, label: 'Delegacia\nVirtual', sub: 'BOLETIM DE OCORRÊNCIA', color: 'from-red-400 to-rose-500', path: '/delegacia' },
   { icon: User, label: 'Meu\nPerfil', color: 'from-violet-400 to-purple-500', path: '/perfil' },
   { icon: CreditCard, label: 'Planos', color: 'from-rose-400 to-pink-500', path: '/planos' },
   { icon: Users, label: 'Minhas\nIndicações', color: 'from-cyan-400 to-teal-500', path: '/indicacoes' },
@@ -114,13 +114,16 @@ function MenuGrid() {
           const Icon = item.icon;
           return (
             <Link key={item.label} to={item.path}>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover p-2 flex flex-col items-center justify-center gap-1.5 text-center group cursor-pointer h-[90px]">
-                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} p-[1px] group-hover:scale-110 transition-transform duration-300`}>
-                  <div className="w-full h-full rounded-lg bg-[#111827] flex items-center justify-center">
-                    <Icon className="w-4 h-4 text-white" />
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover p-2.5 flex flex-col items-center justify-center gap-1.5 text-center group cursor-pointer h-[105px]">
+                <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} p-[1px] group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="w-full h-full rounded-xl bg-[#111827] flex items-center justify-center">
+                    <Icon className="w-[18px] h-[18px] text-white" />
                   </div>
                 </div>
                 <span className="text-[9px] text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
+                {'sub' in item && (item as any).sub && (
+                  <span className="text-[7px] text-red-400/80 font-bold tracking-wider">{(item as any).sub}</span>
+                )}
               </motion.div>
             </Link>
           );
@@ -130,16 +133,29 @@ function MenuGrid() {
   );
 }
 
+function ReferralCTA() {
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mt-2 mb-2">
+      <Link to="/indicacoes">
+        <motion.button whileTap={{ scale: 0.98 }} className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer">
+          <Share2 className="w-4 h-4 text-[#0c1222]" />
+          <span className="text-[#0c1222] font-bold text-xs tracking-wide">INDIQUE E GANHE R$</span>
+        </motion.button>
+      </Link>
+    </motion.div>
+  );
+}
+
 function EmergencyButton({ onClick }: { onClick: () => void }) {
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="flex flex-col items-center mt-2 mb-2">
-      <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="relative w-16 h-16 rounded-full flex flex-col items-center justify-center gap-0.5 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
+    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="flex flex-col items-center mb-3">
+      <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="relative w-[88px] h-[88px] rounded-full flex flex-col items-center justify-center gap-1 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
         <span className="absolute inset-0 rounded-full border-2 border-red-400/30 animate-ping" style={{ animationDuration: '2s' }} />
-        <span className="absolute -inset-1.5 rounded-full border border-red-500/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.3s' }} />
-        <AlertTriangle className="w-5 h-5 text-white" strokeWidth={2.5} />
-        <span className="text-white text-[8px] font-bold leading-tight text-center px-1">EMITIR<br/>ALERTA</span>
+        <span className="absolute -inset-2 rounded-full border border-red-500/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.3s' }} />
+        <AlertTriangle className="w-6 h-6 text-white" strokeWidth={2.5} />
+        <span className="text-white text-[9px] font-bold leading-tight text-center px-1">EMITIR<br/>ALERTA</span>
       </motion.button>
-      <p className="text-red-400/60 text-[9px] mt-1 font-medium tracking-wide">Toque em caso de emergência</p>
+      <p className="text-red-400/60 text-[9px] mt-2 font-medium tracking-wide">Toque em caso de emergência</p>
     </motion.div>
   );
 }
@@ -170,22 +186,22 @@ export default function Home() {
         <div className="absolute top-60 -right-20 w-80 h-80 bg-amber-500/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1.5s' }} />
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto px-4 pt-3 pb-0 overflow-hidden">
+      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto px-4 pt-4 pb-0 overflow-hidden">
 
-        {/* Header com bike pequena no meio */}
+        {/* Header com bike retangular no meio */}
         <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-2 shrink-0">
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="text-slate-400 text-xs">{greeting},</p>
-            <h1 className="text-lg font-bold text-gradient-gold leading-tight">{displayName.toUpperCase()}</h1>
+            <h1 className="text-lg font-bold text-gradient-gold leading-tight truncate">{displayName.toUpperCase()}</h1>
           </div>
 
-          {/* Bike pequena centralizada */}
-          <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="w-10 h-10 rounded-full overflow-hidden border-2 border-amber-400/30 shadow-lg shadow-amber-500/10 shrink-0 mx-2">
+          {/* Bike retangular pequena centralizada */}
+          <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="shrink-0 mx-3 rounded-lg overflow-hidden border border-amber-400/30 shadow-lg shadow-amber-500/10" style={{ width: '60px', height: '36px' }}>
             <img src="/hero-bike.jpg" alt="Bike" className="w-full h-full object-cover" />
           </motion.div>
 
-          <Link to="/perfil">
-            <motion.div whileTap={{ scale: 0.95 }} className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20 shrink-0">
+          <Link to="/perfil" className="shrink-0">
+            <motion.div whileTap={{ scale: 0.95 }} className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
               <span className="text-[#0c1222] font-bold text-sm">{initial}</span>
             </motion.div>
           </Link>
@@ -199,6 +215,9 @@ export default function Home() {
 
         {/* Menu */}
         <MenuGrid />
+
+        {/* Indique e Ganhe */}
+        <ReferralCTA />
 
         {/* Botão Alerta */}
         <EmergencyButton onClick={() => setAlertaOpen(true)} />
