@@ -40,15 +40,15 @@ const newsItems = [
 ];
 
 const menuItems = [
-  { icon: Bike, label: 'Meus\nEquipamentos', color: 'from-amber-400 to-yellow-500', path: '/equipamentos' },
-  { icon: Plus, label: 'Cadastrar\nNovo', color: 'from-emerald-400 to-teal-500', path: '/cadastrar' },
-  { icon: ShieldAlert, label: 'Delegacia\nBOLETIM DE OCORRÊNCIA', color: 'from-red-400 to-rose-500', path: '/delegacia' },
-  { icon: User, label: 'Meu\nPerfil', color: 'from-violet-400 to-purple-500', path: '/perfil' },
+  { icon: Bike, label: 'Meus Equipamentos', color: 'from-amber-400 to-yellow-500', path: '/equipamentos' },
+  { icon: Plus, label: 'Cadastrar Novo', color: 'from-emerald-400 to-teal-500', path: '/cadastrar' },
+  { icon: ShieldAlert, label: 'Delegacia Virtual', color: 'from-red-400 to-rose-500', path: '/delegacia' },
+  { icon: User, label: 'Meu Perfil', color: 'from-violet-400 to-purple-500', path: '/perfil' },
   { icon: CreditCard, label: 'Planos', color: 'from-rose-400 to-pink-500', path: '/planos' },
-  { icon: Users, label: 'Minhas\nIndicações', color: 'from-cyan-400 to-teal-500', path: '/indicacoes' },
+  { icon: Users, label: 'Minhas Indicações', color: 'from-cyan-400 to-teal-500', path: '/indicacoes' },
   { icon: Map, label: 'Mapa', color: 'from-lime-400 to-green-500', path: '/mapa' },
-  { icon: Store, label: 'Lojas\nParceiras', color: 'from-orange-400 to-amber-500', path: '/lojas' },
-  { icon: Tag, label: 'Anuncie\nAqui', color: 'from-sky-400 to-blue-500', path: '/anuncie' },
+  { icon: Store, label: 'Lojas Parceiras', color: 'from-orange-400 to-amber-500', path: '/lojas' },
+  { icon: Tag, label: 'Anuncie Aqui', color: 'from-sky-400 to-blue-500', path: '/anuncie' },
 ];
 
 /* ===== Components ===== */
@@ -121,7 +121,7 @@ function NewsCarousel() {
       <div className="relative overflow-hidden rounded-2xl">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent pointer-events-none z-10" style={{ borderLeft: '3px solid rgba(245, 197, 24, 0.5)' }} />
         <AnimatePresence mode="wait">
-          <motion.div key={current} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.4 }} className="glass-card p-5 relative">
+          <motion.div key={current} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.4 }} className="glass-card p-5 relative overflow-hidden">
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold tracking-wider">{newsItems[current].tag}</span>
             </div>
@@ -157,7 +157,7 @@ function MenuGrid() {
                     <Icon className="w-[18px] h-[18px] text-white" />
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-300 font-medium leading-tight whitespace-pre-line min-h-[28px] flex items-center justify-center">{item.label}</span>
+                <span className="text-[10px] text-slate-300 font-medium leading-tight line-clamp-2">{item.label}</span>
               </motion.div>
             </Link>
           );
