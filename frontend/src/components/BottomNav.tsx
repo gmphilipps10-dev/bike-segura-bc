@@ -22,7 +22,7 @@ export default function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-50">
       <div className="mx-auto max-w-md">
         <div className="mx-4 mb-4 rounded-2xl glass-card border border-white/[0.1] shadow-2xl shadow-black/50 overflow-hidden">
-          <div className="flex items-center justify-around py-3 relative">
+          <div className="flex items-center justify-around py-2 relative">
             <motion.div
               layoutId="nav-indicator"
               className="absolute bottom-2 w-10 h-0.5 bg-amber-400 rounded-full"
