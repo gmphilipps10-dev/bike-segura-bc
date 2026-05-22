@@ -194,7 +194,8 @@ export default function CadastrarNovo() {
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full left-0 right-0 mt-1 glass-card border border-white/10 rounded-xl overflow-hidden z-20 max-h-48 overflow-y-auto"
+                className="absolute top-full left-0 right-0 mt-1 bg-[#1a2332] border border-white/10 rounded-xl overflow-y-auto z-50 shadow-2xl shadow-black/50 scrollbar-hide"
+style={{ maxHeight: '280px' }}
               >
                 {categories.map(c => (
                   <button
