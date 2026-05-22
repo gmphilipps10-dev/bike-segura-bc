@@ -86,10 +86,6 @@ function NewsCarousel() {
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-5">
-      <div className="flex items-center gap-2 mb-3">
-        <Newspaper className="w-4 h-4 text-amber-400" />
-        <span className="text-xs font-bold tracking-wider text-amber-400 uppercase">Últimas Notícias</span>
-      </div>
       <div className="relative overflow-hidden rounded-2xl">
         <div className="absolute inset-0 bg-gradient-to-r from-amber-500/10 via-transparent to-transparent pointer-events-none z-10" style={{ borderLeft: '3px solid rgba(245, 197, 24, 0.5)' }} />
         <AnimatePresence mode="wait">
