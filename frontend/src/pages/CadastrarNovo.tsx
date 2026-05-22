@@ -177,10 +177,10 @@ export default function CadastrarNovo() {
         </motion.section>
 
         {/* ===== CATEGORIA ===== */}
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 mb-4">
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 mb-4" style={{ overflow: 'visible' }}>
           {sectionHeader(<Tag className="w-4 h-4" />, 'Categoria')}
 
-          <div className="relative z-[100]">
+          <div className="relative">
             <button
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
               className="w-full glass-card flex items-center justify-between px-3 py-2.5 cursor-pointer"
