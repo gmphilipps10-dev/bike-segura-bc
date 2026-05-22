@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Camera, FileText, Tag, MapPin, Link as LinkIcon,
-  ChevronDown, Upload, ClipboardList, NotebookPen
+  Upload, ClipboardList, NotebookPen
 } from 'lucide-react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useBikes } from '../context/BikeContext';
@@ -78,7 +78,7 @@ export default function CadastrarNovo() {
   });
 
   const [photos, setPhotos] = useState<Record<string, string | null>>({});
-  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
