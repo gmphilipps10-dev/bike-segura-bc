@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Bike, Plus, ShieldAlert, User, CreditCard, Users, Map, Store, Tag,
-  AlertTriangle, ChevronRight, Radio, Share2, Newspaper
+  AlertTriangle, ChevronRight, Radio, Newspaper
 } from 'lucide-react';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
