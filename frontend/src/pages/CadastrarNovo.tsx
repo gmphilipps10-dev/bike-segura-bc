@@ -123,7 +123,7 @@ export default function CadastrarNovo() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/95 to-[#0c1222]" />
       </div>
 
-      <div className="relative z-10 max-w-md md:max-w-2xl mx-auto px-4 pt-6 pb-8">
+      <div className="relative z-10 max-w-xl mx-auto px-4 pt-6 pb-8">
 
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">
@@ -177,38 +177,20 @@ export default function CadastrarNovo() {
         </motion.section>
 
         {/* ===== CATEGORIA ===== */}
-        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 mb-4" style={{ overflow: 'visible' }}>
+        <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 mb-4">
           {sectionHeader(<Tag className="w-4 h-4" />, 'Categoria')}
 
-          <div className="relative">
-            <button
-              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
-              className="w-full glass-card flex items-center justify-between px-3 py-2.5 cursor-pointer"
-            >
-              <span className={`text-sm ${form.categoria ? 'text-white' : 'text-slate-500'}`}>
-                {form.categoria || 'Selecione...'}
-              </span>
-              <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${showCategoryDropdown ? 'rotate-180' : ''}`} />
-            </button>
-            {showCategoryDropdown && (
-              <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-[#1a2332] border border-white/10 rounded-xl overflow-y-auto z-[9999] shadow-2xl shadow-black/50 scrollbar-hide"
-                style={{ maxHeight: '280px' }}
-              >
-                {categories.map(c => (
-                  <button
-                    key={c}
-                    onClick={() => { handleChange('categoria', c); setShowCategoryDropdown(false); }}
-                    className="w-full text-left px-3 py-2 text-sm text-slate-300 hover:bg-white/5 transition-colors cursor-pointer"
-                  >
-                    {c}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </div>
+          <select
+            value={form.categoria}
+            onChange={e => handleChange('categoria', e.target.value)}
+            className="w-full glass-card px-3 py-2.5 text-sm text-white outline-none cursor-pointer appearance-none"
+            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+          >
+            <option value="" className="bg-[#1a2332] text-slate-500">Selecione...</option>
+            {categories.map(c => (
+              <option key={c} value={c} className="bg-[#1a2332] text-white">{c}</option>
+            ))}
+          </select>
         </motion.section>
 
         {/* ===== CARACTERISTICAS ===== */}
