@@ -179,18 +179,20 @@ export default function Home() {
       <div className="relative z-10 flex-1 overflow-y-auto scrollbar-hide">
         <div className="max-w-md mx-auto px-4 pt-4 pb-28">
 
-          {/* Header com bike centralizada e larga */}
-          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-5">
-            <div className="flex-1 min-w-0">
+          {/* Header com bike ocupando todo o espaço lateral */}
+          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 mb-5">
+            {/* Cumprimento - esquerda */}
+            <div className="shrink-0">
               <p className="text-slate-400 text-xs">{greeting},</p>
-              <h1 className="text-xl font-bold text-gradient-gold leading-tight truncate">{displayName.toUpperCase()}</h1>
+              <h1 className="text-xl font-bold text-gradient-gold leading-tight">{displayName.toUpperCase()}</h1>
             </div>
 
-            {/* Bike centralizada, largura triplicada */}
-            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="shrink-0 mx-2 rounded-lg overflow-hidden" style={{ width: '168px', height: '56px' }}>
+            {/* Bike - ocupa todo o espaço restante, mesma altura do texto */}
+            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="flex-1 rounded-lg overflow-hidden" style={{ height: '48px' }}>
               <img src="/hero-bike.jpg" alt="Bike" className="w-full h-full object-cover" />
             </motion.div>
 
+            {/* Avatar - direita */}
             <Link to="/perfil" className="shrink-0">
               <motion.div whileTap={{ scale: 0.95 }} className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
                 <span className="text-[#0c1222] font-bold text-base">{initial}</span>
