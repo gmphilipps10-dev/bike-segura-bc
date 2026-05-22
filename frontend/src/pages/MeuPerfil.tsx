@@ -5,33 +5,64 @@ import {
   Edit3, Save, LogOut, ChevronRight, Bike, CreditCard,
   Users, HelpCircle, FileText
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import { useAuth } from '../context/AuthContext';
+import { useBikes } from '../context/BikeContext';
 
 export default function MeuPerfil() {
+  const navigate = useNavigate();
+  const { user, updateUser, logout } = useAuth();
+  const { bikes } = useBikes();
+
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
-    nome: 'Gian Silva',
-    email: 'gian@email.com',
-    telefone: '(47) 99999-9999',
-    cpf: '123.456.789-00',
-    endereco: 'Balneário Camboriú, SC',
-    rg: '1.234.567-8',
-    nascimento: '10/05/1995',
-    contatoEmergencia: '(47) 98888-8888'
+    nome: user?.name || '',
+    email: user?.email || '',
+    telefone: user?.phone || '',
+    cpf: user?.cpf || '',
+    rg: user?.rg || '',
+    nascimento: user?.nascimento || '',
+    endereco: user?.endereco || '',
+    contatoEmergencia: user?.contatoEmergencia || ''
   });
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleSave = () => {
+    updateUser({
+      name: form.nome,
+      email: form.email,
+      phone: form.telefone,
+      cpf: form.cpf,
+      rg: form.rg,
+      nascimento: form.nascimento,
+      endereco: form.endereco,
+      contatoEmergencia: form.contatoEmergencia
+    });
+    setEditMode(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const bikeCount = bikes.length;
+  const activeCount = bikes.filter(b => b.protected).length;
+
   const menuItems = [
-    { icon: Bike, label: 'Meus Equipamentos', desc: '3 bikes cadastradas', path: '/equipamentos' },
-    { icon: CreditCard, label: 'Meu Plano', desc: 'Gratuito', path: '/planos' },
-    { icon: Users, label: 'Minhas Indicações', desc: '2 indicações realizadas', path: '/indicacoes' },
+    { icon: Bike, label: 'Meus Equipamentos', desc: `${bikeCount} bike${bikeCount !== 1 ? 's' : ''} cadastrada${bikeCount !== 1 ? 's' : ''} • ${activeCount} protegida${activeCount !== 1 ? 's' : ''}`, path: '/equipamentos' },
+    { icon: CreditCard, label: 'Meu Plano', desc: 'Escolha seu plano de proteção', path: '/planos' },
+    { icon: Users, label: 'Minhas Indicações', desc: 'Ganhe desconto indicando amigos', path: '/indicacoes' },
     { icon: FileText, label: 'Termos e Políticas', desc: 'Termos de uso e privacidade', path: '/termos' },
     { icon: HelpCircle, label: 'Ajuda e Suporte', desc: 'Perguntas frequentes e contato', path: '/ajuda' },
   ];
+
+  const displayName = user?.name || 'Usuário';
+  const initial = user?.name?.charAt(0) || 'U';
 
   return (
     <div className="min-h-screen bg-[#0c1222] relative overflow-x-hidden">
@@ -53,7 +84,13 @@ export default function MeuPerfil() {
             <h1 className="text-xl font-bold text-white">Meu Perfil</h1>
           </div>
           <button
-            onClick={() => setEditMode(!editMode)}
+            onClick={() => {
+              if (editMode) {
+                handleSave();
+              } else {
+                setEditMode(true);
+              }
+            }}
             className="w-10 h-10 rounded-xl glass-card flex items-center justify-center shrink-0 cursor-pointer hover:bg-amber-500/10 transition-colors"
           >
             {editMode ? <Save className="w-5 h-5 text-emerald-400" /> : <Edit3 className="w-5 h-5 text-amber-400" />}
@@ -68,14 +105,14 @@ export default function MeuPerfil() {
           className="glass-card p-5 mb-5 flex items-center gap-4"
         >
           <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-[#0c1222] font-bold text-2xl shadow-lg shadow-amber-500/20">
-            G
+            {initial}
           </div>
           <div className="flex-1">
-            <h2 className="text-white font-bold text-lg">{form.nome}</h2>
-            <p className="text-slate-400 text-xs">{form.email}</p>
+            <h2 className="text-white font-bold text-lg">{displayName}</h2>
+            <p className="text-slate-400 text-xs">{user?.email || ''}</p>
             <div className="flex items-center gap-1.5 mt-1.5">
               <MapPin className="w-3 h-3 text-slate-500" />
-              <span className="text-slate-500 text-[11px]">{form.endereco}</span>
+              <span className="text-slate-500 text-[11px]">{user?.endereco || 'Balneário Camboriú, SC'}</span>
             </div>
           </div>
         </motion.div>
@@ -112,7 +149,7 @@ export default function MeuPerfil() {
                 ) : (
                   <div className="flex items-center gap-2">
                     <item.icon className="w-3.5 h-3.5 text-slate-600" />
-                    <span className="text-white text-sm">{form[item.field as keyof typeof form]}</span>
+                    <span className="text-white text-sm">{form[item.field as keyof typeof form] || 'Não informado'}</span>
                   </div>
                 )}
               </div>
@@ -124,7 +161,7 @@ export default function MeuPerfil() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               whileTap={{ scale: 0.98 }}
-              onClick={() => setEditMode(false)}
+              onClick={handleSave}
               className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] font-bold text-sm cursor-pointer"
             >
               SALVAR ALTERAÇÕES
@@ -171,10 +208,13 @@ export default function MeuPerfil() {
           transition={{ delay: 0.5 }}
           className="mb-24"
         >
-          <Link to="/login" className="w-full glass-card border border-red-500/20 p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-red-500/10 transition-colors">
+          <button
+            onClick={handleLogout}
+            className="w-full glass-card border border-red-500/20 p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-red-500/10 transition-colors"
+          >
             <LogOut className="w-5 h-5 text-red-400" />
             <span className="text-red-400 text-sm font-semibold">SAIR DA CONTA</span>
-          </Link>
+          </button>
         </motion.div>
 
       </div>

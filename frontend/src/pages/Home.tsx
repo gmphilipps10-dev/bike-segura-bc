@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -6,7 +6,10 @@ import {
   AlertTriangle, Share2, ChevronRight, Radio,
   Newspaper, TrendingUp, ShieldCheck, Bike as BikeIcon
 } from 'lucide-react';
+import { useBikes } from '../context/BikeContext';
+import { useAuth } from '../context/AuthContext';
 import AlertaFurtoModal from '../components/AlertaFurtoModal';
+import BottomNav from '../components/BottomNav';
 
 /* ===== Data ===== */
 const newsItems = [
@@ -47,8 +50,6 @@ const menuItems = [
   { icon: Store, label: 'Lojas\nParceiras', color: 'from-orange-400 to-amber-500', path: '/lojas' },
   { icon: Tag, label: 'Anuncie\nAqui', color: 'from-sky-400 to-blue-500', path: '/anuncie' },
 ];
-
-import BottomNav from '../components/BottomNav';
 
 /* ===== Components ===== */
 
@@ -110,10 +111,6 @@ function StatusBadge({ count }: { count: number }) {
 
 function NewsCarousel() {
   const [current, setCurrent] = useState(0);
-  useEffect(() => {
-    const timer = setInterval(() => setCurrent(p => (p + 1) % newsItems.length), 5000);
-    return () => clearInterval(timer);
-  }, []);
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="mb-5">
@@ -199,6 +196,8 @@ function ReferralCTA() {
 
 /* ===== Page ===== */
 export default function Home() {
+  const { bikes } = useBikes();
+  const { user } = useAuth();
   const [greeting] = useState(() => {
     const h = new Date().getHours();
     if (h < 12) return 'Bom dia';
@@ -208,6 +207,9 @@ export default function Home() {
 
   const [alertaOpen, setAlertaOpen] = useState(false);
 
+  const displayName = user?.name?.split(' ')[0] || 'Usuário';
+  const initial = user?.name?.charAt(0) || 'U';
+
   return (
     <div className="min-h-screen bg-[#0c1222] relative overflow-x-hidden">
       {/* Background */}
@@ -215,7 +217,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/90 to-[#0c1222]" />
         <div className="absolute top-20 -left-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-[100px] animate-float" />
-        <div className="absolute top-60 -right-20 w-80 h-80 bg-amber-500/8 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1.5s' }} />
+        <div className="absolute top-60 -right-20 w-80 h-80 bg-amber-500/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1.5s' }} />
         <div className="absolute bottom-40 left-10 w-40 h-40 bg-teal-500/10 rounded-full blur-[80px] animate-float" style={{ animationDelay: '3s' }} />
       </div>
 
@@ -223,11 +225,11 @@ export default function Home() {
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
           <div>
             <p className="text-slate-400 text-sm">{greeting},</p>
-            <h1 className="text-2xl font-bold text-gradient-gold">GIAN</h1>
+            <h1 className="text-2xl font-bold text-gradient-gold">{displayName.toUpperCase()}</h1>
           </div>
           <Link to="/perfil">
             <motion.div whileTap={{ scale: 0.95 }} className="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
-              <span className="text-[#0c1222] font-bold text-base">G</span>
+              <span className="text-[#0c1222] font-bold text-base">{initial}</span>
             </motion.div>
           </Link>
         </motion.header>
@@ -241,7 +243,7 @@ export default function Home() {
         </motion.div>
 
         <AppStats />
-        <StatusBadge count={0} />
+        <StatusBadge count={bikes.length} />
         <NewsCarousel />
         <MenuGrid />
         <EmergencyButton onClick={() => setAlertaOpen(true)} />

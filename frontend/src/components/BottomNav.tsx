@@ -3,9 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const navItems = [
-  { icon: Home, label: 'Início', path: '/home' },
+  { icon: Home, label: 'Início', path: '/' },
   { icon: Bike, label: 'Bikes', path: '/equipamentos' },
-  { icon: CreditCard, label: 'Planos', path: '#' },
+  { icon: CreditCard, label: 'Planos', path: '/planos' },
 ];
 
 export default function BottomNav() {
@@ -13,7 +13,7 @@ export default function BottomNav() {
   const current = location.pathname;
 
   const getIndicatorLeft = () => {
-    if (current === '/home' || current === '/') return 'calc(16.67% - 20px)';
+    if (current === '/') return 'calc(16.67% - 20px)';
     if (current === '/equipamentos') return 'calc(50% - 20px)';
     return 'calc(83.33% - 20px)';
   };

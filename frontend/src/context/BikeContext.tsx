@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 
 export interface BikeData {
   id: string;
@@ -17,9 +17,13 @@ export interface BikeData {
 interface BikeContextType {
   bikes: BikeData[];
   addBike: (bike: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => void;
+  removeBike: (id: string) => void;
+  toggleProtection: (id: string) => void;
 }
 
 const BikeContext = createContext<BikeContextType | null>(null);
+
+const STORAGE_KEY = 'bike_segura_bikes';
 
 const initialBikes: BikeData[] = [
   {
@@ -32,7 +36,7 @@ const initialBikes: BikeData[] = [
     value: '12500',
     photo: '/bike-1.jpg',
     protected: true,
-    location: 'Blumenau, SC',
+    location: 'Balneário Camboriú, SC',
     lastSeen: 'Há 2 min'
   },
   {
@@ -45,27 +49,49 @@ const initialBikes: BikeData[] = [
     value: '8900',
     photo: '/bike-2.jpg',
     protected: true,
-    location: 'Blumenau, SC',
+    location: 'Balneário Camboriú, SC',
     lastSeen: 'Online'
   }
 ];
 
+function loadBikes(): BikeData[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore */ }
+  return initialBikes;
+}
+
 export function BikeProvider({ children }: { children: ReactNode }) {
-  const [bikes, setBikes] = useState<BikeData[]>(initialBikes);
+  const [bikes, setBikes] = useState<BikeData[]>(loadBikes);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bikes));
+  }, [bikes]);
 
   const addBike = (bikeData: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => {
     const newBike: BikeData = {
       ...bikeData,
       id: Date.now().toString(),
       protected: true,
-      location: 'Blumenau, SC',
+      location: 'Balneário Camboriú, SC',
       lastSeen: 'Agora'
     };
     setBikes(prev => [...prev, newBike]);
   };
 
+  const removeBike = (id: string) => {
+    setBikes(prev => prev.filter(b => b.id !== id));
+  };
+
+  const toggleProtection = (id: string) => {
+    setBikes(prev => prev.map(b =>
+      b.id === id ? { ...b, protected: !b.protected, lastSeen: b.protected ? 'Desativado' : 'Agora' } : b
+    ));
+  };
+
   return (
-    <BikeContext.Provider value={{ bikes, addBike }}>
+    <BikeContext.Provider value={{ bikes, addBike, removeBike, toggleProtection }}>
       {children}
     </BikeContext.Provider>
   );

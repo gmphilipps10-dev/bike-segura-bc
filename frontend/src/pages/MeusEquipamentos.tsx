@@ -19,7 +19,7 @@ export default function MeusEquipamentos() {
 
       {/* Content */}
       <div className="relative z-10 max-w-md mx-auto px-4 pt-6 pb-8">
-        
+
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">
           <Link to="/" className="w-10 h-10 rounded-xl glass-card flex items-center justify-center shrink-0 cursor-pointer hover:bg-white/[0.06] transition-colors">
@@ -41,7 +41,7 @@ export default function MeusEquipamentos() {
             <p className="text-xs text-slate-400 mt-0.5">Monitoramento em tempo real ativo</p>
           </div>
           <div className="text-right">
-            <p className="text-emerald-400 font-bold text-lg">{bikes.length > 0 ? Math.round((activeCount/bikes.length)*100) : 0}%</p>
+            <p className="text-emerald-400 font-bold text-lg">{bikes.length > 0 ? Math.round((activeCount / bikes.length) * 100) : 0}%</p>
           </div>
         </motion.div>
 
@@ -59,12 +59,12 @@ export default function MeusEquipamentos() {
               <div className="relative aspect-[16/10] overflow-hidden">
                 <img src={bike.photo || '/bike-1.jpg'} alt={bike.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0c1222] via-transparent to-transparent" />
-                
+
                 {/* Status Badge */}
                 <div className="absolute top-3 right-3">
                   <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                    bike.protected 
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                    bike.protected
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       : 'bg-red-500/20 text-red-300 border border-red-500/30'
                   }`}>
                     {bike.protected ? <ShieldCheck className="w-3 h-3" /> : <Shield className="w-3 h-3" />}
@@ -83,7 +83,7 @@ export default function MeusEquipamentos() {
               {/* Info */}
               <div className="p-4">
                 <h3 className="text-white font-semibold text-base mb-1">{bike.name}</h3>
-                
+
                 <div className="flex items-center gap-2 mb-3">
                   <QrCode className="w-3.5 h-3.5 text-slate-500" />
                   <span className="text-slate-400 text-xs font-mono">{bike.serie}</span>
@@ -106,10 +106,21 @@ export default function MeusEquipamentos() {
         </div>
 
         {/* Add Button */}
+        {bikes.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12"
+          >
+            <p className="text-slate-400 text-sm mb-4">Nenhum equipamento cadastrado</p>
+            <Link to="/cadastrar" className="text-amber-400 text-xs">Cadastrar agora</Link>
+          </motion.div>
+        )}
+
         <Link to="/cadastrar">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.8 }} 
-            animate={{ opacity: 1, scale: 1 }} 
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, type: 'spring' }}
             className="fixed bottom-20 right-4 z-40"
           >

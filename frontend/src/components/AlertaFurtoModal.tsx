@@ -23,6 +23,8 @@ export default function AlertaFurtoModal({ isOpen, onClose }: AlertaFurtoModalPr
       `*Localização aproximada:* ${bike.location}`,
       '',
       'O equipamento acima foi furtado/roubado. Solicito ativação imediata do protocolo de Recuperação Assistida.',
+      '',
+      'Por favor, envie uma foto do equipamento assim que possível para auxiliar na recuperação.',
     ].join('\n');
 
     const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensagem)}`;
@@ -116,12 +118,6 @@ export default function AlertaFurtoModal({ isOpen, onClose }: AlertaFurtoModalPr
                   <AlertTriangle className="w-10 h-10 text-slate-600 mx-auto mb-3" />
                   <p className="text-slate-400 text-sm">Nenhum equipamento cadastrado</p>
                   <p className="text-slate-500 text-xs mt-1 mb-3">Cadastre um equipamento primeiro para emitir o alerta</p>
-                  <button
-                    onClick={() => { onClose(); }}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] text-xs font-bold"
-                  >
-                    CADASTRAR EQUIPAMENTO
-                  </button>
                 </div>
               )}
 

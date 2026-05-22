@@ -48,29 +48,37 @@
   .text-gradient-gold {
     @apply bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 bg-clip-text text-transparent;
   }
-  
+
   .text-gradient-emerald {
     @apply bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent;
   }
-  
+
   .glass-card {
     @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-2xl;
   }
-  
+
   .glass-card-hover {
     @apply glass-card transition-all duration-300 hover:bg-white/[0.06] hover:border-white/[0.15] hover:shadow-lg hover:shadow-amber-500/5;
   }
-  
+
   .glow-gold {
     box-shadow: 0 0 20px rgba(245, 197, 24, 0.15), 0 0 60px rgba(245, 197, 24, 0.05);
   }
-  
+
   .glow-emerald {
     box-shadow: 0 0 20px rgba(52, 211, 153, 0.15), 0 0 60px rgba(52, 211, 153, 0.05);
   }
-  
+
   .glow-danger {
     box-shadow: 0 0 30px rgba(239, 68, 68, 0.3), 0 0 80px rgba(239, 68, 68, 0.1);
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
@@ -147,4 +155,18 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(245, 197, 24, 0.5);
+}
+
+/* Leaflet popup customization */
+.custom-popup .leaflet-popup-content-wrapper {
+  background: #111827;
+  border-radius: 12px;
+  color: white;
+}
+.custom-popup .leaflet-popup-tip {
+  background: #111827;
+}
+.custom-div-icon {
+  background: transparent;
+  border: none;
 }

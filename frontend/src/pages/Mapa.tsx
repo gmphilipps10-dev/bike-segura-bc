@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Radio, Shield, Info
@@ -23,23 +23,23 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 const customBikeIcon = new L.DivIcon({
   className: 'custom-div-icon',
-  html: `<div style="background: linear-gradient(135deg, #f5c518, #f59e0b); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; center; justify-content: center; box-shadow: 0 2px 12px rgba(245,197,24,0.4); border: 2px solid #0c1222;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg></div>`,
+  html: `<div style="background: linear-gradient(135deg, #f5c518, #f59e0b); width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 12px rgba(245,197,24,0.4); border: 2px solid #0c1222;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg></div>`,
   iconSize: [36, 36],
   iconAnchor: [18, 36]
 });
 
 /* ===== Security Zones Data (Balneario Camboriu areas) ===== */
 const securityZones = [
-  { name: 'Centro / Avenida Atlântica', center: [-26.9975, -48.6352], radius: 1100, level: 'danger', incidents: 28, label: 'PERIGOSO' },
-  { name: 'Barra Norte', center: [-26.9800, -48.6200], radius: 900, level: 'warning', incidents: 16, label: 'ATENÇÃO' },
-  { name: 'Barra Sul', center: [-27.0150, -48.6400], radius: 800, level: 'warning', incidents: 14, label: 'ATENÇÃO' },
-  { name: 'Praia Brava', center: [-26.9600, -48.6100], radius: 1000, level: 'caution', incidents: 9, label: 'MODERADO' },
-  { name: 'Nações', center: [-27.0050, -48.6600], radius: 750, level: 'safe', incidents: 4, label: 'SEGURO' },
-  { name: 'Vila Real', center: [-27.0250, -48.6350], radius: 850, level: 'caution', incidents: 7, label: 'MODERADO' },
-  { name: 'Pioneiros', center: [-27.0080, -48.6500], radius: 700, level: 'safe', incidents: 3, label: 'SEGURO' },
-  { name: 'Jardim Iate Clube', center: [-26.9900, -48.6450], radius: 950, level: 'danger', incidents: 21, label: 'PERIGOSO' },
-  { name: 'Rio Pequeno', center: [-27.0350, -48.6250], radius: 800, level: 'safe', incidents: 2, label: 'SEGURO' },
-  { name: 'Santa Regina', center: [-27.0180, -48.6650], radius: 900, level: 'caution', incidents: 8, label: 'MODERADO' },
+  { name: 'Centro / Avenida Atlântica', center: [-26.9975, -48.6352] as [number, number], radius: 1100, level: 'danger', incidents: 28, label: 'PERIGOSO' },
+  { name: 'Barra Norte', center: [-26.9800, -48.6200] as [number, number], radius: 900, level: 'warning', incidents: 16, label: 'ATENÇÃO' },
+  { name: 'Barra Sul', center: [-27.0150, -48.6400] as [number, number], radius: 800, level: 'warning', incidents: 14, label: 'ATENÇÃO' },
+  { name: 'Praia Brava', center: [-26.9600, -48.6100] as [number, number], radius: 1000, level: 'caution', incidents: 9, label: 'MODERADO' },
+  { name: 'Nações', center: [-27.0050, -48.6600] as [number, number], radius: 750, level: 'safe', incidents: 4, label: 'SEGURO' },
+  { name: 'Vila Real', center: [-27.0250, -48.6350] as [number, number], radius: 850, level: 'caution', incidents: 7, label: 'MODERADO' },
+  { name: 'Pioneiros', center: [-27.0080, -48.6500] as [number, number], radius: 700, level: 'safe', incidents: 3, label: 'SEGURO' },
+  { name: 'Jardim Iate Clube', center: [-26.9900, -48.6450] as [number, number], radius: 950, level: 'danger', incidents: 21, label: 'PERIGOSO' },
+  { name: 'Rio Pequeno', center: [-27.0350, -48.6250] as [number, number], radius: 800, level: 'safe', incidents: 2, label: 'SEGURO' },
+  { name: 'Santa Regina', center: [-27.0180, -48.6650] as [number, number], radius: 900, level: 'caution', incidents: 8, label: 'MODERADO' },
 ];
 
 const levelColors: Record<string, { fill: string; stroke: string; text: string; bg: string }> = {
@@ -47,6 +47,24 @@ const levelColors: Record<string, { fill: string; stroke: string; text: string; 
   caution:  { fill: '#eab308', stroke: '#ca8a04', text: 'text-yellow-400', bg: 'bg-yellow-500/20' },
   warning:  { fill: '#f97316', stroke: '#ea580c', text: 'text-orange-400', bg: 'bg-orange-500/20' },
   danger:   { fill: '#ef4444', stroke: '#dc2626', text: 'text-red-400', bg: 'bg-red-500/20' },
+};
+
+// Fixed bike positions relative to center - deterministic based on bike ID
+const getBikePosition = (index: number): [number, number] => {
+  // Create fixed offsets for each bike to avoid random positioning
+  const offsets = [
+    [-0.008, 0.005],
+    [0.006, -0.007],
+    [-0.005, -0.004],
+    [0.009, 0.003],
+    [-0.003, 0.008],
+    [0.004, 0.006],
+    [-0.007, -0.002],
+    [0.002, -0.009],
+  ];
+  const base: [number, number] = [-26.9975, -48.6352];
+  const offset = offsets[index % offsets.length];
+  return [base[0] + offset[0], base[1] + offset[1]];
 };
 
 const tabNames = ['Rastreamento', 'Segurança'] as const;
@@ -66,9 +84,17 @@ export default function Mapa() {
     safe: securityZones.filter(z => z.level === 'safe').length,
   };
 
+  // Memoize bike positions so they don't change on re-render
+  const bikePositions = useMemo(() => {
+    return bikes.map((bike, i) => ({
+      ...bike,
+      position: getBikePosition(i)
+    }));
+  }, [bikes]);
+
   return (
     <div className="h-screen bg-[#0c1222] relative overflow-hidden flex flex-col">
-      
+
       {/* Header */}
       <div className="relative z-20 bg-[#0c1222]/90 backdrop-blur-lg border-b border-white/5">
         <div className="max-w-md mx-auto px-4 pt-4 pb-3">
@@ -116,68 +142,62 @@ export default function Mapa() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>'
           />
 
-          <AnimatePresence mode="wait">
-            {activeTab === 'Rastreamento' ? (
-              <motion.div key="rastreamento">
-                {/* Bike Markers */}
-                {bikes.map(bike => (
-                  <Marker
-                    key={bike.id}
-                    position={[-26.9975 + (Math.random() - 0.5) * 0.03, -48.6352 + (Math.random() - 0.5) * 0.03]}
-                    icon={customBikeIcon}
-                  >
-                    <Popup className="custom-popup">
-                      <div className="p-2 min-w-[180px]">
-                        {bike.photo && (
-                          <img src={bike.photo} alt={bike.name} className="w-full h-24 object-cover rounded-lg mb-2" />
-                        )}
-                        <p className="font-bold text-sm text-[#0c1222]">{bike.name}</p>
-                        <p className="text-xs text-slate-600">{bike.type} • {bike.brand}</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                          <span className="text-emerald-600 text-[10px] font-medium">{bike.lastSeen}</span>
-                        </div>
+          {activeTab === 'Rastreamento' ? (
+            /* Bike Markers */
+            bikePositions.map(bike => (
+              <Marker
+                key={bike.id}
+                position={bike.position}
+                icon={customBikeIcon}
+              >
+                <Popup className="custom-popup">
+                  <div className="p-2 min-w-[180px]">
+                    {bike.photo && (
+                      <img src={bike.photo} alt={bike.name} className="w-full h-24 object-cover rounded-lg mb-2" />
+                    )}
+                    <p className="font-bold text-sm text-[#0c1222]">{bike.name}</p>
+                    <p className="text-xs text-slate-600">{bike.type} • {bike.brand}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                      <span className="text-emerald-600 text-[10px] font-medium">{bike.lastSeen}</span>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            ))
+          ) : (
+            /* Security Zones */
+            securityZones.map(zone => {
+              const colors = levelColors[zone.level];
+              return (
+                <Circle
+                  key={zone.name}
+                  center={zone.center}
+                  radius={zone.radius}
+                  pathOptions={{
+                    fillColor: colors.fill,
+                    color: colors.stroke,
+                    fillOpacity: selectedZone === zone.name ? 0.5 : 0.25,
+                    weight: selectedZone === zone.name ? 3 : 2,
+                  }}
+                  eventHandlers={{
+                    click: () => setSelectedZone(zone.name),
+                  }}
+                >
+                  <Popup>
+                    <div className="p-2">
+                      <p className="font-bold text-sm text-[#0c1222]">{zone.name}</p>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <div className="w-2.5 h-2.5 rounded-full" style={{ background: colors.fill }} />
+                        <span className="text-xs font-medium" style={{ color: colors.fill }}>{zone.label}</span>
                       </div>
-                    </Popup>
-                  </Marker>
-                ))}
-              </motion.div>
-            ) : (
-              <motion.div key="seguranca">
-                {/* Security Zones */}
-                {securityZones.map(zone => {
-                  const colors = levelColors[zone.level];
-                  return (
-                    <Circle
-                      key={zone.name}
-                      center={zone.center as [number, number]}
-                      radius={zone.radius}
-                      pathOptions={{
-                        fillColor: colors.fill,
-                        color: colors.stroke,
-                        fillOpacity: selectedZone === zone.name ? 0.5 : 0.25,
-                        weight: selectedZone === zone.name ? 3 : 2,
-                      }}
-                      eventHandlers={{
-                        click: () => setSelectedZone(zone.name),
-                      }}
-                    >
-                      <Popup>
-                        <div className="p-2">
-                          <p className="font-bold text-sm text-[#0c1222]">{zone.name}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: colors.fill }} />
-                            <span className="text-xs font-medium" style={{ color: colors.fill }}>{zone.label}</span>
-                          </div>
-                          <p className="text-xs text-slate-600 mt-1">{zone.incidents} incidente(s) reportado(s)</p>
-                        </div>
-                      </Popup>
-                    </Circle>
-                  );
-                })}
-              </motion.div>
-            )}
-          </AnimatePresence>
+                      <p className="text-xs text-slate-600 mt-1">{zone.incidents} incidente(s) reportado(s)</p>
+                    </div>
+                  </Popup>
+                </Circle>
+              );
+            })
+          )}
         </MapContainer>
 
         {/* Floating Legend */}
