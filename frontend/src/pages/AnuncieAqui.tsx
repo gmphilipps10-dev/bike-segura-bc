@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Tag, Plus, X, Bike, ChevronRight, Search,
-  MessageCircle, DollarSign
+  DollarSign
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useBikes } from '../context/BikeContext';
@@ -22,27 +22,6 @@ interface Anuncio {
   telefone: string;
 }
 
-const anunciosMock: Anuncio[] = [
-  {
-    id: '1', equipamentoId: '3', nome: 'Sense Impulse E-Trail',
-    tipo: 'Mountain Bike', marca: 'Sense', preco: '8500', condicao: 'Usado - Excelente',
-    descricao: 'Bike pouco usada, 500km rodados. Manutenção em dia. Vendo por upgrade.',
-    foto: '/bike-1.jpg', data: '15/05/2025', vendedor: 'Carlos M.', telefone: '47999998888'
-  },
-  {
-    id: '2', equipamentoId: '4', nome: 'E-Bike Urban Pro',
-    tipo: 'Elétrica Urbana', marca: 'Caloi', preco: '4200', condicao: 'Seminovo',
-    descricao: 'Patinete elétrico com 3 meses de uso. Bateria com autonomia de 30km.',
-    foto: null, data: '02/06/2025', vendedor: 'Ana P.', telefone: '47998887777'
-  },
-  {
-    id: '3', equipamentoId: '5', nome: 'Speed Carbon Race',
-    tipo: 'Speed', marca: 'Specialized', preco: '12000', condicao: 'Usado - Bom',
-    descricao: 'Quadro carbono Tarmac SL6. Grupo Shimano 105. Rodas de alumínio.',
-    foto: '/bike-2.jpg', data: '20/06/2025', vendedor: 'Pedro L.', telefone: '47997776666'
-  },
-];
-
 const condicoes = ['Novo', 'Seminovo', 'Usado - Excelente', 'Usado - Bom', 'Usado - Regular'];
 
 export default function AnuncieAqui() {
@@ -51,17 +30,35 @@ export default function AnuncieAqui() {
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [form, setForm] = useState({ preco: '', condicao: '', descricao: '' });
   const [busca, setBusca] = useState('');
+  const [meusAnuncios, setMeusAnuncios] = useState<Anuncio[]>([]);
 
   const selectedBike = bikes.find(b => b.id === selectedBikeId);
 
-  const anunciosFiltrados = anunciosMock.filter(a =>
+  const anunciosFiltrados = meusAnuncios.filter(a =>
     a.nome.toLowerCase().includes(busca.toLowerCase()) ||
     a.tipo.toLowerCase().includes(busca.toLowerCase()) ||
     a.marca.toLowerCase().includes(busca.toLowerCase())
   );
 
   const handleCreateAnuncio = () => {
-    // Aqui iria a lógica de criar o anúncio no backend
+    if (!selectedBike || !form.preco || !form.condicao) return;
+
+    const novoAnuncio: Anuncio = {
+      id: Date.now().toString(),
+      equipamentoId: selectedBike.id,
+      nome: selectedBike.name,
+      tipo: selectedBike.type,
+      marca: selectedBike.brand,
+      preco: form.preco,
+      condicao: form.condicao,
+      descricao: form.descricao,
+      foto: selectedBike.photo,
+      data: new Date().toLocaleDateString('pt-BR'),
+      vendedor: 'Você',
+      telefone: ''
+    };
+
+    setMeusAnuncios(prev => [novoAnuncio, ...prev]);
     setShowForm(false);
     setSelectedBikeId(null);
     setForm({ preco: '', condicao: '', descricao: '' });
@@ -124,23 +121,27 @@ export default function AnuncieAqui() {
         </motion.div>
 
         {/* Search */}
-        <div className="glass-card flex items-center gap-3 px-4 py-3 mb-5">
-          <Search className="w-4 h-4 text-slate-500 shrink-0" />
-          <input
-            type="text"
-            placeholder="Buscar anúncios..."
-            value={busca}
-            onChange={e => setBusca(e.target.value)}
-            className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600"
-          />
-        </div>
+        {meusAnuncios.length > 0 && (
+          <div className="glass-card flex items-center gap-3 px-4 py-3 mb-5">
+            <Search className="w-4 h-4 text-slate-500 shrink-0" />
+            <input
+              type="text"
+              placeholder="Buscar anúncios..."
+              value={busca}
+              onChange={e => setBusca(e.target.value)}
+              className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600"
+            />
+          </div>
+        )}
 
         {/* Anuncios Feed */}
         <div className="space-y-3 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-white font-bold text-sm">Anúncios ativos</h3>
-            <span className="text-slate-500 text-xs">{anunciosFiltrados.length} disponível(is)</span>
-          </div>
+          {meusAnuncios.length > 0 && (
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-white font-bold text-sm">Meus anúncios</h3>
+              <span className="text-slate-500 text-xs">{anunciosFiltrados.length} ativo(s)</span>
+            </div>
+          )}
 
           {anunciosFiltrados.map((anuncio, i) => (
             <motion.div
@@ -161,7 +162,9 @@ export default function AnuncieAqui() {
                   <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-bold">{anuncio.tipo}</span>
                 </div>
                 <p className="text-slate-500 text-xs mb-2">{anuncio.marca} • {anuncio.condicao}</p>
-                <p className="text-slate-400 text-xs leading-relaxed mb-3">{anuncio.descricao}</p>
+                {anuncio.descricao && (
+                  <p className="text-slate-400 text-xs leading-relaxed mb-3">{anuncio.descricao}</p>
+                )}
 
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -173,27 +176,26 @@ export default function AnuncieAqui() {
                     <p className="text-slate-400 text-xs">{anuncio.data}</p>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-[#0c1222] text-xs font-bold">
-                      {anuncio.vendedor.charAt(0)}
-                    </div>
-                    <span className="text-slate-400 text-xs">{anuncio.vendedor}</span>
-                  </div>
-                  <a
-                    href={`https://wa.me/55${anuncio.telefone}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/30 transition-colors"
-                  >
-                    <MessageCircle className="w-3.5 h-3.5" />
-                    Contato
-                  </a>
-                </div>
               </div>
             </motion.div>
           ))}
+
+          {meusAnuncios.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-8 text-center"
+            >
+              <Tag className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm mb-1">Nenhum anúncio ainda</p>
+              <p className="text-slate-500 text-xs">Cadastre um equipamento e crie seu primeiro anúncio</p>
+              {bikes.length === 0 && (
+                <Link to="/cadastrar" className="text-sky-400 text-xs mt-3 inline-block">
+                  Cadastrar equipamento
+                </Link>
+              )}
+            </motion.div>
+          )}
         </div>
 
         {/* Form Modal */}

@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useAuth } from './AuthContext';
 
 export interface BikeData {
   id: string;
@@ -23,51 +24,34 @@ interface BikeContextType {
 
 const BikeContext = createContext<BikeContextType | null>(null);
 
-const STORAGE_KEY = 'bike_segura_bikes';
-
-const initialBikes: BikeData[] = [
-  {
-    id: '1',
-    name: 'Sense Impulse E-Trail',
-    type: 'Mountain Bike',
-    brand: 'Sense',
-    serie: 'SNS-2024-88742',
-    color: 'Preto com vermelho',
-    value: '12500',
-    photo: '/bike-1.jpg',
-    protected: true,
-    location: 'Balneário Camboriú, SC',
-    lastSeen: 'Há 2 min'
-  },
-  {
-    id: '2',
-    name: 'Caloi Carbon Racing',
-    type: 'Speed',
-    brand: 'Caloi',
-    serie: 'CLO-2025-11293',
-    color: 'Branco com azul',
-    value: '8900',
-    photo: '/bike-2.jpg',
-    protected: true,
-    location: 'Balneário Camboriú, SC',
-    lastSeen: 'Online'
+function getStorageKey(userId: string | null): string {
+  if (userId) {
+    return `bike_segura_bikes_${userId}`;
   }
-];
+  return 'bike_segura_bikes_temp';
+}
 
-function loadBikes(): BikeData[] {
+function loadBikes(userId: string | null): BikeData[] {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = localStorage.getItem(getStorageKey(userId));
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
-  return initialBikes;
+  return [];
 }
 
 export function BikeProvider({ children }: { children: ReactNode }) {
-  const [bikes, setBikes] = useState<BikeData[]>(loadBikes);
+  const { user } = useAuth();
+  const userId = user?.id || null;
+  const [bikes, setBikes] = useState<BikeData[]>(() => loadBikes(userId));
+
+  // Reload bikes when user changes
+  useEffect(() => {
+    setBikes(loadBikes(userId));
+  }, [userId]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(bikes));
-  }, [bikes]);
+    localStorage.setItem(getStorageKey(userId), JSON.stringify(bikes));
+  }, [bikes, userId]);
 
   const addBike = (bikeData: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => {
     const newBike: BikeData = {

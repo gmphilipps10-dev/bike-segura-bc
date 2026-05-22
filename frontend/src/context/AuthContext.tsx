@@ -39,19 +39,7 @@ function loadUsers(): (UserData & { password: string })[] {
     const stored = localStorage.getItem(USERS_KEY);
     if (stored) return JSON.parse(stored);
   } catch { /* ignore */ }
-  // Default demo user
-  return [{
-    id: 'demo-1',
-    name: 'Gian Silva',
-    email: 'gian@email.com',
-    phone: '(47) 99999-9999',
-    cpf: '123.456.789-00',
-    rg: '1.234.567-8',
-    nascimento: '10/05/1995',
-    endereco: 'Balneário Camboriú, SC',
-    contatoEmergencia: '(47) 98888-8888',
-    password: '123456'
-  }];
+  return [];
 }
 
 function saveUsers(users: (UserData & { password: string })[]) {
@@ -79,7 +67,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData);
       return true;
     }
-    // Also allow login with phone
     const foundByPhone = users.find(u => u.phone === email && u.password === password);
     if (foundByPhone) {
       const { password: _, ...userData } = foundByPhone;
@@ -92,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = (data: Omit<UserData, 'id'> & { password: string }): boolean => {
     const users = loadUsers();
     if (users.some(u => u.email === data.email)) {
-      return false; // Email already exists
+      return false;
     }
     const newUser = { ...data, id: Date.now().toString() };
     users.push(newUser);
@@ -111,7 +98,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     const updated = { ...user, ...data };
     setUser(updated);
-    // Also update in users list
     const users = loadUsers();
     const idx = users.findIndex(u => u.id === user.id);
     if (idx >= 0) {

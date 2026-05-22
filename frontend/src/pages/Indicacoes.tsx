@@ -2,24 +2,29 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Share2, Copy, Check, Users, Gift, TrendingUp,
-  UserPlus, CircleCheck, Clock, ChevronRight
+  UserPlus, ChevronRight
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const indicacoesMock = [
-  { id: 1, nome: 'Carlos Silva', data: '15/05/2025', status: 'convertido' },
-  { id: 2, nome: 'Ana Paula', data: '02/06/2025', status: 'convertido' },
-  { id: 3, nome: 'Marcos Lima', data: '10/06/2025', status: 'pendente' },
-  { id: 4, nome: 'Fernanda Rocha', data: '18/06/2025', status: 'convertido' },
-  { id: 5, nome: 'Pedro Costa', data: '01/07/2025', status: 'pendente' },
-];
+import { useAuth } from '../context/AuthContext';
 
 export default function Indicacoes() {
+  const { user } = useAuth();
   const [copied, setCopied] = useState(false);
-  const descontoAtual = 30; // 3 indicações convertidas = 30%
-  const convertidas = indicacoesMock.filter(i => i.status === 'convertido').length;
-  const proximoDesconto = Math.min((convertidas + 1) * 10, 100);
-  const codigoIndicacao = 'GIAN2025BC';
+
+  const descontoAtual = 0;
+  const convertidas = 0;
+  const proximoDesconto = 10;
+
+  // Generate code from user name
+  const generateCode = () => {
+    if (user?.name) {
+      const prefix = user.name.split(' ')[0].toUpperCase().slice(0, 6);
+      return `${prefix}2025BC`;
+    }
+    return 'BIKE2025BC';
+  };
+
+  const codigoIndicacao = generateCode();
   const linkIndicacao = `https://bikesegurabc.com.br/indicar/${codigoIndicacao}`;
 
   const copyToClipboard = (text: string) => {
@@ -40,10 +45,9 @@ export default function Indicacoes() {
       try {
         await navigator.share(shareData);
       } catch {
-        // Usuário cancelou o compartilhamento
+        // Usuário cancelou
       }
     } else {
-      // Fallback: copiar link
       copyToClipboard(linkIndicacao);
     }
   };
@@ -77,7 +81,6 @@ export default function Indicacoes() {
           transition={{ delay: 0.1 }}
           className="glass-card p-5 mb-5 relative overflow-hidden"
         >
-          {/* Glow */}
           <div className="absolute top-0 right-0 w-40 h-40 bg-amber-500/10 rounded-full blur-[60px]" />
 
           <div className="relative">
@@ -112,7 +115,7 @@ export default function Indicacoes() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-amber-400 shrink-0" />
                 <p className="text-amber-400 text-xs">
-                  Mais <span className="font-bold">{10 - (descontoAtual % 10)} indicação(ões)</span> para chegar a <span className="font-bold">{proximoDesconto}%</span>
+                  Indique <span className="font-bold">1 amigo</span> para começar a acumular <span className="font-bold">{proximoDesconto}%</span> de desconto
                 </p>
               </div>
             </div>
@@ -170,7 +173,7 @@ export default function Indicacoes() {
           </button>
         </motion.div>
 
-        {/* Indicacoes List */}
+        {/* Indicações List - Empty State */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -179,43 +182,16 @@ export default function Indicacoes() {
         >
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-white font-bold text-sm">Minhas indicações</h3>
-            <span className="text-amber-400 text-xs font-semibold">{convertidas} convertida(s)</span>
+            <span className="text-slate-500 text-xs">{convertidas} convertida(s)</span>
           </div>
 
-          <div className="space-y-2">
-            {indicacoesMock.map((ind, i) => (
-              <motion.div
-                key={ind.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 + i * 0.05 }}
-                className="glass-card p-3 flex items-center gap-3"
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                  ind.status === 'convertido'
-                    ? 'bg-emerald-500/20'
-                    : 'bg-yellow-500/10'
-                }`}>
-                  {ind.status === 'convertido' ? (
-                    <CircleCheck className="w-4 h-4 text-emerald-400" />
-                  ) : (
-                    <Clock className="w-4 h-4 text-yellow-400" />
-                  )}
-                </div>
-                <div className="flex-1">
-                  <p className="text-white text-sm">{ind.nome}</p>
-                  <p className="text-slate-500 text-[10px]">{ind.data}</p>
-                </div>
-                <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                  ind.status === 'convertido'
-                    ? 'bg-emerald-500/20 text-emerald-300'
-                    : 'bg-yellow-500/10 text-yellow-400'
-                }`}>
-                  {ind.status === 'convertido' ? '+10%' : 'PENDENTE'}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {convertidas === 0 && (
+            <div className="glass-card p-8 text-center">
+              <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+              <p className="text-slate-400 text-sm mb-1">Nenhuma indicação ainda</p>
+              <p className="text-slate-500 text-xs">Compartilhe seu código para começar a acumular descontos</p>
+            </div>
+          )}
         </motion.div>
 
         {/* CTA */}
