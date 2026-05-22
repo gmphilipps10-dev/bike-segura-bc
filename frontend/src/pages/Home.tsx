@@ -187,9 +187,9 @@ export default function Home() {
               <h1 className="text-xl font-bold text-gradient-gold leading-tight">{displayName.toUpperCase()}</h1>
             </div>
 
-            {/* Bike - largura total, altura proporcional */}
-            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="flex-1 rounded-lg overflow-hidden">
-              <img src="/hero-bike.jpg" alt="Bike" className="w-full h-auto object-contain" />
+            {/* Bike - largura total, altura 50% */}
+            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="flex-1 rounded-lg overflow-hidden max-h-[28px]">
+              <img src="/hero-bike.jpg" alt="Bike" className="w-full h-full object-contain" />
             </motion.div>
 
             {/* Avatar - direita */}
