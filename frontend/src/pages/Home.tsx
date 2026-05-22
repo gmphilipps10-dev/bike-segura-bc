@@ -177,7 +177,7 @@ export default function Home() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 overflow-y-auto scrollbar-hide">
-        <div className="max-w-xl mx-auto px-4 pt-4 pb-28">
+        <div className="max-w-md mx-auto px-4 pt-4 pb-36">
 
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-5">
