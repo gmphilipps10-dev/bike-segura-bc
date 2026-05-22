@@ -21,11 +21,11 @@ export default function BottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50">
       <div className="mx-auto max-w-md">
-        <div className="mx-4 mb-4 rounded-2xl glass-card border border-white/[0.1] shadow-2xl shadow-black/50 overflow-hidden">
-          <div className="flex items-center justify-around py-2 relative">
+        <div className="mx-4 mb-3 rounded-2xl glass-card border border-white/[0.1] shadow-2xl shadow-black/50 overflow-hidden">
+          <div className="flex items-center justify-around py-1.5 relative">
             <motion.div
               layoutId="nav-indicator"
-              className="absolute bottom-2 w-10 h-0.5 bg-amber-400 rounded-full"
+              className="absolute bottom-1.5 w-8 h-0.5 bg-amber-400 rounded-full"
               style={{ left: getIndicatorLeft() }}
               transition={{ type: 'spring', stiffness: 400, damping: 30 }}
             />
@@ -36,12 +36,12 @@ export default function BottomNav() {
                 <Link
                   key={item.label}
                   to={item.path}
-                  className={`flex flex-col items-center gap-1 px-4 py-1 transition-colors cursor-pointer ${
+                  className={`flex flex-col items-center gap-0.5 px-3 py-0.5 transition-colors cursor-pointer ${
                     isActive ? 'text-amber-400' : 'text-slate-500 hover:text-slate-300'
                   }`}
                 >
-                  <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 1.5} />
-                  <span className="text-[9px] font-medium">{item.label}</span>
+                  <Icon className="w-4 h-4" strokeWidth={isActive ? 2.5 : 1.5} />
+                  <span className="text-[8px] font-medium">{item.label}</span>
                 </Link>
               );
             })}
