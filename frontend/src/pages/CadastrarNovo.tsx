@@ -8,9 +8,52 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useBikes } from '../context/BikeContext';
 
 const categories = [
-  'Mountain Bike', 'Speed / Road', 'Elétrica Urbana', 'BMX', 'Gravel',
-  'Dobrável', 'Urban / City', 'Downhill', 'Ciclocross', 'Triathlon',
-  'Fat Bike', 'Outra'
+  // Bicicletas
+  'Bicicleta Mountain Bike',
+  'Bicicleta Mountain Bike Elétrica',
+  'Bicicleta Speed / Road',
+  'Bicicleta Speed Elétrica',
+  'Bicicleta Urbana / City',
+  'Bicicleta Urbana Elétrica',
+  'Bicicleta Dobrável / Folding',
+  'Bicicleta Dobrável Elétrica',
+  'Bicicleta Gravel',
+  'Bicicleta BMX',
+  'Bicicleta Downhill',
+  'Bicicleta Enduro',
+  'Bicicleta Cross-country (XC)',
+  'Bicicleta Trail / All Mountain',
+  'Bicicleta Fat Bike',
+  'Bicicleta Triathlon / TT',
+  'Bicicleta Ciclocross',
+  'Bicicleta Cicloturismo',
+  'Bicicleta Carga',
+  'Bicicleta Carga Elétrica',
+  'Bicicleta Infantil',
+  'Bicicleta Triciclo Adulto',
+  'Bicicleta Triciclo Adulto Elétrico',
+  'Bicicleta Handbike',
+  'Bicicleta Tandem',
+  'Bicicleta Lowrider / Custom',
+  // Patinetes
+  'Patinete Elétrico',
+  'Patinete Elétrico Compartilhado',
+  'Patinete Manual',
+  'Patinete Elétrico Off-road',
+  'Patinete Motorizado à Combustão',
+  // Outros autopropelidos
+  'Skate Elétrico',
+  'Longboard Elétrico',
+  'Monociclo Elétrico / EUC',
+  'Hoverboard',
+  'One-wheel',
+  'Moto Elétrica',
+  'Moto Elétrica Dobrável',
+  'Triciclo Elétrico',
+  'Quadriciclo Elétrico',
+  'Go-kart Elétrico',
+  // Genérico
+  'Outro Equipamento'
 ];
 
 const photoSlots = [
@@ -87,7 +130,7 @@ export default function CadastrarNovo() {
           <RouterLink to="/" className="w-10 h-10 rounded-xl glass-card flex items-center justify-center shrink-0 cursor-pointer">
             <ArrowLeft className="w-5 h-5 text-amber-400" />
           </RouterLink>
-          <h1 className="text-xl font-bold text-white">Cadastrar Bicicleta</h1>
+          <h1 className="text-xl font-bold text-white">Cadastrar Equipamento</h1>
         </motion.header>
 
         {/* ===== DADOS BASICOS ===== */}
