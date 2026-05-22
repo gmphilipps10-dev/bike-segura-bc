@@ -123,7 +123,7 @@ export default function CadastrarNovo() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/95 to-[#0c1222]" />
       </div>
 
-      <div className="relative z-10 max-w-md mx-auto px-4 pt-6 pb-8">
+      <div className="relative z-10 max-w-md md:max-w-2xl mx-auto px-4 pt-6 pb-8">
 
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">
@@ -180,7 +180,7 @@ export default function CadastrarNovo() {
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-5 mb-4">
           {sectionHeader(<Tag className="w-4 h-4" />, 'Categoria')}
 
-          <div className="relative">
+          <div className="relative z-[100]">
             <button
               onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
               className="w-full glass-card flex items-center justify-between px-3 py-2.5 cursor-pointer"
@@ -194,8 +194,8 @@ export default function CadastrarNovo() {
               <motion.div
                 initial={{ opacity: 0, y: -5 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="absolute top-full left-0 right-0 mt-1 bg-[#1a2332] border border-white/10 rounded-xl overflow-y-auto z-50 shadow-2xl shadow-black/50 scrollbar-hide"
-style={{ maxHeight: '280px' }}
+                className="absolute top-full left-0 right-0 mt-1 bg-[#1a2332] border border-white/10 rounded-xl overflow-y-auto z-[9999] shadow-2xl shadow-black/50 scrollbar-hide"
+                style={{ maxHeight: '280px' }}
               >
                 {categories.map(c => (
                   <button
