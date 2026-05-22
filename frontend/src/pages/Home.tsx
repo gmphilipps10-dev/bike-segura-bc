@@ -42,7 +42,7 @@ const newsItems = [
 const menuItems = [
   { icon: Bike, label: 'Meus Equipamentos', color: 'from-amber-400 to-yellow-500', path: '/equipamentos' },
   { icon: Plus, label: 'Cadastrar Novo', color: 'from-emerald-400 to-teal-500', path: '/cadastrar' },
-  { icon: ShieldAlert, label: 'Delegacia Virtual', color: 'from-red-400 to-rose-500', path: '/delegacia' },
+  { icon: ShieldAlert, label: 'Delegacia Virtual\nBoletim de Ocorrência', color: 'from-red-400 to-rose-500', path: '/delegacia' },
   { icon: User, label: 'Meu Perfil', color: 'from-violet-400 to-purple-500', path: '/perfil' },
   { icon: CreditCard, label: 'Planos', color: 'from-rose-400 to-pink-500', path: '/planos' },
   { icon: Users, label: 'Minhas Indicações', color: 'from-cyan-400 to-teal-500', path: '/indicacoes' },
@@ -157,7 +157,7 @@ function MenuGrid() {
                     <Icon className="w-[18px] h-[18px] text-white" />
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-300 font-medium leading-tight line-clamp-2">{item.label}</span>
+                <span className="text-[10px] text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
               </motion.div>
             </Link>
           );
