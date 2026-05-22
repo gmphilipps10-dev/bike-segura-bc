@@ -57,13 +57,12 @@ function StatusBadge({ count }: { count: number }) {
     <motion.div
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      className="flex items-center gap-3 mb-5"
+      className="flex items-center gap-2 mb-3 scale-50 origin-left"
     >
       <div className="relative">
         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center">
           <Radio className="w-5 h-5 text-emerald-400" />
         </div>
-        {/* Expanding signal waves */}
         <span className="absolute inset-0 rounded-xl border border-emerald-400/40 animate-ping" style={{ animationDuration: '2s' }} />
         <span className="absolute -inset-1.5 rounded-2xl border border-emerald-400/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
         <span className="absolute -inset-3 rounded-3xl border border-emerald-400/10 animate-ping" style={{ animationDuration: '3s', animationDelay: '1s' }} />
@@ -79,7 +78,6 @@ function StatusBadge({ count }: { count: number }) {
 function NewsCarousel() {
   const [current, setCurrent] = useState(0);
 
-  // Auto-rotate every 4 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrent(prev => (prev + 1) % newsItems.length);
@@ -120,19 +118,19 @@ function NewsCarousel() {
 
 function MenuGrid() {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-6">
-      <div className="grid grid-cols-3 gap-3">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-5">
+      <div className="grid grid-cols-3 gap-2.5">
         {menuItems.map((item, i) => {
           const Icon = item.icon;
           return (
             <Link key={item.label} to={item.path}>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 * i + 0.35 }} whileTap={{ scale: 0.95 }} className="glass-card-hover p-3 flex flex-col items-center justify-center gap-1.5 text-center group cursor-pointer h-[100px]">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} p-[1px] group-hover:scale-110 transition-transform duration-300`}>
-                  <div className="w-full h-full rounded-xl bg-[#111827] flex items-center justify-center">
-                    <Icon className="w-[18px] h-[18px] text-white" />
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 * i + 0.35 }} whileTap={{ scale: 0.95 }} className="glass-card-hover p-2 flex flex-col items-center justify-center gap-1 text-center group cursor-pointer h-[88px]">
+                <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} p-[1px] group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="w-full h-full rounded-lg bg-[#111827] flex items-center justify-center">
+                    <Icon className="w-4 h-4 text-white" />
                   </div>
                 </div>
-                <span className="text-[10px] text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
+                <span className="text-[9px] text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
                 {'sub' in item && (item as any).sub && (
                   <span className="text-[7px] text-red-400/80 font-bold tracking-wider">{(item as any).sub}</span>
                 )}
@@ -147,7 +145,7 @@ function MenuGrid() {
 
 function EmergencyButton({ onClick }: { onClick: () => void }) {
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, type: 'spring' }} className="flex flex-col items-center mb-4">
+    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, type: 'spring' }} className="flex flex-col items-center mb-8">
       <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="relative w-[88px] h-[88px] rounded-full flex flex-col items-center justify-center gap-1 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
         <span className="absolute inset-0 rounded-full border-2 border-red-400/30 animate-ping" style={{ animationDuration: '2s' }} />
         <AlertTriangle className="w-6 h-6 text-white" strokeWidth={2.5} />
@@ -184,17 +182,17 @@ export default function Home() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 overflow-y-auto scrollbar-hide">
-        <div className="max-w-md mx-auto px-4 pt-4 pb-24">
+        <div className="max-w-md mx-auto px-4 pt-4 pb-28">
 
-          {/* Header com bike maior */}
+          {/* Header com bike centralizada e larga */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-5">
             <div className="flex-1 min-w-0">
               <p className="text-slate-400 text-xs">{greeting},</p>
               <h1 className="text-xl font-bold text-gradient-gold leading-tight truncate">{displayName.toUpperCase()}</h1>
             </div>
 
-            {/* Bike maior, sem borda, centralizada */}
-            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="shrink-0 mx-3 rounded-lg overflow-hidden" style={{ width: '100px', height: '56px' }}>
+            {/* Bike centralizada, largura triplicada */}
+            <motion.div initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="shrink-0 mx-2 rounded-lg overflow-hidden" style={{ width: '168px', height: '56px' }}>
               <img src="/hero-bike.jpg" alt="Bike" className="w-full h-full object-cover" />
             </motion.div>
 
@@ -208,7 +206,7 @@ export default function Home() {
           {/* Status */}
           <StatusBadge count={bikes.length} />
 
-          {/* Carrossel original */}
+          {/* Carrossel */}
           <NewsCarousel />
 
           {/* Menu */}
