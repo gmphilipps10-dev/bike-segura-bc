@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, error: authError, clearError: clearAuthError } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
@@ -26,7 +26,7 @@ export default function Login() {
 
   const handleSubmit = async () => {
     setError('');
-    authCtx.clearError();
+    clearAuthError();
 
     if (isRegister) {
       // Validate register
@@ -52,7 +52,7 @@ export default function Login() {
       if (success) {
         navigate('/');
       } else {
-        setError(authCtx.error || 'Este e-mail já está cadastrado');
+        setError(authError || 'Este e-mail já está cadastrado');
       }
     } else {
       // Validate login
@@ -66,7 +66,7 @@ export default function Login() {
       if (success) {
         navigate('/');
       } else {
-        setError(authCtx.error || 'E-mail ou senha incorretos');
+        setError(authError || 'E-mail ou senha incorretos');
       }
     }
   };
