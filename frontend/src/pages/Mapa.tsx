@@ -13,62 +13,45 @@ import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
 import 'leaflet/dist/leaflet.css';
 
-/* ===== Fix Leaflet default icons ===== */
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41]
+L.Marker.prototype.options.icon = L.icon({
+  iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41]
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
-/* ===== Simple reliable pin icons using CSS ===== */
-const makePinIcon = (color1: string, color2: string, symbol: string) =>
-  new L.DivIcon({
-    className: '',
-    html: `<div style="position:relative;width:36px;height:44px;">
-      <div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:linear-gradient(135deg,${color1},${color2});transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 2px 8px ${color1}80;border:2px solid #0c1222;display:flex;align-items:center;justify-content:center;">
-        <span style="transform:rotate(45deg);color:white;font-size:14px;font-weight:bold;">${symbol}</span>
-      </div>
-      <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${color2};position:absolute;bottom:2px;left:12px;"></div>
-    </div>`,
-    iconSize: [36, 44],
-    iconAnchor: [18, 40],
-    popupAnchor: [0, -40]
-  });
-
-const theftPin = makePinIcon('#ef4444', '#dc2626', '&#9888;');
-const monitoredPin = makePinIcon('#f97316', '#ea580c', '&#10005;');
-const bikePin = new L.DivIcon({
+/* ===== Simple colored circle markers (reliable) ===== */
+const makeCircleIcon = (color: string) => new L.DivIcon({
   className: '',
-  html: `<div style="position:relative;width:36px;height:44px;">
-    <div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:linear-gradient(135deg,#f5c518,#f59e0b);transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 2px 8px rgba(245,197,24,0.5);border:2px solid #0c1222;display:flex;align-items:center;justify-content:center;">
-      <svg style="transform:rotate(45deg);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg>
-    </div>
-    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #f59e0b;position:absolute;bottom:2px;left:12px;"></div>
-  </div>`,
-  iconSize: [36, 44],
-  iconAnchor: [18, 40],
-  popupAnchor: [0, -40]
+  html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid #0c1222;box-shadow:0 2px 8px ${color}80;display:flex;align-items:center;justify-content:center;font-size:13px;">&#128205;</div>`,
+  iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16]
+});
+
+const theftIcon = makeCircleIcon('#ef4444');
+const monitoredIcon = makeCircleIcon('#f97316');
+
+const bikeIcon = new L.DivIcon({
+  className: '',
+  html: `<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f5c518,#f59e0b);border:3px solid #0c1222;box-shadow:0 2px 8px rgba(245,197,24,0.5);display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg></div>`,
+  iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
 });
 
 const API_BASE = '/bike-segura-bc-backend/api';
 
-/* ===== BAIRROS REAIS de Balneario Camboriu ===== */
-const bairroCenters: Record<string, [number, number]> = {
-  'Centro': [-26.9980, -48.6340],
-  'Barra Norte': [-26.9850, -48.6230],
-  'Barra Sul': [-27.0120, -48.6380],
-  'Praia Brava': [-26.9650, -48.6150],
-  'Nacoes': [-27.0050, -48.6550],
-  'Pioneiros': [-27.0000, -48.6450],
-  'Vila Real': [-27.0220, -48.6380],
-  'Jardim Iate Clube': [-26.9900, -48.6420],
-  'Santa Regina': [-27.0180, -48.6600],
-  'Condominio': [-27.0300, -48.6500],
+/* ===== TODOS os bairros de Balneario Camboriu ===== */
+const TODOS_BAIRROS: Record<string, { center: [number, number]; radius: number }> = {
+  'Centro':             { center: [-26.9980, -48.6340], radius: 550 },
+  'Barra Norte':        { center: [-26.9850, -48.6220], radius: 500 },
+  'Barra Sul':          { center: [-27.0120, -48.6380], radius: 450 },
+  'Praia Brava':        { center: [-26.9650, -48.6150], radius: 500 },
+  'Nacoes':             { center: [-27.0050, -48.6550], radius: 400 },
+  'Pioneiros':          { center: [-27.0000, -48.6450], radius: 400 },
+  'Vila Real':          { center: [-27.0220, -48.6380], radius: 400 },
+  'Jardim Iate Clube':  { center: [-26.9900, -48.6420], radius: 450 },
+  'Santa Regina':       { center: [-27.0180, -48.6600], radius: 400 },
+  'Tabuleiro':          { center: [-27.0100, -48.6300], radius: 400 },
+  'Sao Judas Tadeu':    { center: [-27.0250, -48.6500], radius: 350 },
+  'Laranjeiras':        { center: [-27.0050, -48.6150], radius: 350 },
 };
 
 const tabNames = ['Rastreamento', 'AreaSegura'] as const;
@@ -79,10 +62,9 @@ interface Ocorrencia {
   endereco: string; bairro: string; lat: number; lng: number;
   titulo: string; descricao: string; dataOcorrencia: string;
   veiculoTipo: string; veiculoCor: string; veiculoMarca: string;
-  status: string; createdAt: string; confirmacoes: number;
+  status: string; createdAt: string;
 }
 
-/* ===== WhatsApp Modal ===== */
 function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
   const { token } = useAuth();
   const [texto, setTexto] = useState('');
@@ -129,33 +111,24 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
             </div>
           )}
           <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro(''); }} placeholder="Cole aqui a mensagem..." className="w-full h-28 glass-card p-3 text-white text-sm placeholder:text-slate-500 outline-none resize-none rounded-xl border border-white/5 focus:border-amber-400/30" />
-          <AnimatePresence>
-            {erro && (
-              <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2">
-                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <p className="text-red-300 text-[10px] leading-relaxed">{erro}</p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {resultado && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 space-y-2">
-                <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <p className="text-emerald-300 text-[10px] font-medium">Ocorrencia registrada!</p>
+          {erro && <div className="mt-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-2"><AlertTriangle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" /><p className="text-red-300 text-[10px] leading-relaxed">{erro}</p></div>}
+          {resultado && (
+            <div className="mt-3 space-y-2">
+              <div className="p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <p className="text-emerald-300 text-[10px] font-medium">Ocorrencia registrada!</p>
+              </div>
+              {resultado.dadosExtraidos && (
+                <div className="p-3 rounded-lg glass-card space-y-1">
+                  <p className="text-amber-400 text-[10px] font-bold mb-1">Dados extraidos:</p>
+                  {resultado.dadosExtraidos.endereco && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.endereco}</span></div>}
+                  {resultado.dadosExtraidos.bairro && <div className="flex items-center gap-2 text-[10px]"><Navigation className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.bairro}</span></div>}
+                  {resultado.dadosExtraidos.veiculoTipo && <div className="flex items-center gap-2 text-[10px]"><Bike className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.veiculoTipo} {resultado.dadosExtraidos.veiculoCor && `- ${resultado.dadosExtraidos.veiculoCor}`}</span></div>}
+                  {resultado.geocoding && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-emerald-400 shrink-0" /><span className="text-emerald-400">Localizado em Balneario Camboriu</span></div>}
                 </div>
-                {resultado.dadosExtraidos && (
-                  <div className="p-3 rounded-lg glass-card space-y-1">
-                    <p className="text-amber-400 text-[10px] font-bold mb-1">Dados extraidos:</p>
-                    {resultado.dadosExtraidos.endereco && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.endereco}</span></div>}
-                    {resultado.dadosExtraidos.bairro && <div className="flex items-center gap-2 text-[10px]"><Navigation className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.bairro}</span></div>}
-                    {resultado.dadosExtraidos.veiculoTipo && <div className="flex items-center gap-2 text-[10px]"><Bike className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.veiculoTipo} {resultado.dadosExtraidos.veiculoCor && `- ${resultado.dadosExtraidos.veiculoCor}`}</span></div>}
-                    {resultado.geocoding && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-emerald-400 shrink-0" /><span className="text-emerald-400">Localizado em Balneario Camboriu</span></div>}
-                  </div>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </div>
+          )}
         </div>
         <div className="p-4 border-t border-white/5 shrink-0">
           <motion.button whileTap={{ scale: 0.98 }} onClick={handleSubmit} disabled={loading || !texto.trim()} className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 flex items-center justify-center gap-2 shadow-lg cursor-pointer disabled:opacity-50">
@@ -170,7 +143,7 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 }
 
 function OcorrenciaPopup({ o }: { o: Ocorrencia }) {
-  const fd = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
+  const fd = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
   const fh = (d: string) => new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   return (
     <div className="p-2.5 min-w-[220px]">
@@ -190,6 +163,37 @@ function OcorrenciaPopup({ o }: { o: Ocorrencia }) {
   );
 }
 
+/* ===== Conta ocorrencias por bairro ===== */
+function contarPorBairro(ocorrencias: Ocorrencia[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  ocorrencias.filter(o => o.status === 'ativo').forEach(o => {
+    const bRaw = o.bairro || '';
+    // Encontra o bairro correspondente nos bairros conhecidos
+    let matched = '';
+    for (const b of Object.keys(TODOS_BAIRROS)) {
+      if (bRaw.toLowerCase().includes(b.toLowerCase()) || b.toLowerCase().includes(bRaw.toLowerCase())) {
+        matched = b; break;
+      }
+    }
+    // Fallback: procura no endereco
+    if (!matched) {
+      for (const b of Object.keys(TODOS_BAIRROS)) {
+        if (o.endereco.toLowerCase().includes(b.toLowerCase())) { matched = b; break; }
+      }
+    }
+    if (!matched) matched = 'Centro';
+    map[matched] = (map[matched] || 0) + 1;
+  });
+  return map;
+}
+
+function getCorRisco(count: number) {
+  if (count >= 5) return { fill: '#ef4444', stroke: '#dc2626', label: 'PERIGO', text: 'text-red-400' };
+  if (count >= 3) return { fill: '#f97316', stroke: '#ea580c', label: 'ATENCAO', text: 'text-orange-400' };
+  if (count >= 1) return { fill: '#eab308', stroke: '#ca8a04', label: 'MODERADO', text: 'text-yellow-400' };
+  return { fill: '#10b981', stroke: '#059669', label: 'SEGURO', text: 'text-emerald-400' };
+}
+
 export default function Mapa() {
   const { bikes } = useBikes();
   const { user } = useAuth();
@@ -205,55 +209,27 @@ export default function Mapa() {
 
   const fetchOcorrencias = useCallback(async () => {
     setLoading(true);
-    try {
-      const res = await fetch(`${API_BASE}/ocorrencias?dias=60`);
-      if (res.ok) { const d = await res.json(); setOcorrencias(d); }
-    } catch {}
+    try { const res = await fetch(`${API_BASE}/ocorrencias?dias=60`); if (res.ok) setOcorrencias(await res.json()); } catch {}
     setLoading(false);
   }, []);
 
   const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE}/ocorrencias/stats?dias=60`);
-      if (res.ok) { const d = await res.json(); setStats(d); }
-    } catch {}
+    try { const res = await fetch(`${API_BASE}/ocorrencias/stats?dias=60`); if (res.ok) setStats(await res.json()); } catch {}
   }, []);
 
   useEffect(() => { fetchOcorrencias(); fetchStats(); }, [fetchOcorrencias, fetchStats]);
 
-  // Agrupa ocorrencias por bairro para circulos dinamicos
-  const ocorrenciasPorBairro = useMemo(() => {
-    const map: Record<string, { count: number; lat: number; lng: number; ocorrencias: Ocorrencia[] }> = {};
-    ocorrencias.filter(o => o.status === 'ativo').forEach(o => {
-      const b = o.bairro || 'Centro';
-      // So considera bairros de BC
-      const bairroKey = Object.keys(bairroCenters).find(k => b.toLowerCase().includes(k.toLowerCase())) || b;
-      const bc = bairroCenters[bairroKey] || [o.lat, o.lng];
-      if (!map[bairroKey]) map[bairroKey] = { count: 0, lat: bc[0], lng: bc[1], ocorrencias: [] };
-      map[bairroKey].count++;
-      map[bairroKey].ocorrencias.push(o);
-    });
-    return map;
-  }, [ocorrencias]);
+  const porBairro = useMemo(() => contarPorBairro(ocorrencias), [ocorrencias]);
 
   const bikePositions = useMemo(() => bikes.map((b, i) => ({
     ...b,
     position: [[-0.008,0.005],[0.006,-0.007],[-0.005,-0.004],[0.009,0.003],[-0.003,0.008],[0.004,0.006],[-0.007,-0.002],[0.002,-0.009]][i % 8].map((o, j) => center[j] + o) as [number, number]
   })), [bikes, center]);
 
-  const getNivelRisco = (count: number) => {
-    if (count >= 5) return { fill: '#ef4444', stroke: '#dc2626', label: 'PERIGO', text: 'text-red-400' };
-    if (count >= 3) return { fill: '#f97316', stroke: '#ea580c', label: 'ATENCAO', text: 'text-orange-400' };
-    if (count >= 1) return { fill: '#eab308', stroke: '#ca8a04', label: 'MODERADO', text: 'text-yellow-400' };
-    return { fill: '#10b981', stroke: '#059669', label: 'SEGURO', text: 'text-emerald-400' };
-  };
-
   const formatarData = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-  // Verifica se coordenada esta dentro de BC (limites aproximados)
-  const isDentroBC = (lat: number, lng: number) => {
-    return lat >= -27.06 && lat <= -26.95 && lng >= -48.68 && lng <= -48.58;
-  };
+  // Verifica se esta dentro de BC
+  const isDentroBC = (lat: number, lng: number) => lat >= -27.06 && lat <= -26.95 && lng >= -48.68 && lng <= -48.58;
 
   return (
     <div className="h-[100dvh] w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
@@ -294,44 +270,38 @@ export default function Mapa() {
 
           {activeTab === 'Rastreamento' ? (
             bikePositions.map(b => (
-              <Marker key={b.id} position={b.position} icon={bikePin}>
+              <Marker key={b.id} position={b.position} icon={bikeIcon}>
                 <Popup><div className="p-2 min-w-[180px]">{b.photo && <img src={b.photo} alt={b.name} className="w-full h-24 object-cover rounded-lg mb-2" />}<p className="font-bold text-sm text-[#0c1222]">{b.name}</p><p className="text-xs text-slate-600">{b.type} - {b.brand}</p><div className="flex items-center gap-1 mt-1"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /><span className="text-emerald-600 text-[10px]">{b.lastSeen}</span></div></div></Popup>
               </Marker>
             ))
           ) : (
             <>
-              {/* Circulos de risco dinamicos baseados em ocorrencias REAIS - apenas dentro de BC */}
-              {Object.entries(ocorrenciasPorBairro)
-                .filter(([, d]) => isDentroBC(d.lat, d.lng))
-                .map(([bairro, dados]) => {
-                  const nivel = getNivelRisco(dados.count);
-                  const radius = 350 + Math.min(dados.count * 60, 400);
-                  return (
-                    <Circle key={bairro} center={[dados.lat, dados.lng]} radius={radius}
-                      pathOptions={{ fillColor: nivel.fill, color: nivel.stroke, fillOpacity: 0.18, weight: 2 }}>
-                      <Popup>
-                        <div className="p-2 min-w-[180px]">
-                          <p className="font-bold text-sm text-[#0c1222]">{bairro}</p>
-                          <div className="flex items-center gap-1.5 mt-1">
-                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: nivel.fill }} />
-                            <span className="text-xs font-medium" style={{ color: nivel.fill }}>{nivel.label}</span>
-                          </div>
-                          <p className="text-xs text-slate-600 mt-1">{dados.count} ocorrencia(s) no ultimo mes</p>
-                          <div className="mt-1.5 pt-1.5 border-t border-slate-200 space-y-0.5">
-                            {dados.ocorrencias.slice(0, 3).map(o => (
-                              <p key={o._id} className="text-[9px] text-slate-500 truncate">{o.titulo || o.endereco}</p>
-                            ))}
-                            {dados.ocorrencias.length > 3 && <p className="text-[9px] text-slate-400">+{dados.ocorrencias.length - 3} mais...</p>}
-                          </div>
+              {/* TODOS os bairros de BC - com cor baseada em ocorrencias reais (0 = SEGURO/verde) */}
+              {Object.entries(TODOS_BAIRROS).map(([bairro, dados]) => {
+                const count = porBairro[bairro] || 0;
+                const nivel = getCorRisco(count);
+                return (
+                  <Circle key={bairro} center={dados.center} radius={dados.radius}
+                    pathOptions={{ fillColor: nivel.fill, color: nivel.stroke, fillOpacity: count === 0 ? 0.1 : 0.2 + Math.min(count * 0.04, 0.15), weight: count === 0 ? 1 : 2 }}>
+                    <Popup>
+                      <div className="p-2 min-w-[160px]">
+                        <p className="font-bold text-sm text-[#0c1222]">{bairro}</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: nivel.fill }} />
+                          <span className="text-xs font-medium" style={{ color: nivel.fill }}>{nivel.label}</span>
                         </div>
-                      </Popup>
-                    </Circle>
-                  );
-                })}
+                        <p className="text-xs text-slate-600 mt-1">
+                          {count === 0 ? 'Sem ocorrencias registradas' : `${count} ocorrencia(s) no ultimo mes`}
+                        </p>
+                      </div>
+                    </Popup>
+                  </Circle>
+                );
+              })}
 
-              {/* Pins de ocorrencias individuais - apenas dentro de BC */}
+              {/* Pins de ocorrencias individuais */}
               {ocorrencias.filter(o => o.status === 'ativo' && isDentroBC(o.lat, o.lng)).map(o => (
-                <Marker key={o._id} position={[o.lat, o.lng]} icon={o.tipo === 'manual' ? theftPin : monitoredPin}>
+                <Marker key={o._id} position={[o.lat, o.lng]} icon={o.tipo === 'manual' ? theftIcon : monitoredIcon}>
                   <Popup><OcorrenciaPopup o={o} /></Popup>
                 </Marker>
               ))}
@@ -343,7 +313,6 @@ export default function Mapa() {
         <AnimatePresence mode="wait">
           {activeTab === 'AreaSegura' ? (
             <motion.div key="legend-seg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-4 left-3 right-3 z-[400]">
-              {/* Lista toggle */}
               <div className="glass-card p-3 mb-2">
                 <button onClick={() => setShowList(!showList)} className="w-full flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
@@ -366,19 +335,18 @@ export default function Mapa() {
                             </div>
                           </div>
                         ))}
-                        {ocorrencias.length === 0 && <p className="text-[10px] text-slate-500 text-center py-2">Nenhuma ocorrencia registrada ainda. Clique no botao verde para adicionar.</p>}
+                        {ocorrencias.length === 0 && <p className="text-[10px] text-slate-500 text-center py-2">Nenhuma ocorrencia. Clique no botao verde para adicionar.</p>}
                       </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* Estatisticas */}
               <div className="glass-card p-3">
                 <button onClick={() => setStatsOpen(!statsOpen)} className="w-full flex items-center justify-between cursor-pointer">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-white text-[11px] font-bold">Nivel de Seguranca</span>
+                    <span className="text-white text-[11px] font-bold">Nivel por Bairro</span>
                   </div>
                   {statsOpen ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronUp className="w-3.5 h-3.5 text-slate-400" />}
                 </button>
@@ -386,26 +354,24 @@ export default function Mapa() {
                   {statsOpen && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       <div className="mt-2.5 space-y-1.5">
-                        {Object.entries(ocorrenciasPorBairro).sort((a, b) => b[1].count - a[1].count).map(([bairro, d]) => {
-                          const n = getNivelRisco(d.count);
+                        {Object.entries(TODOS_BAIRROS).map(([bairro]) => {
+                          const count = porBairro[bairro] || 0;
+                          const n = getCorRisco(count);
                           return (
                             <div key={bairro} className="flex items-center gap-2">
                               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: n.fill }} />
                               <span className="text-[10px] text-slate-300 flex-1">{bairro}</span>
-                              <span className={`text-[10px] font-bold ${n.text}`}>{d.count}</span>
-                              <span className="text-[8px] text-slate-500 w-16 text-right">{n.label}</span>
+                              <span className={`text-[10px] font-bold ${n.text}`}>{count}</span>
+                              <span className="text-[8px] text-slate-500 w-14 text-right">{n.label}</span>
                             </div>
                           );
                         })}
-                        {Object.keys(ocorrenciasPorBairro).length === 0 && (
-                          <p className="text-[10px] text-slate-500 text-center py-1">Sem dados ainda. Adicione ocorrencias pelo botao verde.</p>
-                        )}
                       </div>
                       {stats && (
                         <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1"><CircleDot className="w-2.5 h-2.5 text-red-400" /><span className="text-[9px] text-slate-400">Report.: {stats.manual}</span></div>
-                            <div className="flex items-center gap-1"><CircleDot className="w-2.5 h-2.5 text-orange-400" /><span className="text-[9px] text-slate-400">Monit.: {stats.monitorado}</span></div>
+                            <div className="flex items-center gap-1"><CircleDot className="w-2.5 h-2.5 text-red-400" /><span className="text-[9px] text-slate-400">Rep.: {stats.manual}</span></div>
+                            <div className="flex items-center gap-1"><CircleDot className="w-2.5 h-2.5 text-orange-400" /><span className="text-[9px] text-slate-400">Mon.: {stats.monitorado}</span></div>
                           </div>
                           <button onClick={() => { fetchOcorrencias(); fetchStats(); }} className="text-[9px] text-amber-400 cursor-pointer hover:underline">Atualizar</button>
                         </div>
@@ -414,9 +380,11 @@ export default function Mapa() {
                   )}
                 </AnimatePresence>
                 {!statsOpen && (
-                  <div className="flex items-center gap-3 mt-1.5">
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700" /><span className="text-[9px] text-slate-400">Reportado</span></div>
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-gradient-to-br from-orange-500 to-orange-700" /><span className="text-[9px] text-slate-400">Monitorado</span></div>
+                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                    <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-[8px] text-slate-400">Seguro</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /><span className="text-[8px] text-slate-400">Moderado</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /><span className="text-[8px] text-slate-400">Atencao</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /><span className="text-[8px] text-slate-400">Perigo</span></div>
                   </div>
                 )}
               </div>
