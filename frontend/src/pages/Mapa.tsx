@@ -25,61 +25,51 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const pinSvg = (color1: string, color2: string, iconSvg: string) => `
-  <div style="position:relative;width:40px;height:48px;filter:drop-shadow(0 3px 6px rgba(0,0,0,0.4));">
-    <svg width="40" height="48" viewBox="0 0 40 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 0C11.2 0 4.2 7 4.2 15.6c0 11.7 15.8 30.6 15.8 30.6S35.8 27.3 35.8 15.6C35.8 7 28.8 0 20 0z" fill="url(#g)"/>
-      <ellipse cx="20" cy="15.6" rx="12" ry="12" fill="#0c1222"/>
-      <defs><linearGradient id="g" x1="20" y1="0" x2="20" y2="46.2" gradientUnits="userSpaceOnUse">
-        <stop stop-color="${color1}"/><stop offset="1" stop-color="${color2}"/>
-      </linearGradient></defs>
-    </svg>
-    <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
-      ${iconSvg}
+/* ===== Simple reliable pin icons using CSS ===== */
+const makePinIcon = (color1: string, color2: string, symbol: string) =>
+  new L.DivIcon({
+    className: '',
+    html: `<div style="position:relative;width:36px;height:44px;">
+      <div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:linear-gradient(135deg,${color1},${color2});transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 2px 8px ${color1}80;border:2px solid #0c1222;display:flex;align-items:center;justify-content:center;">
+        <span style="transform:rotate(45deg);color:white;font-size:14px;font-weight:bold;">${symbol}</span>
+      </div>
+      <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid ${color2};position:absolute;bottom:2px;left:12px;"></div>
+    </div>`,
+    iconSize: [36, 44],
+    iconAnchor: [18, 40],
+    popupAnchor: [0, -40]
+  });
+
+const theftPin = makePinIcon('#ef4444', '#dc2626', '&#9888;');
+const monitoredPin = makePinIcon('#f97316', '#ea580c', '&#10005;');
+const bikePin = new L.DivIcon({
+  className: '',
+  html: `<div style="position:relative;width:36px;height:44px;">
+    <div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:linear-gradient(135deg,#f5c518,#f59e0b);transform:rotate(-45deg);position:absolute;top:0;left:0;box-shadow:0 2px 8px rgba(245,197,24,0.5);border:2px solid #0c1222;display:flex;align-items:center;justify-content:center;">
+      <svg style="transform:rotate(45deg);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg>
     </div>
-  </div>`;
-
-const theftPin = new L.DivIcon({
-  className: '',
-  html: pinSvg('#ef4444', '#dc2626', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>`),
-  iconSize: [40, 48],
-  iconAnchor: [20, 48],
-  popupAnchor: [0, -48]
-});
-
-const monitoredPin = new L.DivIcon({
-  className: '',
-  html: pinSvg('#f97316', '#ea580c', `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>`),
-  iconSize: [40, 48],
-  iconAnchor: [20, 48],
-  popupAnchor: [0, -48]
-});
-
-const customBikeIcon = new L.DivIcon({
-  className: '',
-  html: `<div style="position:relative;width:40px;height:48px;filter:drop-shadow(0 3px 6px rgba(245,197,24,0.4));">
-    <svg width="40" height="48" viewBox="0 0 40 48" fill="none"><path d="M20 0C11.2 0 4.2 7 4.2 15.6c0 11.7 15.8 30.6 15.8 30.6S35.8 27.3 35.8 15.6C35.8 7 28.8 0 20 0z" fill="url(#gb)"/><ellipse cx="20" cy="15.6" rx="12" ry="12" fill="#0c1222"/><defs><linearGradient id="gb" x1="20" y1="0" x2="20" y2="46.2" gradientUnits="userSpaceOnUse"><stop stop-color="#f5c518"/><stop offset="1" stop-color="#f59e0b"/></linearGradient></defs></svg>
-    <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);width:24px;height:24px;display:flex;align-items:center;justify-content:center;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f5c518" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg>
-    </div>
+    <div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:8px solid #f59e0b;position:absolute;bottom:2px;left:12px;"></div>
   </div>`,
-  iconSize: [40, 48],
-  iconAnchor: [20, 48],
-  popupAnchor: [0, -48]
+  iconSize: [36, 44],
+  iconAnchor: [18, 40],
+  popupAnchor: [0, -40]
 });
 
 const API_BASE = '/bike-segura-bc-backend/api';
 
-/* ===== Áreas seguras de BC (sem dados de incidente — apenas referência) ===== */
-const safeAreas = [
-  { name: 'Centro', center: [-26.9975, -48.6352] as [number, number], radius: 900 },
-  { name: 'Barra Norte', center: [-26.9850, -48.6250] as [number, number], radius: 700 },
-  { name: 'Barra Sul', center: [-27.0100, -48.6400] as [number, number], radius: 600 },
-  { name: 'Praia Brava', center: [-26.9650, -48.6150] as [number, number], radius: 800 },
-  { name: 'Nacoes', center: [-27.0050, -48.6600] as [number, number], radius: 600 },
-  { name: 'Pioneiros', center: [-27.0080, -48.6500] as [number, number], radius: 550 },
-  { name: 'Rio Pequeno', center: [-27.0350, -48.6250] as [number, number], radius: 650 },
-];
+/* ===== BAIRROS REAIS de Balneario Camboriu ===== */
+const bairroCenters: Record<string, [number, number]> = {
+  'Centro': [-26.9980, -48.6340],
+  'Barra Norte': [-26.9850, -48.6230],
+  'Barra Sul': [-27.0120, -48.6380],
+  'Praia Brava': [-26.9650, -48.6150],
+  'Nacoes': [-27.0050, -48.6550],
+  'Pioneiros': [-27.0000, -48.6450],
+  'Vila Real': [-27.0220, -48.6380],
+  'Jardim Iate Clube': [-26.9900, -48.6420],
+  'Santa Regina': [-27.0180, -48.6600],
+  'Condominio': [-27.0300, -48.6500],
+};
 
 const tabNames = ['Rastreamento', 'AreaSegura'] as const;
 type TabType = typeof tabNames[number];
@@ -135,7 +125,7 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
           {!resultado && !erro && (
             <div className="mb-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <p className="text-amber-300 text-[10px] font-medium mb-1">Exemplo:</p>
-              <p className="text-amber-200/70 text-[10px] leading-relaxed">"Furto de bike trek azul na Av. Atlantica, em frente ao P12, Barra Norte, ontem as 20h30."</p>
+              <p className="text-amber-200/70 text-[10px] leading-relaxed">"Furto de bike trek azul na Av. Brasil, esquina com Rua 2400, Centro, ontem as 20h30."</p>
             </div>
           )}
           <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro(''); }} placeholder="Cole aqui a mensagem..." className="w-full h-28 glass-card p-3 text-white text-sm placeholder:text-slate-500 outline-none resize-none rounded-xl border border-white/5 focus:border-amber-400/30" />
@@ -160,6 +150,7 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                     {resultado.dadosExtraidos.endereco && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.endereco}</span></div>}
                     {resultado.dadosExtraidos.bairro && <div className="flex items-center gap-2 text-[10px]"><Navigation className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.bairro}</span></div>}
                     {resultado.dadosExtraidos.veiculoTipo && <div className="flex items-center gap-2 text-[10px]"><Bike className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.veiculoTipo} {resultado.dadosExtraidos.veiculoCor && `- ${resultado.dadosExtraidos.veiculoCor}`}</span></div>}
+                    {resultado.geocoding && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-emerald-400 shrink-0" /><span className="text-emerald-400">Localizado em Balneario Camboriu</span></div>}
                   </div>
                 )}
               </motion.div>
@@ -179,7 +170,7 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 }
 
 function OcorrenciaPopup({ o }: { o: Ocorrencia }) {
-  const fd = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  const fd = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' });
   const fh = (d: string) => new Date(d).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   return (
     <div className="p-2.5 min-w-[220px]">
@@ -191,26 +182,13 @@ function OcorrenciaPopup({ o }: { o: Ocorrencia }) {
       {o.descricao && <p className="text-[10px] text-slate-600 leading-relaxed mb-2 line-clamp-3">{o.descricao}</p>}
       <div className="space-y-1">
         <div className="flex items-center gap-1.5 text-[10px]"><MapPin className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-700">{o.endereco}</span></div>
-        <div className="flex items-center gap-1.5 text-[10px]"><Calendar className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-700">{fd(o.dataOcorrencia)} {fh(o.dataOcorrencia)}</span></div>
+        <div className="flex items-center gap-1.5 text-[10px]"><Calendar className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-700">{fd(o.dataOcorrencia)} as {fh(o.dataOcorrencia)}</span></div>
         {(o.veiculoTipo || o.veiculoCor) && <div className="flex items-center gap-1.5 text-[10px]"><BikeIcon className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-700">{o.veiculoTipo}{o.veiculoCor && ` - ${o.veiculoCor}`}</span></div>}
       </div>
+      <p className="text-[8px] text-slate-400 mt-1.5 pt-1 border-t border-slate-200">Registrado em {new Date(o.createdAt).toLocaleDateString('pt-BR')}</p>
     </div>
   );
 }
-
-/* ===== Bairros com centroides aproximados ===== */
-const bairroCenters: Record<string, [number, number]> = {
-  'Centro': [-26.9975, -48.6352],
-  'Barra Norte': [-26.9800, -48.6200],
-  'Barra Sul': [-27.0150, -48.6400],
-  'Praia Brava': [-26.9600, -48.6100],
-  'Nacoes': [-27.0050, -48.6600],
-  'Pioneiros': [-27.0080, -48.6500],
-  'Vila Real': [-27.0250, -48.6350],
-  'Jardim Iate Clube': [-26.9900, -48.6450],
-  'Rio Pequeno': [-27.0350, -48.6250],
-  'Santa Regina': [-27.0180, -48.6650],
-};
 
 export default function Mapa() {
   const { bikes } = useBikes();
@@ -221,10 +199,9 @@ export default function Mapa() {
   const [, setLoading] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [stats, setStats] = useState<any>(null);
-  const [, setSelectedOcorrencia] = useState<string | null>(null);
   const [showList, setShowList] = useState(false);
 
-  const center: [number, number] = [-26.9975, -48.6352];
+  const center: [number, number] = [-26.9958, -48.6356];
 
   const fetchOcorrencias = useCallback(async () => {
     setLoading(true);
@@ -244,33 +221,39 @@ export default function Mapa() {
 
   useEffect(() => { fetchOcorrencias(); fetchStats(); }, [fetchOcorrencias, fetchStats]);
 
-  // Agrupa ocorrencias por bairro para criar circulos dinamicos
+  // Agrupa ocorrencias por bairro para circulos dinamicos
   const ocorrenciasPorBairro = useMemo(() => {
     const map: Record<string, { count: number; lat: number; lng: number; ocorrencias: Ocorrencia[] }> = {};
     ocorrencias.filter(o => o.status === 'ativo').forEach(o => {
-      const b = o.bairro || 'Desconhecido';
-      if (!map[b]) {
-        const bc = bairroCenters[b];
-        map[b] = { count: 0, lat: bc ? bc[0] : o.lat, lng: bc ? bc[1] : o.lng, ocorrencias: [] };
-      }
-      map[b].count++;
-      map[b].ocorrencias.push(o);
+      const b = o.bairro || 'Centro';
+      // So considera bairros de BC
+      const bairroKey = Object.keys(bairroCenters).find(k => b.toLowerCase().includes(k.toLowerCase())) || b;
+      const bc = bairroCenters[bairroKey] || [o.lat, o.lng];
+      if (!map[bairroKey]) map[bairroKey] = { count: 0, lat: bc[0], lng: bc[1], ocorrencias: [] };
+      map[bairroKey].count++;
+      map[bairroKey].ocorrencias.push(o);
     });
     return map;
   }, [ocorrencias]);
 
-  const bikePositions = useMemo(() => bikes.map((b, i) => ({ ...b, position: [
-    [-0.008,0.005],[0.006,-0.007],[-0.005,-0.004],[0.009,0.003],[-0.003,0.008],[0.004,0.006],[-0.007,-0.002],[0.002,-0.009]
-  ][i % 8].map((o, j) => [-26.9975, -48.6352][j] + o) as [number, number] })), [bikes]);
+  const bikePositions = useMemo(() => bikes.map((b, i) => ({
+    ...b,
+    position: [[-0.008,0.005],[0.006,-0.007],[-0.005,-0.004],[0.009,0.003],[-0.003,0.008],[0.004,0.006],[-0.007,-0.002],[0.002,-0.009]][i % 8].map((o, j) => center[j] + o) as [number, number]
+  })), [bikes, center]);
 
   const getNivelRisco = (count: number) => {
-    if (count >= 5) return { level: 'danger', fill: '#ef4444', stroke: '#dc2626', label: 'PERIGO', text: 'text-red-400' };
-    if (count >= 3) return { level: 'warning', fill: '#f97316', stroke: '#ea580c', label: 'ATENCAO', text: 'text-orange-400' };
-    if (count >= 1) return { level: 'caution', fill: '#eab308', stroke: '#ca8a04', label: 'MODERADO', text: 'text-yellow-400' };
-    return { level: 'safe', fill: '#10b981', stroke: '#059669', label: 'SEGURO', text: 'text-emerald-400' };
+    if (count >= 5) return { fill: '#ef4444', stroke: '#dc2626', label: 'PERIGO', text: 'text-red-400' };
+    if (count >= 3) return { fill: '#f97316', stroke: '#ea580c', label: 'ATENCAO', text: 'text-orange-400' };
+    if (count >= 1) return { fill: '#eab308', stroke: '#ca8a04', label: 'MODERADO', text: 'text-yellow-400' };
+    return { fill: '#10b981', stroke: '#059669', label: 'SEGURO', text: 'text-emerald-400' };
   };
 
   const formatarData = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+  // Verifica se coordenada esta dentro de BC (limites aproximados)
+  const isDentroBC = (lat: number, lng: number) => {
+    return lat >= -27.06 && lat <= -26.95 && lng >= -48.68 && lng <= -48.58;
+  };
 
   return (
     <div className="h-[100dvh] w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
@@ -283,7 +266,7 @@ export default function Mapa() {
               <ArrowLeft className="w-4 h-4 text-amber-400" />
             </Link>
             <div className="flex-1 min-w-0">
-              <h1 className="text-base font-bold text-white">Mapa</h1>
+              <h1 className="text-base font-bold text-white">Mapa da Seguranca</h1>
               <p className="text-[10px] text-slate-400 truncate">
                 {activeTab === 'Rastreamento' ? `${bikes.length} equipamento(s)` : `${ocorrencias.length} ocorrencia(s) real(is)`}
               </p>
@@ -311,61 +294,44 @@ export default function Mapa() {
 
           {activeTab === 'Rastreamento' ? (
             bikePositions.map(b => (
-              <Marker key={b.id} position={b.position} icon={customBikeIcon}>
+              <Marker key={b.id} position={b.position} icon={bikePin}>
                 <Popup><div className="p-2 min-w-[180px]">{b.photo && <img src={b.photo} alt={b.name} className="w-full h-24 object-cover rounded-lg mb-2" />}<p className="font-bold text-sm text-[#0c1222]">{b.name}</p><p className="text-xs text-slate-600">{b.type} - {b.brand}</p><div className="flex items-center gap-1 mt-1"><div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" /><span className="text-emerald-600 text-[10px]">{b.lastSeen}</span></div></div></Popup>
               </Marker>
             ))
           ) : (
             <>
-              {/* Circulos de risco dinamicos baseados em ocorrencias REAIS */}
-              {Object.entries(ocorrenciasPorBairro).map(([bairro, dados]) => {
-                const nivel = getNivelRisco(dados.count);
-                const radius = 400 + Math.min(dados.count * 80, 600);
-                return (
-                  <Circle key={bairro} center={[dados.lat, dados.lng]} radius={radius}
-                    pathOptions={{ fillColor: nivel.fill, color: nivel.stroke, fillOpacity: 0.2, weight: 2 }}>
-                    <Popup>
-                      <div className="p-2 min-w-[180px]">
-                        <p className="font-bold text-sm text-[#0c1222]">{bairro}</p>
-                        <div className="flex items-center gap-1.5 mt-1">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: nivel.fill }} />
-                          <span className="text-xs font-medium" style={{ color: nivel.fill }}>{nivel.label}</span>
+              {/* Circulos de risco dinamicos baseados em ocorrencias REAIS - apenas dentro de BC */}
+              {Object.entries(ocorrenciasPorBairro)
+                .filter(([, d]) => isDentroBC(d.lat, d.lng))
+                .map(([bairro, dados]) => {
+                  const nivel = getNivelRisco(dados.count);
+                  const radius = 350 + Math.min(dados.count * 60, 400);
+                  return (
+                    <Circle key={bairro} center={[dados.lat, dados.lng]} radius={radius}
+                      pathOptions={{ fillColor: nivel.fill, color: nivel.stroke, fillOpacity: 0.18, weight: 2 }}>
+                      <Popup>
+                        <div className="p-2 min-w-[180px]">
+                          <p className="font-bold text-sm text-[#0c1222]">{bairro}</p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <div className="w-2.5 h-2.5 rounded-full" style={{ background: nivel.fill }} />
+                            <span className="text-xs font-medium" style={{ color: nivel.fill }}>{nivel.label}</span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-1">{dados.count} ocorrencia(s) no ultimo mes</p>
+                          <div className="mt-1.5 pt-1.5 border-t border-slate-200 space-y-0.5">
+                            {dados.ocorrencias.slice(0, 3).map(o => (
+                              <p key={o._id} className="text-[9px] text-slate-500 truncate">{o.titulo || o.endereco}</p>
+                            ))}
+                            {dados.ocorrencias.length > 3 && <p className="text-[9px] text-slate-400">+{dados.ocorrencias.length - 3} mais...</p>}
+                          </div>
                         </div>
-                        <p className="text-xs text-slate-600 mt-1">{dados.count} ocorrencia(s) no ultimo mes</p>
-                        <div className="mt-1.5 pt-1.5 border-t border-slate-200 space-y-0.5">
-                          {dados.ocorrencias.slice(0, 3).map(o => (
-                            <p key={o._id} className="text-[9px] text-slate-500 truncate">{o.titulo || o.endereco}</p>
-                          ))}
-                          {dados.ocorrencias.length > 3 && <p className="text-[9px] text-slate-400">+{dados.ocorrencias.length - 3} mais...</p>}
-                        </div>
-                      </div>
-                    </Popup>
-                  </Circle>
-                );
-              })}
+                      </Popup>
+                    </Circle>
+                  );
+                })}
 
-              {/* Areas sem ocorrencias = SEGURO */}
-              {safeAreas.filter(sa => !ocorrenciasPorBairro[sa.name]).map(sa => (
-                <Circle key={sa.name} center={sa.center} radius={sa.radius}
-                  pathOptions={{ fillColor: '#10b981', color: '#059669', fillOpacity: 0.08, weight: 1.5, dashArray: '5, 8' }}>
-                  <Popup>
-                    <div className="p-2 min-w-[160px]">
-                      <p className="font-bold text-sm text-[#0c1222]">{sa.name}</p>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span className="text-xs font-medium text-emerald-600">AREA SEGURA</span>
-                      </div>
-                      <p className="text-xs text-slate-600 mt-1">Sem ocorrencias registradas</p>
-                    </div>
-                  </Popup>
-                </Circle>
-              ))}
-
-              {/* Pins de ocorrencias individuais */}
-              {ocorrencias.filter(o => o.status === 'ativo').map(o => (
-                <Marker key={o._id} position={[o.lat, o.lng]}
-                  icon={o.tipo === 'manual' ? theftPin : monitoredPin}
-                  eventHandlers={{ click: () => setSelectedOcorrencia(o._id) }}>
+              {/* Pins de ocorrencias individuais - apenas dentro de BC */}
+              {ocorrencias.filter(o => o.status === 'ativo' && isDentroBC(o.lat, o.lng)).map(o => (
+                <Marker key={o._id} position={[o.lat, o.lng]} icon={o.tipo === 'manual' ? theftPin : monitoredPin}>
                   <Popup><OcorrenciaPopup o={o} /></Popup>
                 </Marker>
               ))}
@@ -373,7 +339,7 @@ export default function Mapa() {
           )}
         </MapContainer>
 
-        {/* Legend / Info */}
+        {/* Legend */}
         <AnimatePresence mode="wait">
           {activeTab === 'AreaSegura' ? (
             <motion.div key="legend-seg" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-4 left-3 right-3 z-[400]">
@@ -392,15 +358,15 @@ export default function Mapa() {
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       <div className="mt-2 max-h-40 overflow-y-auto space-y-1.5 scrollbar-hide">
                         {ocorrencias.slice(0, 8).map(o => (
-                          <button key={o._id} onClick={() => setSelectedOcorrencia(o._id)} className="w-full text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors flex items-start gap-2 cursor-pointer">
+                          <div key={o._id} className="w-full text-left p-2 rounded-lg bg-white/5 flex items-start gap-2">
                             <div className={`w-2 h-2 rounded-full mt-1 shrink-0 ${o.tipo === 'manual' ? 'bg-red-500' : 'bg-orange-500'}`} />
                             <div className="min-w-0">
                               <p className="text-[10px] text-white font-medium truncate">{o.titulo || o.endereco}</p>
                               <p className="text-[8px] text-slate-400">{formatarData(o.dataOcorrencia)} - {o.bairro}</p>
                             </div>
-                          </button>
+                          </div>
                         ))}
-                        {ocorrencias.length === 0 && <p className="text-[10px] text-slate-500 text-center py-2">Nenhuma ocorrencia registrada ainda</p>}
+                        {ocorrencias.length === 0 && <p className="text-[10px] text-slate-500 text-center py-2">Nenhuma ocorrencia registrada ainda. Clique no botao verde para adicionar.</p>}
                       </div>
                     </motion.div>
                   )}
@@ -419,13 +385,12 @@ export default function Mapa() {
                 <AnimatePresence>
                   {statsOpen && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                      {/* Ocorrencias por bairro */}
                       <div className="mt-2.5 space-y-1.5">
                         {Object.entries(ocorrenciasPorBairro).sort((a, b) => b[1].count - a[1].count).map(([bairro, d]) => {
                           const n = getNivelRisco(d.count);
                           return (
                             <div key={bairro} className="flex items-center gap-2">
-                              <div className={`w-2.5 h-2.5 rounded-full shrink-0`} style={{ background: n.fill }} />
+                              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: n.fill }} />
                               <span className="text-[10px] text-slate-300 flex-1">{bairro}</span>
                               <span className={`text-[10px] font-bold ${n.text}`}>{d.count}</span>
                               <span className="text-[8px] text-slate-500 w-16 text-right">{n.label}</span>
@@ -452,7 +417,6 @@ export default function Mapa() {
                   <div className="flex items-center gap-3 mt-1.5">
                     <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-700" /><span className="text-[9px] text-slate-400">Reportado</span></div>
                     <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-gradient-to-br from-orange-500 to-orange-700" /><span className="text-[9px] text-slate-400">Monitorado</span></div>
-                    <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700" /><span className="text-[9px] text-slate-400">Seguro</span></div>
                   </div>
                 )}
               </div>
@@ -477,7 +441,6 @@ export default function Mapa() {
         </AnimatePresence>
       </div>
 
-      {/* WhatsApp Modal */}
       <AnimatePresence>
         {showWhatsApp && <WhatsAppModal onClose={() => setShowWhatsApp(false)} onSuccess={() => { fetchOcorrencias(); fetchStats(); }} />}
       </AnimatePresence>
