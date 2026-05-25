@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Radio, ClipboardPaste, X,
-  AlertTriangle, MapPin, Calendar, Bike, Send, Loader2,
+  AlertTriangle, MapPin, Calendar, Send, Loader2,
   CheckCircle, ChevronDown, ChevronUp, TrendingUp,
   Navigation, Eye, Bike as BikeIcon, CircleDot
 } from 'lucide-react';
@@ -20,11 +20,11 @@ L.Marker.prototype.options.icon = L.icon({
   iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41]
 });
 
-/* ===== Simple colored circle markers (reliable) ===== */
+/* ===== Colored circle markers ===== */
 const makeCircleIcon = (color: string) => new L.DivIcon({
   className: '',
-  html: `<div style="width:28px;height:28px;border-radius:50%;background:${color};border:3px solid #0c1222;box-shadow:0 2px 8px ${color}80;display:flex;align-items:center;justify-content:center;font-size:13px;">&#128205;</div>`,
-  iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16]
+  html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:2.5px solid #0c1222;box-shadow:0 2px 6px ${color}80;"></div>`,
+  iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
 });
 
 const theftIcon = makeCircleIcon('#ef4444');
@@ -32,26 +32,26 @@ const monitoredIcon = makeCircleIcon('#f97316');
 
 const bikeIcon = new L.DivIcon({
   className: '',
-  html: `<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#f5c518,#f59e0b);border:3px solid #0c1222;box-shadow:0 2px 8px rgba(245,197,24,0.5);display:flex;align-items:center;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg></div>`,
-  iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -18]
+  html: `<div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#f5c518,#f59e0b);border:2.5px solid #0c1222;box-shadow:0 2px 6px rgba(245,197,24,0.5);display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0c1222" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2"/><path d="M8 14.5v.5"/></svg></div>`,
+  iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16]
 });
 
 const API_BASE = '/bike-segura-bc-backend/api';
 
-/* ===== TODOS os bairros de Balneario Camboriu ===== */
-const TODOS_BAIRROS: Record<string, { center: [number, number]; radius: number }> = {
-  'Centro':             { center: [-26.9980, -48.6340], radius: 550 },
-  'Barra Norte':        { center: [-26.9850, -48.6220], radius: 500 },
-  'Barra Sul':          { center: [-27.0120, -48.6380], radius: 450 },
-  'Praia Brava':        { center: [-26.9650, -48.6150], radius: 500 },
-  'Nacoes':             { center: [-27.0050, -48.6550], radius: 400 },
-  'Pioneiros':          { center: [-27.0000, -48.6450], radius: 400 },
-  'Vila Real':          { center: [-27.0220, -48.6380], radius: 400 },
-  'Jardim Iate Clube':  { center: [-26.9900, -48.6420], radius: 450 },
-  'Santa Regina':       { center: [-27.0180, -48.6600], radius: 400 },
-  'Tabuleiro':          { center: [-27.0100, -48.6300], radius: 400 },
-  'Sao Judas Tadeu':    { center: [-27.0250, -48.6500], radius: 350 },
-  'Laranjeiras':        { center: [-27.0050, -48.6150], radius: 350 },
+/* ===== Bairros de BC ===== */
+const BAIRROS: Record<string, [number, number]> = {
+  'Centro': [-26.9980, -48.6340],
+  'Barra Norte': [-26.9850, -48.6220],
+  'Barra Sul': [-27.0120, -48.6380],
+  'Praia Brava': [-26.9650, -48.6150],
+  'Nacoes': [-27.0050, -48.6550],
+  'Pioneiros': [-27.0000, -48.6450],
+  'Vila Real': [-27.0220, -48.6380],
+  'Jardim Iate Clube': [-26.9900, -48.6420],
+  'Santa Regina': [-27.0180, -48.6600],
+  'Tabuleiro': [-27.0100, -48.6300],
+  'Sao Judas Tadeu': [-27.0250, -48.6500],
+  'Laranjeiras': [-27.0050, -48.6150],
 };
 
 const tabNames = ['Rastreamento', 'AreaSegura'] as const;
@@ -107,7 +107,7 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
           {!resultado && !erro && (
             <div className="mb-3 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <p className="text-amber-300 text-[10px] font-medium mb-1">Exemplo:</p>
-              <p className="text-amber-200/70 text-[10px] leading-relaxed">"Furto de bike trek azul na Av. Brasil, esquina com Rua 2400, Centro, ontem as 20h30."</p>
+              <p className="text-amber-200/70 text-[10px] leading-relaxed">"Furto de bike trek azul na Av. Brasil, Centro, ontem as 20h30."</p>
             </div>
           )}
           <textarea value={texto} onChange={e => { setTexto(e.target.value); setErro(''); }} placeholder="Cole aqui a mensagem..." className="w-full h-28 glass-card p-3 text-white text-sm placeholder:text-slate-500 outline-none resize-none rounded-xl border border-white/5 focus:border-amber-400/30" />
@@ -123,7 +123,6 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
                   <p className="text-amber-400 text-[10px] font-bold mb-1">Dados extraidos:</p>
                   {resultado.dadosExtraidos.endereco && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.endereco}</span></div>}
                   {resultado.dadosExtraidos.bairro && <div className="flex items-center gap-2 text-[10px]"><Navigation className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.bairro}</span></div>}
-                  {resultado.dadosExtraidos.veiculoTipo && <div className="flex items-center gap-2 text-[10px]"><Bike className="w-3 h-3 text-slate-400 shrink-0" /><span className="text-slate-300">{resultado.dadosExtraidos.veiculoTipo} {resultado.dadosExtraidos.veiculoCor && `- ${resultado.dadosExtraidos.veiculoCor}`}</span></div>}
                   {resultado.geocoding && <div className="flex items-center gap-2 text-[10px]"><MapPin className="w-3 h-3 text-emerald-400 shrink-0" /><span className="text-emerald-400">Localizado em Balneario Camboriu</span></div>}
                 </div>
               )}
@@ -163,23 +162,15 @@ function OcorrenciaPopup({ o }: { o: Ocorrencia }) {
   );
 }
 
-/* ===== Conta ocorrencias por bairro ===== */
 function contarPorBairro(ocorrencias: Ocorrencia[]): Record<string, number> {
   const map: Record<string, number> = {};
   ocorrencias.filter(o => o.status === 'ativo').forEach(o => {
-    const bRaw = o.bairro || '';
-    // Encontra o bairro correspondente nos bairros conhecidos
     let matched = '';
-    for (const b of Object.keys(TODOS_BAIRROS)) {
-      if (bRaw.toLowerCase().includes(b.toLowerCase()) || b.toLowerCase().includes(bRaw.toLowerCase())) {
-        matched = b; break;
-      }
+    for (const b of Object.keys(BAIRROS)) {
+      if ((o.bairro && (b.toLowerCase().includes(o.bairro.toLowerCase()) || o.bairro.toLowerCase().includes(b.toLowerCase())))) { matched = b; break; }
     }
-    // Fallback: procura no endereco
     if (!matched) {
-      for (const b of Object.keys(TODOS_BAIRROS)) {
-        if (o.endereco.toLowerCase().includes(b.toLowerCase())) { matched = b; break; }
-      }
+      for (const b of Object.keys(BAIRROS)) { if (o.endereco.toLowerCase().includes(b.toLowerCase())) { matched = b; break; } }
     }
     if (!matched) matched = 'Centro';
     map[matched] = (map[matched] || 0) + 1;
@@ -188,10 +179,10 @@ function contarPorBairro(ocorrencias: Ocorrencia[]): Record<string, number> {
 }
 
 function getCorRisco(count: number) {
-  if (count >= 5) return { fill: '#ef4444', stroke: '#dc2626', label: 'PERIGO', text: 'text-red-400' };
-  if (count >= 3) return { fill: '#f97316', stroke: '#ea580c', label: 'ATENCAO', text: 'text-orange-400' };
-  if (count >= 1) return { fill: '#eab308', stroke: '#ca8a04', label: 'MODERADO', text: 'text-yellow-400' };
-  return { fill: '#10b981', stroke: '#059669', label: 'SEGURO', text: 'text-emerald-400' };
+  if (count >= 5) return { fill: '#ef4444', stroke: '#dc2626', label: 'PERIGO', text: 'text-red-400', opacity: 0.25 };
+  if (count >= 3) return { fill: '#f97316', stroke: '#ea580c', label: 'ATENCAO', text: 'text-orange-400', opacity: 0.22 };
+  if (count >= 1) return { fill: '#eab308', stroke: '#ca8a04', label: 'MODERADO', text: 'text-yellow-400', opacity: 0.18 };
+  return { fill: '#10b981', stroke: '#059669', label: 'SEGURO', text: 'text-emerald-400', opacity: 0.08 };
 }
 
 export default function Mapa() {
@@ -227,8 +218,6 @@ export default function Mapa() {
   })), [bikes, center]);
 
   const formatarData = (d: string) => new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-
-  // Verifica se esta dentro de BC
   const isDentroBC = (lat: number, lng: number) => lat >= -27.06 && lat <= -26.95 && lng >= -48.68 && lng <= -48.58;
 
   return (
@@ -276,23 +265,39 @@ export default function Mapa() {
             ))
           ) : (
             <>
-              {/* TODOS os bairros de BC - com cor baseada em ocorrencias reais (0 = SEGURO/verde) */}
-              {Object.entries(TODOS_BAIRROS).map(([bairro, dados]) => {
+              {/* 1 UNICO circulo verde = BC seguro */}
+              <Circle center={center} radius={4200}
+                pathOptions={{ fillColor: '#10b981', color: '#059669', fillOpacity: 0.06, weight: 2, dashArray: '6, 4' }}>
+                <Popup>
+                  <div className="p-2 min-w-[160px]">
+                    <p className="font-bold text-sm text-[#0c1222]">Balneario Camboriu</p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <span className="text-xs font-medium text-emerald-600">AREA SEGURA</span>
+                    </div>
+                    <p className="text-xs text-slate-600 mt-1">
+                      {ocorrencias.length === 0 ? 'Sem ocorrencias registradas' : `${ocorrencias.length} ocorrencia(s) registrada(s)`}
+                    </p>
+                  </div>
+                </Popup>
+              </Circle>
+
+              {/* So aparece circulos coloridos em bairros COM ocorrencias (> 0) */}
+              {Object.entries(BAIRROS).map(([bairro, pos]) => {
                 const count = porBairro[bairro] || 0;
-                const nivel = getCorRisco(count);
+                if (count === 0) return null; // sem ocorrencias = nao mostra nada (fica o verde de BC)
+                const n = getCorRisco(count);
                 return (
-                  <Circle key={bairro} center={dados.center} radius={dados.radius}
-                    pathOptions={{ fillColor: nivel.fill, color: nivel.stroke, fillOpacity: count === 0 ? 0.1 : 0.2 + Math.min(count * 0.04, 0.15), weight: count === 0 ? 1 : 2 }}>
+                  <Circle key={bairro} center={pos} radius={450}
+                    pathOptions={{ fillColor: n.fill, color: n.stroke, fillOpacity: n.opacity, weight: 2.5 }}>
                     <Popup>
                       <div className="p-2 min-w-[160px]">
                         <p className="font-bold text-sm text-[#0c1222]">{bairro}</p>
                         <div className="flex items-center gap-1.5 mt-1">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: nivel.fill }} />
-                          <span className="text-xs font-medium" style={{ color: nivel.fill }}>{nivel.label}</span>
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ background: n.fill }} />
+                          <span className="text-xs font-medium" style={{ color: n.fill }}>{n.label}</span>
                         </div>
-                        <p className="text-xs text-slate-600 mt-1">
-                          {count === 0 ? 'Sem ocorrencias registradas' : `${count} ocorrencia(s) no ultimo mes`}
-                        </p>
+                        <p className="text-xs text-slate-600 mt-1">{count} ocorrencia(s)</p>
                       </div>
                     </Popup>
                   </Circle>
@@ -354,7 +359,7 @@ export default function Mapa() {
                   {statsOpen && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                       <div className="mt-2.5 space-y-1.5">
-                        {Object.entries(TODOS_BAIRROS).map(([bairro]) => {
+                        {Object.entries(BAIRROS).map(([bairro]) => {
                           const count = porBairro[bairro] || 0;
                           const n = getCorRisco(count);
                           return (
@@ -362,7 +367,7 @@ export default function Mapa() {
                               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: n.fill }} />
                               <span className="text-[10px] text-slate-300 flex-1">{bairro}</span>
                               <span className={`text-[10px] font-bold ${n.text}`}>{count}</span>
-                              <span className="text-[8px] text-slate-500 w-14 text-right">{n.label}</span>
+                              {count > 0 && <span className="text-[8px] text-slate-500 w-14 text-right">{n.label}</span>}
                             </div>
                           );
                         })}
@@ -381,7 +386,7 @@ export default function Mapa() {
                 </AnimatePresence>
                 {!statsOpen && (
                   <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /><span className="text-[8px] text-slate-400">Seguro</span></div>
+                    <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full border border-dashed border-emerald-500 bg-emerald-500/20" /><span className="text-[8px] text-slate-400">BC Seguro</span></div>
                     <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-yellow-500" /><span className="text-[8px] text-slate-400">Moderado</span></div>
                     <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-orange-500" /><span className="text-[8px] text-slate-400">Atencao</span></div>
                     <div className="flex items-center gap-1"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /><span className="text-[8px] text-slate-400">Perigo</span></div>
