@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, register, error: authError, clearError: clearAuthError } = useAuth();
+  const { login, register, clearError, error: authError } = useAuth();
   const [isRegister, setIsRegister] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
@@ -26,7 +26,7 @@ export default function Login() {
 
   const handleSubmit = async () => {
     setError('');
-    clearAuthError();
+    clearError();
 
     if (isRegister) {
       // Validate register
