@@ -290,7 +290,7 @@ export default function Mapa() {
               {/* So aparece circulos coloridos em bairros COM ocorrencias (> 0) */}
               {Object.entries(BAIRROS).map(([bairro, pos]) => {
                 const count = porBairro[bairro] || 0;
-                if (count === 0) return null; // sem ocorrencias = nao mostra nada (fica o verde de BC)
+                if (count < 3) return null; // menos de 3 ocorrencias = so mostra o pin, sem circulo
                 const n = getCorRisco(count);
                 return (
                   <Circle key={bairro} center={pos} radius={450}
