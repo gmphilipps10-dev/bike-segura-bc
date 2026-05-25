@@ -33,17 +33,17 @@ const menuItems = [
 
 function StatusBadge({ count }: { count: number }) {
   return (
-    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-1.5 mb-0.5 shrink-0">
+    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 mb-2 shrink-0">
       <div className="relative">
-        <div className="w-5 h-5 rounded-md bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center">
-          <Radio className="w-2.5 h-2.5 text-emerald-400" />
+        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center">
+          <Radio className="w-4 h-4 text-emerald-400" />
         </div>
-        <span className="absolute inset-0 rounded-md border border-emerald-400/40 animate-ping" style={{ animationDuration: '2s' }} />
-        <span className="absolute -inset-0.5 rounded-lg border border-emerald-400/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
+        <span className="absolute inset-0 rounded-lg border border-emerald-400/40 animate-ping" style={{ animationDuration: '2s' }} />
+        <span className="absolute -inset-0.5 rounded-xl border border-emerald-400/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
       </div>
       <div>
-        <p className="text-[10px] font-semibold text-white">{count} {count === 1 ? 'Equipamento Monitorado' : 'Equipamentos Monitorados'}</p>
-        <p className="text-[9px] text-emerald-400/80">Em tempo real</p>
+        <p className="text-xs font-semibold text-white">{count} {count === 1 ? 'Equipamento Monitorado' : 'Equipamentos Monitorados'}</p>
+        <p className="text-[10px] text-emerald-400/80">Em tempo real</p>
       </div>
     </motion.div>
   );
@@ -54,17 +54,17 @@ function NewsCarousel() {
   useEffect(() => { const t = setInterval(() => setCurrent(p => (p + 1) % newsItems.length), 4000); return () => clearInterval(t); }, []);
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-1 shrink-0">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-3 shrink-0">
       <div className="relative overflow-hidden rounded-xl">
         <AnimatePresence mode="wait">
-          <motion.div key={current} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.4 }} className="glass-card p-3.5 relative overflow-hidden">
-            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold tracking-wider">{newsItems[current].tag}</span>
-            <h3 className="text-white font-semibold text-[13px] leading-snug mt-1 mb-1">{newsItems[current].title}</h3>
-            <p className="text-slate-400 text-[11px] leading-relaxed">{newsItems[current].desc}</p>
+          <motion.div key={current} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.4 }} className="glass-card p-4 relative overflow-hidden">
+            <span className="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold tracking-wider">{newsItems[current].tag}</span>
+            <h3 className="text-white font-semibold text-sm leading-snug mt-2 mb-1.5">{newsItems[current].title}</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">{newsItems[current].desc}</p>
           </motion.div>
         </AnimatePresence>
-        <div className="flex items-center justify-center gap-1 mt-1.5">
-          {newsItems.map((_, i) => <button key={i} onClick={() => setCurrent(i)} className={`h-1 rounded-full transition-all duration-300 ${i === current ? 'w-5 bg-amber-400' : 'w-1.5 bg-slate-600'}`} />)}
+        <div className="flex items-center justify-center gap-1.5 mt-2">
+          {newsItems.map((_, i) => <button key={i} onClick={() => setCurrent(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`} />)}
         </div>
       </div>
     </motion.div>
@@ -74,17 +74,17 @@ function NewsCarousel() {
 function MenuGrid() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="shrink-0">
-      <div className="grid grid-cols-3 gap-1">
+      <div className="grid grid-cols-3 gap-2">
         {menuItems.map((item, i) => {
           const Icon = item.icon;
           return (
             <Link key={item.label} to={item.path} className="min-w-0">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover p-1 flex flex-col items-center justify-center gap-0 text-center group cursor-pointer h-[62px]">
-                <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${item.color} p-[1px] group-hover:scale-110 transition-transform duration-300`}>
-                  <div className="w-full h-full rounded-lg bg-[#111827] flex items-center justify-center"><Icon className="w-3.5 h-3.5 text-white" /></div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover py-3 px-1 flex flex-col items-center justify-center gap-1 text-center group cursor-pointer h-[88px]">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} p-[2px] group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="w-full h-full rounded-[10px] bg-[#111827] flex items-center justify-center"><Icon className="w-5 h-5 text-white" /></div>
                 </div>
-                <span className="text-[8px] text-slate-300 font-medium leading-tight whitespace-pre-line mt-0.5">{item.label}</span>
-                {'sub' in item && (item as any).sub && <span className="text-[5px] text-red-400/80 font-bold tracking-wider leading-none mt-0">{(item as any).sub}</span>}
+                <span className="text-[10px] text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
+                {'sub' in item && (item as any).sub && <span className="text-[6px] text-red-400/80 font-bold tracking-wider leading-none -mt-0.5">{(item as any).sub}</span>}
               </motion.div>
             </Link>
           );
@@ -96,24 +96,24 @@ function MenuGrid() {
 
 function EmergencyButton({ onClick }: { onClick: () => void }) {
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="flex flex-col items-center shrink-0">
-      <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="relative w-[52px] h-[52px] rounded-full flex flex-col items-center justify-center gap-0 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
+    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="flex flex-col items-center shrink-0 my-2">
+      <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="relative w-16 h-16 rounded-full flex flex-col items-center justify-center gap-0.5 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
         <span className="absolute inset-0 rounded-full border-2 border-red-400/30 animate-ping" style={{ animationDuration: '2s' }} />
-        <AlertTriangle className="w-4 h-4 text-white" strokeWidth={2.5} />
-        <span className="text-white text-[6px] font-bold leading-tight text-center px-0.5 mt-0.5">EMITIR<br/>ALERTA</span>
+        <AlertTriangle className="w-6 h-6 text-white" strokeWidth={2.5} />
+        <span className="text-white text-[8px] font-bold leading-tight text-center px-1">EMITIR<br/>ALERTA</span>
       </motion.button>
-      <p className="text-red-400/60 text-[7px] mt-0.5 font-medium tracking-wide uppercase">Toque em caso de emergência</p>
+      <p className="text-red-400/60 text-[9px] mt-1.5 font-medium tracking-wide uppercase">Toque em caso de emergência</p>
     </motion.div>
   );
 }
 
 function ReferralCTA() {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="shrink-0 mt-1">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="shrink-0 mb-1">
       <Link to="/indicacoes">
-        <motion.button whileTap={{ scale: 0.98 }} className="w-full py-2 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 cursor-pointer">
-          <Share2 className="w-3.5 h-3.5 text-[#0c1222]" />
-          <span className="text-[#0c1222] font-bold text-[10px] tracking-wide">INDIQUE E GANHE R$</span>
+        <motion.button whileTap={{ scale: 0.98 }} className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer">
+          <Share2 className="w-4 h-4 text-[#0c1222]" />
+          <span className="text-[#0c1222] font-bold text-xs tracking-wide">INDIQUE E GANHE R$</span>
         </motion.button>
       </Link>
     </motion.div>
@@ -137,19 +137,19 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/90 to-[#0c1222]" />
       </div>
 
-      {/* Main content - NO SCROLL, everything fits */}
+      {/* Main content - fills viewport comfortably */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <div className="w-full max-w-md mx-auto px-3 pt-2 flex flex-col flex-1 min-h-0" style={{ paddingBottom: 'max(3.8rem, calc(3rem + env(safe-area-inset-bottom, 0px)))' }}>
+        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0" style={{ paddingBottom: 'max(4.5rem, calc(3.5rem + env(safe-area-inset-bottom, 0px)))' }}>
 
           {/* Header */}
-          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-0.5">
+          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">
             <div>
-              <p className="text-slate-400 text-[10px] leading-none">{greeting},</p>
-              <h1 className="text-base font-bold text-gradient-gold leading-tight">{displayName.toUpperCase()}</h1>
+              <p className="text-slate-400 text-xs leading-none mb-0.5">{greeting},</p>
+              <h1 className="text-lg font-bold text-gradient-gold leading-tight">{displayName.toUpperCase()}</h1>
             </div>
             <Link to="/perfil">
-              <motion.div whileTap={{ scale: 0.95 }} className="w-8 h-8 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
-                <span className="text-[#0c1222] font-bold text-xs">{initial}</span>
+              <motion.div whileTap={{ scale: 0.95 }} className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
+                <span className="text-[#0c1222] font-bold text-sm">{initial}</span>
               </motion.div>
             </Link>
           </motion.header>
@@ -163,8 +163,8 @@ export default function Home() {
           {/* Menu */}
           <MenuGrid />
 
-          {/* Spacer pushes buttons to bottom */}
-          <div className="flex-1 min-h-0" />
+          {/* Flexible spacer */}
+          <div className="flex-1 min-h-4" />
 
           {/* Botão Alerta */}
           <EmergencyButton onClick={() => setAlertaOpen(true)} />
