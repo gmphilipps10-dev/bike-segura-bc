@@ -20,15 +20,31 @@ L.Marker.prototype.options.icon = L.icon({
   iconUrl: icon, shadowUrl: iconShadow, iconSize: [25, 41], iconAnchor: [12, 41]
 });
 
-/* ===== Colored circle markers ===== */
-const makeCircleIcon = (color: string) => new L.DivIcon({
+/* ===== 3D Pin SVG (like the reference image) ===== */
+const makePinIcon = (colorLight: string, colorDark: string) => new L.DivIcon({
   className: '',
-  html: `<div style="width:24px;height:24px;border-radius:50%;background:${color};border:2.5px solid #0c1222;box-shadow:0 2px 6px ${color}80;"></div>`,
-  iconSize: [24, 24], iconAnchor: [12, 12], popupAnchor: [0, -14]
+  html: `<svg width="32" height="44" viewBox="0 0 32 44" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 3px 5px rgba(0,0,0,0.4));">
+    <defs>
+      <linearGradient id="pg" x1="16" y1="0" x2="16" y2="38" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="${colorLight}"/>
+        <stop offset="60%" stop-color="${colorDark}"/>
+        <stop offset="100%" stop-color="${colorDark}"/>
+      </linearGradient>
+      <linearGradient id="ph" x1="12" y1="6" x2="20" y2="14" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stop-color="${colorLight}" stop-opacity="0.6"/>
+        <stop offset="100%" stop-color="${colorDark}" stop-opacity="0.3"/>
+      </linearGradient>
+    </defs>
+    <path d="M16 0C7.2 0 0.5 6.2 0.5 13.8c0 5.5 3.2 10.3 8 12.8L16 38l7.5-11.4c4.8-2.5 8-7.3 8-12.8C31.5 6.2 24.8 0 16 0z" fill="url(#pg)" stroke="${colorDark}" stroke-width="1"/>
+    <ellipse cx="16" cy="14" rx="6" ry="6" fill="${colorDark}" opacity="0.3"/>
+    <ellipse cx="16" cy="13" rx="5" ry="5" fill="url(#ph)"/>
+    <ellipse cx="14.5" cy="11.5" rx="2.5" ry="2" fill="white" opacity="0.25"/>
+  </svg>`,
+  iconSize: [32, 44], iconAnchor: [16, 40], popupAnchor: [0, -42]
 });
 
-const theftIcon = makeCircleIcon('#ef4444');
-const monitoredIcon = makeCircleIcon('#f97316');
+const theftIcon = makePinIcon('#ff6b6b', '#dc2626');
+const monitoredIcon = makePinIcon('#fb923c', '#ea580c');
 
 const bikeIcon = new L.DivIcon({
   className: '',
