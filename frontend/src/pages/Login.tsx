@@ -93,11 +93,13 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="flex flex-col items-center mb-8"
         >
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-xl shadow-amber-500/20 mb-4">
-            <Bike className="w-10 h-10 text-[#0c1222]" strokeWidth={2.5} />
-          </div>
+          <img
+            src="/logo-oficial.jpg"
+            alt="Bike Segura BC"
+            className="w-20 h-20 rounded-2xl object-cover shadow-xl shadow-amber-500/20 mb-4"
+          />
           <h1 className="text-2xl font-bold text-gradient-gold">BIKE SEGURA BC</h1>
-          <p className="text-slate-400 text-sm mt-1">Proteja o que te move</p>
+          <p className="text-slate-400 text-sm mt-1">Sua bike protegida!</p>
         </motion.div>
 
         {/* Toggle */}

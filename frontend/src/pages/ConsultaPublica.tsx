@@ -241,7 +241,7 @@ export default function ConsultaPublica() {
         </motion.div>
         <div className="relative z-10 ml-4 text-center">
           <p className="text-white font-bold text-sm">Consultando registro...</p>
-          <p className="text-slate-500 text-xs mt-1">Bike Segura BC</p>
+          <p className="text-slate-500 text-xs mt-1">Sua bike protegida!</p>
         </div>
       </div>
     );
@@ -257,9 +257,11 @@ export default function ConsultaPublica() {
         </div>
         <div className="relative z-10 max-w-md md:max-w-2xl mx-auto px-4 md:px-8 pt-10 pb-8 flex flex-col items-center text-center min-h-screen">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-xl shadow-amber-500/20 mx-auto mb-4">
-              <Bike className="w-10 h-10 text-[#0c1222]" />
-            </div>
+            <img
+              src="/logo-oficial.jpg"
+              alt="Bike Segura BC"
+              className="w-20 h-20 rounded-2xl object-cover shadow-xl shadow-amber-500/20 mx-auto mb-4"
+            />
             <h1 className="text-2xl font-bold text-gradient-gold">BIKE SEGURA BC</h1>
           </motion.div>
 
@@ -295,7 +297,7 @@ export default function ConsultaPublica() {
             </Link>
           </motion.div>
 
-          <p className="text-slate-600 text-[10px] mt-6">bikesegurabc.com.br</p>
+          <p className="text-slate-600 text-[10px] mt-6">{window.location.host}</p>
         </div>
       </div>
     );
@@ -314,9 +316,11 @@ export default function ConsultaPublica() {
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
           <Link to="/login" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
-              <Bike className="w-5 h-5 text-[#0c1222]" />
-            </div>
+            <img
+              src="/logo-oficial.jpg"
+              alt="Bike Segura BC"
+              className="w-10 h-10 rounded-xl object-cover"
+            />
             <div>
               <h1 className="text-sm font-bold text-white">BIKE SEGURA BC</h1>
               <p className="text-slate-500 text-[10px]">Consulta Publica</p>
@@ -455,10 +459,10 @@ export default function ConsultaPublica() {
         {/* Footer */}
         <div className="text-center">
           <Link to="/login" className="text-amber-400 text-xs hover:underline inline-flex items-center gap-1">
-            Proteja sua bike - Cadastre-se no Bike Segura BC
+            Sua bike protegida! - Cadastre-se no Bike Segura BC
             <ExternalLink className="w-3 h-3" />
           </Link>
-          <p className="text-slate-700 text-[10px] mt-2">bikesegurabc.com.br</p>
+          <p className="text-slate-700 text-[10px] mt-2">{window.location.host}</p>
         </div>
 
       </div>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Bike, Gift, ArrowRight, CheckCircle } from 'lucide-react';
+import { Gift, ArrowRight, CheckCircle, Shield, Radio } from 'lucide-react';
 import { useParams, Link } from 'react-router-dom';
 
 export default function IndicarLanding() {
@@ -22,11 +22,13 @@ export default function IndicarLanding() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-xl shadow-amber-500/20 mx-auto mb-4">
-            <Bike className="w-10 h-10 text-[#0c1222]" strokeWidth={2.5} />
-          </div>
+          <img
+            src="/logo-oficial.jpg"
+            alt="Bike Segura BC"
+            className="w-24 h-24 rounded-2xl object-cover shadow-xl shadow-amber-500/20 mx-auto mb-4"
+          />
           <h1 className="text-2xl font-bold text-gradient-gold">BIKE SEGURA BC</h1>
-          <p className="text-slate-400 text-sm mt-1">Proteja o que te move</p>
+          <p className="text-slate-400 text-sm mt-1">Sua bike protegida!</p>
         </motion.div>
 
         {/* Gift Card */}
@@ -42,7 +44,7 @@ export default function IndicarLanding() {
             </div>
             <div>
               <p className="text-white font-bold text-lg">Voce foi indicado!</p>
-              <p className="text-slate-400 text-xs">Use o codigo e ganhe beneficios</p>
+              <p className="text-slate-400 text-xs">Use o codigo e ganhe beneficios exclusivos</p>
             </div>
           </div>
 
@@ -53,14 +55,14 @@ export default function IndicarLanding() {
 
           <div className="space-y-2">
             {[
-              '10% de desconto na primeira assinatura',
-              'Protecao completa para sua bike',
-              'Rastreamento em tempo real',
-              'Alertas de furto instantaneos'
-            ].map((benefit, i) => (
+              { icon: Shield, text: 'Acordo de Cooperacao Tecnica (ACT) com forcas de seguranca' },
+              { icon: CheckCircle, text: 'Beneficios exclusivos na primeira assinatura' },
+              { icon: Radio, text: 'Rastreamento em tempo real' },
+              { icon: CheckCircle, text: 'Alertas de furto instantaneos' },
+            ].map((item, i) => (
               <div key={i} className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-slate-300 text-xs">{benefit}</span>
+                <item.icon className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="text-slate-300 text-xs">{item.text}</span>
               </div>
             ))}
           </div>
