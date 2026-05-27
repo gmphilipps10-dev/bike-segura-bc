@@ -11,6 +11,7 @@ import MeuPerfil from './pages/MeuPerfil';
 import Planos from './pages/Planos';
 import Indicacoes from './pages/Indicacoes';
 import IndicarLanding from './pages/IndicarLanding';
+import ConsultaPublica from './pages/ConsultaPublica';
 import LojasParceiras from './pages/LojasParceiras';
 import AnuncieAqui from './pages/AnuncieAqui';
 import AjudaSuporte from './pages/AjudaSuporte';
@@ -34,6 +35,8 @@ function AppRoutes() {
       <Route path="/planos" element={<PrivateRoute><Planos /></PrivateRoute>} />
       <Route path="/indicacoes" element={<PrivateRoute><Indicacoes /></PrivateRoute>} />
       <Route path="/indicar/:codigo" element={<IndicarLanding />} />
+      <Route path="/qr/:hash" element={<ConsultaPublica />} />
+      <Route path="/consulta/:hash" element={<ConsultaPublica />} />
       <Route path="/lojas" element={<PrivateRoute><LojasParceiras /></PrivateRoute>} />
       <Route path="/anuncie" element={<PrivateRoute><AnuncieAqui /></PrivateRoute>} />
       <Route path="/ajuda" element={<PrivateRoute><AjudaSuporte /></PrivateRoute>} />
