@@ -1,6 +1,7 @@
 const express = require('express');
 const Bike = require('../models/Bike');
 const authMiddleware = require('../middleware/auth');
+const { vincularProximoQR } = require('./preprinted');
 const router = express.Router();
 
 // ===== FUNCOES UTILITARIAS =====
@@ -117,11 +118,25 @@ router.post('/', async (req, res) => {
       rastreamento: rastreamento || '',
       plataformaTag: plataformaTag || '',
       caracteristicas: caracteristicas || '',
-      hash: generateHash(serie),
     });
 
     await bike.save();
-    res.status(201).json(bike);
+
+    // Tenta vincular proximo QR pre-impresso automaticamente
+    const qr = await vincularProximoQR(bike._id, req.userId);
+    if (!qr) {
+      // Fallback: gera hash dinamico se nao houver QR pre-impresso disponivel
+      bike.hash = generateHash(serie);
+      await bike.save();
+    }
+
+    // Retorna bike populada com dados do QR
+    const bikeResponse = await Bike.findById(bike._id).lean();
+    if (qr) {
+      bikeResponse.stickerNumber = qr.stickerNumber;
+    }
+
+    res.status(201).json(bikeResponse);
   } catch (error) {
     console.error('Create bike error:', error);
     res.status(500).json({ message: 'Erro ao cadastrar bike.' });

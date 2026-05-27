@@ -12,6 +12,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
+app.use('/api/preprinted', require('./routes/preprinted'));
 app.use('/api/ocorrencias', require('./routes/ocorrencias'));
 
 // Health check
