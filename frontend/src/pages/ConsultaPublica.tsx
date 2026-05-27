@@ -1,11 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bike, Shield, ShieldAlert, MapPin, QrCode, Calendar,
   User, Phone, FileText, AlertTriangle, CheckCircle,
-  Eye, Clock, ChevronRight, Radio, X, Send, Loader2
+  Eye, Clock, ChevronRight, Radio, X, Send, Loader2,
+  ExternalLink
 } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
+
+const API_BASE = '/bike-segura-bc-backend/api';
 
 /* ===== Types ===== */
 interface PublicBikeData {
@@ -31,26 +34,6 @@ interface PublicBikeData {
   scans: number;
 }
 
-/* ===== Mock Data — será substituído por API real ===== */
-const mockBikes: Record<string, PublicBikeData> = {
-  'a7x9k2m8f3ab': {
-    id: '1', hash: 'a7x9k2m8f3ab', name: 'Trek Marlin 7', brand: 'Trek', type: 'Mountain Bike',
-    color: 'Vermelha', serie: 'WTU123456789C', caracteristicas: 'Pedal Shimano, guidão riser, selim comfort',
-    photo: '/bike-1.jpg', status: 'normal', protected: true,
-    ownerName: 'Gian M.', ownerPhone: '(47) 9****-****', ownerSince: '2024',
-    boRegistered: false, boNumber: '', alertDate: null,
-    lastSeen: 'Há 2 horas', lastLocation: 'Centro, Balneário Camboriú', scans: 47
-  },
-  'b8y0l3n9g4cd': {
-    id: '2', hash: 'b8y0l3n9g4cd', name: 'Specialized Tarmac', brand: 'Specialized', type: 'Speed / Road',
-    color: 'Preta', serie: 'WSBC123456789K', caracteristicas: 'Grupo Shimano 105, rodas carbono, peso 7.2kg',
-    photo: null, status: 'furto', protected: true,
-    ownerName: 'Carlos S.', ownerPhone: '(47) 9****-****', ownerSince: '2023',
-    boRegistered: true, boNumber: 'BO-2025-004891', alertDate: '15/05/2025',
-    lastSeen: '15/05/2025 20:30', lastLocation: 'Av. Brasil, Centro — BC', scans: 12
-  },
-};
-
 /* ===== Components ===== */
 
 function StatusBadge({ status, protected: prot }: { status: string; protected: boolean }) {
@@ -60,7 +43,7 @@ function StatusBadge({ status, protected: prot }: { status: string; protected: b
         <ShieldAlert className="w-6 h-6 text-red-400 shrink-0" />
         <div>
           <p className="text-red-400 font-bold text-sm">EQUIPAMENTO FURTADO</p>
-          <p className="text-red-300/70 text-xs">Não compre. Denuncie imediatamente.</p>
+          <p className="text-red-300/70 text-xs">Nao compre. Denuncie imediatamente.</p>
         </div>
       </div>
     );
@@ -111,11 +94,17 @@ function ReportModal({ hash, onClose }: { hash: string; onClose: () => void }) {
   const [local, setLocal] = useState('');
   const [obs, setObs] = useState('');
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!local.trim()) return;
     setStep('sending');
-    // Simulação — trocar por API real
-    setTimeout(() => setStep('sent'), 2000);
+    try {
+      await fetch(`${API_BASE}/bikes/public/${hash}/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ local, obs })
+      });
+    } catch {}
+    setStep('sent');
   };
 
   return (
@@ -146,26 +135,26 @@ function ReportModal({ hash, onClose }: { hash: string; onClose: () => void }) {
           {step === 'form' && (
             <div className="space-y-4">
               <div>
-                <label className="text-slate-400 text-xs mb-1.5 block">Onde você viu? <span className="text-amber-400">*</span></label>
+                <label className="text-slate-400 text-xs mb-1.5 block">Onde voce viu? <span className="text-amber-400">*</span></label>
                 <div className="glass-card flex items-center gap-3 px-3 py-2.5">
                   <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
                   <input
-                    type="text" placeholder="Ex: Av. Brasil, 1500 — Centro"
+                    type="text" placeholder="Ex: Av. Brasil, 1500 - Centro"
                     value={local} onChange={e => setLocal(e.target.value)}
                     className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-slate-400 text-xs mb-1.5 block">Observação (opcional)</label>
+                <label className="text-slate-400 text-xs mb-1.5 block">Observacao (opcional)</label>
                 <textarea
-                  rows={3} placeholder="Cor da roupa da pessoa, direção que foi, etc."
+                  rows={3} placeholder="Cor da roupa da pessoa, direcao que foi, etc."
                   value={obs} onChange={e => setObs(e.target.value)}
                   className="w-full glass-card px-3 py-2.5 text-white text-sm placeholder:text-slate-600 outline-none resize-none"
                 />
               </div>
               <p className="text-slate-600 text-[10px] leading-relaxed">
-                Sua localização aproximada será enviada junto. Seus dados pessoais <span className="text-amber-400">não</span> serão compartilhados com o proprietário.
+                Sua localizacao aproximada sera enviada junto. Seus dados pessoais <span className="text-amber-400">nao</span> serao compartilhados com o proprietario.
               </p>
             </div>
           )}
@@ -184,7 +173,7 @@ function ReportModal({ hash, onClose }: { hash: string; onClose: () => void }) {
               </div>
               <div>
                 <p className="text-white font-bold text-sm">Aviso enviado!</p>
-                <p className="text-slate-400 text-xs mt-1">O proprietário foi notificado com sua informação. Obrigado por ajudar!</p>
+                <p className="text-slate-400 text-xs mt-1">O proprietario foi notificado com sua informacao. Obrigado por ajudar!</p>
               </div>
             </div>
           )}
@@ -213,31 +202,27 @@ export default function ConsultaPublica() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showReport, setShowReport] = useState(false);
-  const [scanPulse, setScanPulse] = useState(true);
 
-  // Simulate API call
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const found = hash ? mockBikes[hash.toLowerCase()] : null;
-      if (found) {
-        setBike(found);
-      } else {
-        // Fallback: try to find by partial match or show demo
-        setNotFound(true);
-      }
-      setLoading(false);
-      setScanPulse(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    if (!hash) { setNotFound(true); setLoading(false); return; }
+
+    fetch(`${API_BASE}/bikes/public/${hash}`)
+      .then(async res => {
+        if (!res.ok) { setNotFound(true); return; }
+        const data = await res.json();
+        setBike(data);
+      })
+      .catch(() => setNotFound(true))
+      .finally(() => setLoading(false));
   }, [hash]);
 
-  const handleShare = useCallback(async () => {
+  const handleShare = async () => {
     const url = window.location.href;
     if (navigator.share) {
       try { await navigator.share({ title: 'Bike Segura BC - Consulta', url }); return; } catch {}
     }
     navigator.clipboard.writeText(url);
-  }, []);
+  };
 
   // ===== LOADING =====
   if (loading) {
@@ -247,24 +232,16 @@ export default function ConsultaPublica() {
           <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/95 to-[#0c1222]" />
         </div>
-        <div className="relative z-10 flex flex-col items-center gap-4">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1], rotate: [0, 180, 360] }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center"
-          >
-            <QrCode className="w-8 h-8 text-[#0c1222]" />
-          </motion.div>
-          <div className="text-center">
-            <p className="text-white font-bold text-sm">Consultando registro...</p>
-            <p className="text-slate-500 text-xs mt-1">Bike Segura BC</p>
-          </div>
-          {scanPulse && (
-            <>
-              <span className="absolute inset-0 rounded-2xl border border-amber-400/40 animate-ping" style={{ animationDuration: '2s' }} />
-              <span className="absolute -inset-2 rounded-3xl border border-amber-400/20 animate-ping" style={{ animationDuration: '2.5s', animationDelay: '0.5s' }} />
-            </>
-          )}
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+          className="relative z-10 w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center"
+        >
+          <QrCode className="w-8 h-8 text-[#0c1222]" />
+        </motion.div>
+        <div className="relative z-10 ml-4 text-center">
+          <p className="text-white font-bold text-sm">Consultando registro...</p>
+          <p className="text-slate-500 text-xs mt-1">Bike Segura BC</p>
         </div>
       </div>
     );
@@ -278,7 +255,7 @@ export default function ConsultaPublica() {
           <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
           <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/95 to-[#0c1222]" />
         </div>
-        <div className="relative z-10 max-w-md mx-auto px-4 pt-10 pb-8 flex flex-col items-center text-center min-h-screen">
+        <div className="relative z-10 max-w-md md:max-w-2xl mx-auto px-4 md:px-8 pt-10 pb-8 flex flex-col items-center text-center min-h-screen">
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center shadow-xl shadow-amber-500/20 mx-auto mb-4">
               <Bike className="w-10 h-10 text-[#0c1222]" />
@@ -288,27 +265,27 @@ export default function ConsultaPublica() {
 
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-6 w-full">
             <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto mb-3" />
-            <h2 className="text-white font-bold text-lg mb-2">Registro não encontrado</h2>
+            <h2 className="text-white font-bold text-lg mb-2">Registro nao encontrado</h2>
             <p className="text-slate-400 text-xs leading-relaxed mb-4">
-              Este QR Code ou hash não corresponde a nenhum equipamento cadastrado no sistema. Pode ser:
+              Este QR Code ou hash nao corresponde a nenhum equipamento cadastrado no sistema. Pode ser:
             </p>
             <ul className="text-slate-400 text-xs leading-relaxed text-left space-y-1.5 mb-4">
               <li className="flex items-start gap-2">
                 <ChevronRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>Um código inválido ou digitado incorretamente</span>
+                <span>Um codigo invalido ou digitado incorretamente</span>
               </li>
               <li className="flex items-start gap-2">
                 <ChevronRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>O cadastro foi removido pelo proprietário</span>
+                <span>O cadastro foi removido pelo proprietario</span>
               </li>
               <li className="flex items-start gap-2">
                 <ChevronRight className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                <span>O QR Code pode ser falso — <span className="text-red-400 font-semibold">cuidado com receptação</span></span>
+                <span>O QR Code pode ser falso - <span className="text-red-400 font-semibold">cuidado com receptacao</span></span>
               </li>
             </ul>
             <div className="glass-card bg-red-500/5 border border-red-500/20 p-3 mb-4">
               <p className="text-red-400 text-xs font-semibold">
-                Se você está negociando esta bike, desconfie. Exija nota fiscal e verifique o número de série no quadro.
+                Se voce esta negociando esta bike, desconfie. Exiga nota fiscal e verifique o numero de serie no quadro.
               </p>
             </div>
             <Link to="/login">
@@ -327,7 +304,6 @@ export default function ConsultaPublica() {
   // ===== BIKE FOUND =====
   return (
     <div className="min-h-screen bg-[#0c1222] relative">
-      {/* Background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/95 to-[#0c1222]" />
@@ -343,7 +319,7 @@ export default function ConsultaPublica() {
             </div>
             <div>
               <h1 className="text-sm font-bold text-white">BIKE SEGURA BC</h1>
-              <p className="text-slate-500 text-[10px]">Consulta Pública</p>
+              <p className="text-slate-500 text-[10px]">Consulta Publica</p>
             </div>
           </Link>
           <div className="flex items-center gap-2">
@@ -366,7 +342,7 @@ export default function ConsultaPublica() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0c1222] via-transparent to-transparent" />
                 <div className="absolute bottom-3 left-3 right-3">
                   <h2 className="text-white font-bold text-lg">{bike.name}</h2>
-                  <p className="text-slate-400 text-xs">{bike.brand} — {bike.type}</p>
+                  <p className="text-slate-400 text-xs">{bike.brand} - {bike.type}</p>
                 </div>
               </div>
             </div>
@@ -376,21 +352,21 @@ export default function ConsultaPublica() {
         {/* Bike Data */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-4 mb-4">
           <h3 className="text-amber-400 font-bold text-xs tracking-wider mb-3">DADOS DO EQUIPAMENTO</h3>
-          <DataRow icon={QrCode} label="Número de Série" value={bike.serie} highlight={bike.status === 'furto'} />
+          <DataRow icon={QrCode} label="Numero de Serie" value={bike.serie} highlight={bike.status === 'furto'} />
           <DataRow icon={Bike} label="Marca / Modelo" value={`${bike.brand} ${bike.name}`} />
           <DataRow icon={FileText} label="Categoria" value={bike.type} />
           <DataRow icon={MapPin} label="Cor" value={bike.color} />
           {bike.caracteristicas && (
-            <DataRow icon={Eye} label="Características" value={bike.caracteristicas} />
+            <DataRow icon={Eye} label="Caracteristicas" value={bike.caracteristicas} />
           )}
         </motion.div>
 
         {/* Owner Data (partial) */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="glass-card p-4 mb-4">
-          <h3 className="text-amber-400 font-bold text-xs tracking-wider mb-3">PROPRIETÁRIO</h3>
+          <h3 className="text-amber-400 font-bold text-xs tracking-wider mb-3">PROPRIETARIO</h3>
           <DataRow icon={User} label="Nome" value={bike.ownerName} />
           <DataRow icon={Phone} label="Contato" value={bike.ownerPhone} />
-          <DataRow icon={Calendar} label="Proprietário desde" value={bike.ownerSince} />
+          <DataRow icon={Calendar} label="Proprietario desde" value={bike.ownerSince} />
           {bike.boRegistered && (
             <DataRow icon={FileText} label="BO Registrado" value={bike.boNumber} highlight />
           )}
@@ -415,17 +391,17 @@ export default function ConsultaPublica() {
               )}
               <div className="flex items-center gap-2 text-xs">
                 <MapPin className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                <span className="text-red-300">Última localização: {bike.lastLocation}</span>
+                <span className="text-red-300">Ultima localizacao: {bike.lastLocation}</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
                 <Radio className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                <span className="text-red-300">Visto por último: {bike.lastSeen}</span>
+                <span className="text-red-300">Visto por ultimo: {bike.lastSeen}</span>
               </div>
             </div>
             {bike.boRegistered && (
               <div className="mt-3 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
                 <p className="text-red-300 text-[10px] font-semibold">
-                  BO nº {bike.boNumber} registrado na Delegacia Virtual SC
+                  BO n {bike.boNumber} registrado na Delegacia Virtual SC
                 </p>
               </div>
             )}
@@ -445,7 +421,7 @@ export default function ConsultaPublica() {
                 <span className="text-[#0c1222] font-bold text-sm tracking-wide">AVISTEI ESTA BIKE</span>
               </motion.button>
               <a
-                href="https://wa.me/5547992458380?text=Denuncia%20de%20bike%20furtada%20-%20Hash:%20" + bike.hash
+                href={`https://wa.me/5547992458380?text=Denuncia%20de%20bike%20furtada%20-%20Hash:%20${bike.hash}`}
                 target="_blank" rel="noopener noreferrer"
                 className="w-full py-3 rounded-xl glass-card border border-red-500/30 flex items-center justify-center gap-2 text-red-400 font-bold text-sm hover:bg-red-500/10 transition-colors"
               >
@@ -457,7 +433,7 @@ export default function ConsultaPublica() {
             <div className="glass-card p-4 text-center">
               <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
               <p className="text-emerald-400 font-bold text-sm">Equipamento Regular</p>
-              <p className="text-slate-500 text-xs mt-1">Este equipamento não possui alerta de furto ativo</p>
+              <p className="text-slate-500 text-xs mt-1">Este equipamento nao possui alerta de furto ativo</p>
             </div>
           )}
         </motion.div>
@@ -470,16 +446,17 @@ export default function ConsultaPublica() {
           <span className="flex items-center gap-1">
             <Eye className="w-3 h-3" /> {bike.scans} consultas
           </span>
-          <span>•</span>
+          <span>.</span>
           <span>ID: {bike.hash.slice(0, 8).toUpperCase()}</span>
-          <span>•</span>
+          <span>.</span>
           <button onClick={handleShare} className="text-amber-400 hover:underline cursor-pointer">Compartilhar</button>
         </motion.div>
 
         {/* Footer */}
         <div className="text-center">
-          <Link to="/login" className="text-amber-400 text-xs hover:underline">
-            Proteja sua bike — Cadastre-se no Bike Segura BC
+          <Link to="/login" className="text-amber-400 text-xs hover:underline inline-flex items-center gap-1">
+            Proteja sua bike - Cadastre-se no Bike Segura BC
+            <ExternalLink className="w-3 h-3" />
           </Link>
           <p className="text-slate-700 text-[10px] mt-2">bikesegurabc.com.br</p>
         </div>

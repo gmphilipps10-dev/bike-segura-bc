@@ -17,6 +17,11 @@ export interface BikeData {
   rastreamento?: string;
   plataformaTag?: string;
   caracteristicas?: string;
+  hash?: string;
+  status?: 'normal' | 'furto' | 'recuperada';
+  boNumber?: string;
+  alertDate?: string | null;
+  scanCount?: number;
 }
 
 interface BikeContextType {

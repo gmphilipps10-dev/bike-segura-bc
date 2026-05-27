@@ -1,11 +1,143 @@
-import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, Shield, ShieldCheck, MapPin, QrCode } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowLeft, Plus, Shield, ShieldCheck, MapPin, QrCode,
+  X, Copy, Check, ExternalLink, Share2, Download
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useBikes } from '../context/BikeContext';
 
+function QRModal({ bike, onClose }: { bike: any; onClose: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const consultaUrl = bike.hash
+    ? `${window.location.origin}${window.location.pathname}#/qr/${bike.hash}`
+    : `${window.location.origin}${window.location.pathname}#/qr/${bike.id}`;
+
+  const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(consultaUrl)}`;
+
+  const copyHash = () => {
+    navigator.clipboard.writeText(bike.hash || bike.id);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(consultaUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
+
+  const share = async () => {
+    if (navigator.share) {
+      try { await navigator.share({ title: `Bike Segura BC - ${bike.name}`, url: consultaUrl }); return; } catch {}
+    }
+    copyLink();
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+        className="w-full max-w-sm glass-card border border-white/10 rounded-2xl overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="p-4 border-b border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
+              <QrCode className="w-4 h-4 text-[#0c1222]" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm">QR Code da Bike</h3>
+              <p className="text-slate-400 text-[10px]">Consulta publica</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg glass-card flex items-center justify-center cursor-pointer">
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+
+        <div className="p-5 flex flex-col items-center">
+          {/* QR Code Image */}
+          <div className="bg-white rounded-2xl p-4 mb-4 shadow-lg">
+            <img
+              src={qrApiUrl}
+              alt={`QR Code ${bike.name}`}
+              className="w-[200px] h-[200px]"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+              }}
+            />
+          </div>
+
+          {/* Bike Info */}
+          <p className="text-white font-bold text-sm mb-1">{bike.name}</p>
+          <p className="text-slate-500 text-xs mb-4">{bike.brand} - {bike.type}</p>
+
+          {/* Hash */}
+          <button
+            onClick={copyHash}
+            className="glass-card bg-amber-500/5 border border-amber-400/20 px-4 py-2.5 rounded-xl flex items-center gap-2 mb-3 w-full justify-center cursor-pointer hover:bg-amber-500/10 transition-colors"
+          >
+            <span className="text-amber-400 font-mono text-xs font-bold tracking-wider">
+              {(bike.hash || bike.id).toUpperCase()}
+            </span>
+            {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+          </button>
+
+          {/* Link */}
+          <button
+            onClick={copyLink}
+            className="glass-card px-4 py-2.5 rounded-xl flex items-center gap-2 mb-4 w-full justify-center cursor-pointer hover:bg-white/[0.06] transition-colors"
+          >
+            <span className="text-slate-400 text-[10px] truncate max-w-[200px]">{consultaUrl}</span>
+            {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> : <Copy className="w-3.5 h-3.5 text-slate-500 shrink-0" />}
+          </button>
+
+          {/* Actions */}
+          <div className="flex gap-2 w-full">
+            <button
+              onClick={share}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Share2 className="w-4 h-4 text-[#0c1222]" />
+              <span className="text-[#0c1222] font-bold text-xs">COMPARTILHAR</span>
+            </button>
+            <a
+              href={qrApiUrl}
+              download={`qr-bike-${bike.hash || bike.id}.png`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 py-2.5 rounded-xl glass-card flex items-center justify-center gap-1.5 hover:bg-white/[0.06] transition-colors"
+            >
+              <Download className="w-4 h-4 text-amber-400" />
+              <span className="text-amber-400 font-bold text-xs">BAIXAR</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Instructions */}
+        <div className="p-4 border-t border-white/5 bg-white/[0.02]">
+          <p className="text-slate-500 text-[10px] text-center leading-relaxed">
+            Imprima este QR Code em adesivo casca de ovo e cole no quadro da sua bike.
+            Qualquer pessoa pode escanear para verificar se o equipamento e registrado.
+          </p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function MeusEquipamentos() {
   const { bikes } = useBikes();
+  const [selectedBike, setSelectedBike] = useState<any>(null);
   const activeCount = bikes.filter(b => b.protected).length;
 
   return (
@@ -53,7 +185,7 @@ export default function MeusEquipamentos() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 + i * 0.1 }}
-              className="glass-card-hover overflow-hidden cursor-pointer group"
+              className="glass-card-hover overflow-hidden group"
             >
               {/* Image */}
               <div className="relative aspect-[16/10] overflow-hidden">
@@ -88,6 +220,23 @@ export default function MeusEquipamentos() {
                   <QrCode className="w-3.5 h-3.5 text-slate-500" />
                   <span className="text-slate-400 text-xs font-mono">{bike.serie}</span>
                 </div>
+
+                {/* Hash + QR Button */}
+                {bike.hash && (
+                  <button
+                    onClick={() => setSelectedBike(bike)}
+                    className="w-full glass-card bg-amber-500/5 border border-amber-400/20 px-3 py-2 rounded-xl flex items-center justify-between mb-3 cursor-pointer hover:bg-amber-500/10 transition-colors group/qr"
+                  >
+                    <div className="flex items-center gap-2">
+                      <QrCode className="w-4 h-4 text-amber-400" />
+                      <span className="text-amber-400 font-mono text-[10px] font-bold tracking-wider">{bike.hash.toUpperCase()}</span>
+                    </div>
+                    <span className="text-amber-400 text-[10px] font-medium flex items-center gap-1">
+                      Ver QR
+                      <ExternalLink className="w-3 h-3 group-hover/qr:translate-x-0.5 transition-transform" />
+                    </span>
+                  </button>
+                )}
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
@@ -133,6 +282,13 @@ export default function MeusEquipamentos() {
       </div>
 
       <BottomNav />
+
+      {/* QR Modal */}
+      <AnimatePresence>
+        {selectedBike && (
+          <QRModal bike={selectedBike} onClose={() => setSelectedBike(null)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
