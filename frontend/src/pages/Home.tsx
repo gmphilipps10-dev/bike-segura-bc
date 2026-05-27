@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -128,9 +128,30 @@ export default function Home() {
   const [alertaOpen, setAlertaOpen] = useState(false);
   const displayName = user?.name?.split(' ')[0] || 'Usuário';
   const initial = user?.name?.charAt(0) || 'U';
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const apply = (m: MediaQueryListEvent | MediaQueryList) => {
+      if (m.matches) {
+        el.style.height = 'auto';
+        el.style.minHeight = '100vh';
+        el.style.overflowY = 'auto';
+      } else {
+        el.style.height = '100dvh';
+        el.style.minHeight = '';
+        el.style.overflowY = 'hidden';
+      }
+    };
+    apply(mq);
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
 
   return (
-    <div className="h-screen w-full bg-[#0c1222] relative overflow-hidden flex flex-col home-scroll">
+    <div ref={rootRef} className="h-screen w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
 
       {/* Background */}
       <div className="fixed inset-0 z-0">
@@ -138,9 +159,9 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0c1222] via-[#0c1222]/90 to-[#0c1222]" />
       </div>
 
-      {/* Main content - fills viewport comfortably */}
-      <div className="relative z-10 flex-1 flex flex-col min-h-0 home-grow">
-        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0 home-grow" style={{ paddingBottom: '6rem' }}>
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col">
+        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col pb-24">
 
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">
