@@ -130,7 +130,14 @@ export default function Home() {
   const initial = user?.name?.charAt(0) || 'U';
 
   return (
-    <div className="w-full bg-[#0c1222] relative flex flex-col" style={{ minHeight: '100vh', overflowY: 'auto' }}>
+    <div className="w-full bg-[#0c1222] relative flex flex-col h-[100dvh] overflow-hidden home-root">
+      <style>{`
+        @media (min-width: 768px) {
+          .home-root { height: auto !important; overflow-y: auto !important; min-height: 100dvh; }
+          .home-grow  { flex: 1 0 auto !important; min-height: auto !important; }
+        }
+      `}</style>
+
       {/* Background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
@@ -138,8 +145,8 @@ export default function Home() {
       </div>
 
       {/* Main content - fills viewport comfortably */}
-      <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0" style={{ paddingBottom: '6rem' }}>
+      <div className="relative z-10 flex-1 flex flex-col min-h-0 home-grow">
+        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0 home-grow" style={{ paddingBottom: '6rem' }}>
 
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">
