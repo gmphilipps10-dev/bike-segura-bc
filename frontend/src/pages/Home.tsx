@@ -130,7 +130,7 @@ export default function Home() {
   const initial = user?.name?.charAt(0) || 'U';
 
   return (
-    <div className="h-[100dvh] w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
+    <div className="h-[100dvh] md:min-h-[100dvh] md:h-auto w-full bg-[#0c1222] relative overflow-hidden md:overflow-y-auto flex flex-col">
       {/* Background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
