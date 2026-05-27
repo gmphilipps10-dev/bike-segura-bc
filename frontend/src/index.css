@@ -157,6 +157,19 @@
   background: rgba(245, 197, 24, 0.5);
 }
 
+/* Desktop: scroll na Home quando conteúdo excede viewport */
+@media (min-width: 768px) {
+  .home-desktop-scroll {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+  }
+  .home-desktop-grow {
+    flex: 1 0 auto !important;
+    min-height: auto !important;
+  }
+}
+
 /* Leaflet popup customization */
 .custom-popup .leaflet-popup-content-wrapper {
   background: #111827;
