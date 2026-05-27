@@ -25,13 +25,44 @@ export default function Indicacoes() {
   };
 
   const codigoIndicacao = generateCode();
-  const linkIndicacao = `https://bikesegurabc.com.br/indicar/${codigoIndicacao}`;
+  const linkIndicacao = `https://bikesegurabc.com.br/#/indicar/${codigoIndicacao}`;
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
+  const copyToClipboard = async (text: string) => {
+    let success = false;
+
+    // Tenta navigator.clipboard primeiro (funciona em browsers modernos)
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        success = true;
+      } catch {
+        // Falhou, tenta fallback
+      }
+    }
+
+    // Fallback para iOS Safari e browsers antigos
+    if (!success) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '0';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        success = document.execCommand('copy');
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }
   };
 
   const shareLink = async () => {
@@ -41,15 +72,20 @@ export default function Indicacoes() {
       url: linkIndicacao,
     };
 
+    // Tenta navigator.share (iOS Safari suporta, mas pode falhar com URL inválida)
     if (navigator.share) {
       try {
         await navigator.share(shareData);
-      } catch {
-        // Usuário cancelou
+        return; // Sucesso, sai da função
+      } catch (err: any) {
+        // Se o erro for "cancelado pelo usuário", ignora
+        if (err?.name === 'AbortError') return;
+        // Outros erros: cai no fallback
       }
-    } else {
-      copyToClipboard(linkIndicacao);
     }
+
+    // Fallback: copia o link para o clipboard
+    await copyToClipboard(linkIndicacao);
   };
 
   return (

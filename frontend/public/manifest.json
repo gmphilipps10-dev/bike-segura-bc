@@ -1,0 +1,23 @@
+{
+  "name": "Bike Segura BC",
+  "short_name": "Bike Segura BC",
+  "description": "Proteção e rastreamento de bicicletas em Balneário Camboriú",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1222",
+  "theme_color": "#0c1222",
+  "orientation": "portrait",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
