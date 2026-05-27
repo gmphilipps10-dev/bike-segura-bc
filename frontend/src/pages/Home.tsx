@@ -130,7 +130,7 @@ export default function Home() {
   const initial = user?.name?.charAt(0) || 'U';
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#0c1222] relative overflow-y-auto flex flex-col">
+    <div className="w-full bg-[#0c1222] relative flex flex-col" style={{ minHeight: '100vh', overflowY: 'auto' }}>
       {/* Background */}
       <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-cover bg-center opacity-30" style={{ backgroundImage: 'url(/bg-pattern.jpg)' }} />
@@ -139,7 +139,7 @@ export default function Home() {
 
       {/* Main content - fills viewport comfortably */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0 pb-24">
+        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0" style={{ paddingBottom: '6rem' }}>
 
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">
