@@ -157,6 +157,69 @@
   background: rgba(245, 197, 24, 0.5);
 }
 
+/* ===== RESPONSIVE CONTAINER SYSTEM ===== */
+.app-container {
+  @apply max-w-md mx-auto px-4;
+}
+@media (min-width: 768px) {
+  .app-container {
+    @apply max-w-3xl px-6;
+  }
+}
+@media (min-width: 1024px) {
+  .app-container {
+    @apply max-w-5xl px-8;
+  }
+}
+@media (min-width: 1280px) {
+  .app-container {
+    @apply max-w-6xl px-10;
+  }
+}
+
+/* Responsive grid for menu items */
+.app-grid-3 {
+  @apply grid grid-cols-3 gap-2;
+}
+@media (min-width: 768px) {
+  .app-grid-3 {
+    @apply grid-cols-4 gap-3;
+  }
+}
+@media (min-width: 1024px) {
+  .app-grid-3 {
+    @apply grid-cols-5 gap-4;
+  }
+}
+@media (min-width: 1280px) {
+  .app-grid-3 {
+    @apply grid-cols-6 gap-4;
+  }
+}
+
+/* Responsive Bottom Nav */
+.app-bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 z-50;
+}
+.app-bottom-nav > div {
+  @apply mx-auto max-w-md;
+}
+@media (min-width: 768px) {
+  .app-bottom-nav > div {
+    @apply max-w-3xl;
+  }
+}
+@media (min-width: 1024px) {
+  .app-bottom-nav > div {
+    @apply max-w-5xl;
+  }
+}
+@media (min-width: 1280px) {
+  .app-bottom-nav > div {
+    @apply max-w-6xl;
+  }
+}
+
 /* Desktop: scroll na Home quando conteúdo excede viewport */
 @media (min-width: 768px) {
   .home-desktop-scroll {

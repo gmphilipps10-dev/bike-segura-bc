@@ -85,7 +85,7 @@ export default function Login() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col max-w-md mx-auto w-full px-5 pt-10 pb-8">
+      <div className="relative z-10 flex-1 flex flex-col max-w-md md:max-w-2xl mx-auto w-full px-5 md:px-8 pt-10 pb-8">
 
         {/* Logo */}
         <motion.div

@@ -74,17 +74,17 @@ function NewsCarousel() {
 function MenuGrid() {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="shrink-0">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3 lg:gap-4">
         {menuItems.map((item, i) => {
           const Icon = item.icon;
           return (
             <Link key={item.label} to={item.path} className="min-w-0">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover py-3 px-1 flex flex-col items-center justify-center gap-1 text-center group cursor-pointer h-[88px]">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${item.color} p-[2px] group-hover:scale-110 transition-transform duration-300`}>
-                  <div className="w-full h-full rounded-[10px] bg-[#111827] flex items-center justify-center"><Icon className="w-5 h-5 text-white" /></div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover py-3 md:py-4 px-1 flex flex-col items-center justify-center gap-1.5 text-center group cursor-pointer h-[88px] md:h-[100px]">
+                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${item.color} p-[2px] group-hover:scale-110 transition-transform duration-300`}>
+                  <div className="w-full h-full rounded-[10px] bg-[#111827] flex items-center justify-center"><Icon className="w-5 h-5 md:w-6 md:h-6 text-white" /></div>
                 </div>
-                <span className="text-[10px] text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
-                {'sub' in item && (item as any).sub && <span className="text-[6px] text-red-400/80 font-bold tracking-wider leading-none -mt-0.5">{(item as any).sub}</span>}
+                <span className="text-[10px] md:text-xs text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
+                {'sub' in item && (item as any).sub && <span className="text-[6px] md:text-[7px] text-red-400/80 font-bold tracking-wider leading-none -mt-0.5">{(item as any).sub}</span>}
               </motion.div>
             </Link>
           );
@@ -161,7 +161,7 @@ export default function Home() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <div className="w-full max-w-md mx-auto px-4 pt-4 flex flex-col flex-1 min-h-0" style={{ paddingBottom: '6rem' }}>
+        <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-10 pt-4 flex flex-col flex-1 min-h-0" style={{ paddingBottom: '6rem' }}>
 
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">

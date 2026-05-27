@@ -73,7 +73,7 @@ export default function MeuPerfil() {
         <div className="absolute top-20 -left-20 w-60 h-60 bg-violet-500/10 rounded-full blur-[100px] animate-float" />
       </div>
 
-      <div className="relative z-10 max-w-md mx-auto px-4 pt-6 pb-8">
+      <div className="relative z-10 max-w-md md:max-w-3xl lg:max-w-4xl mx-auto px-4 md:px-6 lg:px-8 pt-6 pb-8">
 
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">

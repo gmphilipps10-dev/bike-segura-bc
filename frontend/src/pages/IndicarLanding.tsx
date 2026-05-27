@@ -15,7 +15,7 @@ export default function IndicarLanding() {
         <div className="absolute bottom-40 -right-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-[120px] animate-float" style={{ animationDelay: '1.5s' }} />
       </div>
 
-      <div className="relative z-10 max-w-md w-full text-center">
+      <div className="relative z-10 max-w-md md:max-w-2xl w-full text-center px-4 md:px-8">
         {/* Logo */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

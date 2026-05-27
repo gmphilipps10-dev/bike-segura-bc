@@ -230,7 +230,7 @@ export default function Mapa() {
 
       {/* Header */}
       <div className="relative z-20 bg-[#0c1222]/90 backdrop-blur-lg border-b border-white/5 shrink-0">
-        <div className="max-w-md mx-auto px-4 pt-3 pb-2.5">
+        <div className="max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-10 pt-3 pb-2.5">
           <div className="flex items-center gap-3 mb-2.5">
             <Link to="/" className="w-9 h-9 rounded-xl glass-card flex items-center justify-center shrink-0 cursor-pointer">
               <ArrowLeft className="w-4 h-4 text-amber-400" />
