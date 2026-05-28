@@ -55,14 +55,14 @@ export default function IndicarLanding() {
 
           <div className="space-y-2">
             {[
-              { icon: Shield, text: 'Acordo de Cooperacao Tecnica (ACT) com forcas de seguranca' },
-              { icon: CheckCircle, text: 'Beneficios exclusivos na primeira assinatura' },
-              { icon: Radio, text: 'Rastreamento em tempo real' },
-              { icon: CheckCircle, text: 'Alertas de furto instantaneos' },
-            ].map((item, i) => (
+              '10% de desconto na primeira assinatura',
+              'Protecao completa para sua bike',
+              'Rastreamento em tempo real',
+              'Alertas de furto instantaneos',
+            ].map((benefit, i) => (
               <div key={i} className="flex items-center gap-2">
-                <item.icon className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span className="text-slate-300 text-xs">{item.text}</span>
+                <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="text-slate-300 text-xs">{benefit}</span>
               </div>
             ))}
           </div>

@@ -29,7 +29,7 @@ const faqs = [
   },
   {
     pergunta: 'Como funciona o sistema de indicações?',
-    resposta: 'Cada amigo indicado que contratar o Bike Segura BC acumula beneficios exclusivos para voce. Quanto mais amigos, maiores as vantagens. Consulte as condicoes atuais no app.',
+    resposta: 'Cada amigo que indicar e contratar o Bike Segura BC te dá 10% de desconto no próximo plano. O desconto é cumulativo até 100%. Após usar, a contagem zera e recomeça.',
   },
   {
     pergunta: 'O equipamento de rastreamento está incluído no plano?',

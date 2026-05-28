@@ -13,8 +13,7 @@ export default function Indicacoes() {
 
   const descontoAtual = 0;
   const convertidas = 0;
-  // Valor configuravel pelo admin - nao expor numeros fixos sem autorizacao
-  const proximoBeneficio = 'Beneficio';
+  const proximoDesconto = 10;
 
   // Generate code from user name
   const generateCode = () => {
@@ -71,7 +70,7 @@ export default function Indicacoes() {
   const shareLink = async () => {
     const shareData = {
       title: 'Bike Segura BC - Indicação',
-      text: `Use meu codigo ${codigoIndicacao} no Bike Segura BC! Sua bike protegida com Acordo de Cooperacao Tecnica (ACT) com as forcas de seguranca.`,
+      text: `Use meu código ${codigoIndicacao} e ganhe 10% de desconto na primeira assinatura do Bike Segura BC! Proteja sua bike com quem entende.`,
       url: linkIndicacao,
       url: linkIndicacao,
     };
@@ -110,7 +109,7 @@ export default function Indicacoes() {
           </Link>
           <div>
             <h1 className="text-xl font-bold text-white">Minhas Indicações</h1>
-            <p className="text-xs text-slate-400">Indique e ganhe beneficios</p>
+            <p className="text-xs text-slate-400">Indique e ganhe desconto</p>
           </div>
         </motion.header>
 
@@ -155,7 +154,7 @@ export default function Indicacoes() {
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-amber-400 shrink-0" />
                 <p className="text-amber-400 text-xs">
-                  Indique <span className="font-bold">1 amigo</span> e comece a acumular <span className="font-bold">{proximoBeneficio}s exclusivos</span>
+                  Indique <span className="font-bold">1 amigo</span> para começar a acumular <span className="font-bold">{proximoDesconto}%</span> de desconto
                 </p>
               </div>
             </div>
@@ -172,15 +171,14 @@ export default function Indicacoes() {
           <h3 className="text-white font-bold text-sm mb-3">Como funciona</h3>
           <div className="space-y-2.5">
             {[
-              { icon: Shield, text: 'ACT - Acordo de Cooperacao Tecnica com forcas de seguranca', highlight: true },
-              { icon: UserPlus, text: 'Indique amigos e acumule beneficios exclusivos' },
-              { icon: TrendingUp, text: 'Descontos cumulativos em cada indicacao convertida' },
-              { icon: Gift, text: 'Beneficios especiais ao atingir metas de indicacao' },
-              { icon: Users, text: 'Depois de usar os beneficios, a contagem zera e recomeça' },
+              { icon: UserPlus, text: 'Cada indicação que contratar o Bike Segura BC = 10% de desconto' },
+              { icon: TrendingUp, text: 'O desconto é cumulativo: 10%, 20%, 30%... até 100%' },
+              { icon: Gift, text: 'Ao atingir 100%, seu próximo plano sai de graça' },
+              { icon: Users, text: 'Depois de usar o desconto, a contagem zera e recomeça' },
             ].map((item, i) => (
               <div key={i} className="flex items-start gap-2.5">
-                <item.icon className={`w-4 h-4 shrink-0 mt-0.5 ${item.highlight ? 'text-amber-400' : 'text-amber-400'}`} />
-                <span className={`text-xs ${item.highlight ? 'text-amber-300 font-semibold' : 'text-slate-300'}`}>{item.text}</span>
+                <item.icon className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                <span className="text-slate-300 text-xs">{item.text}</span>
               </div>
             ))}
           </div>
@@ -230,7 +228,7 @@ export default function Indicacoes() {
             <div className="glass-card p-8 text-center">
               <Users className="w-10 h-10 text-slate-600 mx-auto mb-3" />
               <p className="text-slate-400 text-sm mb-1">Nenhuma indicação ainda</p>
-              <p className="text-slate-500 text-xs">Compartilhe seu codigo para comecar a acumular beneficios</p>
+              <p className="text-slate-500 text-xs">Compartilhe seu código para começar a acumular descontos</p>
             </div>
           )}
         </motion.div>
