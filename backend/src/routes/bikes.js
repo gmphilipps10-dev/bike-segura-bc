@@ -1,39 +1,23 @@
 const express = require('express');
 const Bike = require('../models/Bike');
 const authMiddleware = require('../middleware/auth');
-const { vincularProximoQR } = require('./preprinted');
+const { vincularProximoQR, generateHash } = require('../utils/qrManager');
 const router = express.Router();
 
-// ===== FUNCOES UTILITARIAS =====
-
-function generateHash(serie) {
-  const crypto = require('crypto');
-  const salt = process.env.QR_SALT || 'bikesegura-bc-2025-salt';
-  return crypto.createHash('sha256')
-    .update(serie + salt + Date.now())
-    .digest('hex')
-    .slice(0, 12);
-}
-
-// ===== ROTAS PUBLICAS (sem autenticacao) =====
-
-// Consulta publica de bike por hash (QR Code)
+// Consulta publica de bike por hash (QR Code) - SEM AUTENTICACAO
 router.get('/public/:hash', async (req, res) => {
   try {
     const bike = await Bike.findOne({ hash: req.params.hash.toLowerCase() });
     if (!bike) return res.status(404).json({ error: 'Registro nao encontrado' });
 
-    // Buscar dados do proprietario
     const User = require('../models/User');
     const owner = await User.findById(bike.userId);
 
-    // Incrementar contador de scans
     bike.scanCount = (bike.scanCount || 0) + 1;
     bike.lastScanAt = new Date();
     await bike.save();
 
-    // Dados publicos (sem expor informacoes sensiveis)
-    const publicData = {
+    res.json({
       id: bike._id,
       hash: bike.hash,
       name: bike.name,
@@ -46,45 +30,38 @@ router.get('/public/:hash', async (req, res) => {
       status: bike.status,
       protected: bike.protected,
       ownerName: owner ? owner.name.split(' ').map((n, i) => i === 0 ? n : n.charAt(0) + '.').join(' ') : 'Usuario',
-      ownerPhone: owner ? owner.phone.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-****') : '',
+      ownerPhone: owner ? owner.phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-****') : '',
       ownerSince: bike.createdAt ? new Date(bike.createdAt).getFullYear().toString() : '2025',
       boRegistered: !!bike.boNumber,
       boNumber: bike.boNumber,
-      alertDate: bike.alertDate ? bike.alertDate.toLocaleDateString('pt-BR') : null,
+      alertDate: bike.alertDate ? new Date(bike.alertDate).toLocaleDateString('pt-BR') : null,
       lastSeen: bike.lastSeen,
       lastLocation: bike.location,
       scans: bike.scanCount,
-    };
-
-    res.json(publicData);
+    });
   } catch (error) {
-    console.error('Public bike query error:', error);
+    console.error('[QR-Public] Erro:', error);
     res.status(500).json({ error: 'Erro ao consultar registro' });
   }
 });
 
-// Registrar avistamento (scan) de bike
+// Registrar avistamento - SEM AUTENTICACAO
 router.post('/public/:hash/scan', async (req, res) => {
   try {
-    const bike = await Bike.findOne({ hash: req.params.hash.toLowerCase() });
-    if (!bike) return res.status(404).json({ error: 'Registro nao encontrado' });
-
-    const { local, obs } = req.body;
-
-    // TODO: aqui enviar notificacao ao proprietario (push, email, whatsapp)
-    // Por enquanto, apenas registra
-
-    res.json({ 
-      success: true, 
-      message: 'Aviso registrado. O proprietario sera notificado.' 
-    });
+    const hash = req.params.hash.toLowerCase();
+    const bike = await Bike.findOne({ hash });
+    if (bike) {
+      bike.scanCount = (bike.scanCount || 0) + 1;
+      bike.lastScanAt = new Date();
+      await bike.save();
+    }
+    res.json({ success: true, message: 'Aviso registrado.' });
   } catch (error) {
-    console.error('Scan report error:', error);
-    res.status(500).json({ error: 'Erro ao registrar aviso' });
+    res.status(500).json({ error: 'Erro ao registrar' });
   }
 });
 
-// ===== ROTAS AUTENTICADAS =====
+// ===== A PARTIR DAQUI TUDO REQUER AUTENTICACAO =====
 router.use(authMiddleware);
 
 // Listar bikes do usuario
@@ -97,7 +74,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Criar bike (com geracao de hash automatica)
+// Criar bike - COM GERACAO DE HASH AUTOMATICA
 router.post('/', async (req, res) => {
   try {
     const { name, type, brand, serie, color, value, photo, rastreamento, plataformaTag, caracteristicas } = req.body;
@@ -106,6 +83,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Preencha os campos obrigatorios.' });
     }
 
+    // Cria a bike
     const bike = new Bike({
       userId: req.userId,
       name,
@@ -119,34 +97,34 @@ router.post('/', async (req, res) => {
       plataformaTag: plataformaTag || '',
       caracteristicas: caracteristicas || '',
     });
-
     await bike.save();
+    console.log('[Bike-Criar] Bike salva ID:', bike._id);
 
-    // Tenta vincular proximo QR pre-impresso automaticamente
-    let stickerNumber = null;
-    const qr = await vincularProximoQR(bike._id, req.userId);
-    if (qr) {
-      stickerNumber = qr.stickerNumber;
-    } else {
-      // Fallback: gera hash dinamico se nao houver QR pre-impresso disponivel
+    // Vincula QR (auto-gera se necessario)
+    const { hash, stickerNumber } = await vincularProximoQR(bike._id, req.userId);
+    console.log('[Bike-Criar] QR vinculado:', { hash, stickerNumber });
+
+    // Se nao conseguiu vincular, gera hash fallback
+    if (!hash) {
       bike.hash = generateHash(serie);
       await bike.save();
+      console.log('[Bike-Criar] Hash fallback gerado:', bike.hash);
     }
 
-    // Recarrega a bike para ter o hash atualizado
-    const bikeResponse = await Bike.findById(bike._id).lean();
+    // Recarrega com hash atualizado
+    const bikeAtualizada = await Bike.findById(bike._id).lean();
 
-    // Converte _id para id e adiciona stickerNumber se houver
     const response = {
-      ...bikeResponse,
-      id: bikeResponse._id.toString(),
-      hash: bikeResponse.hash,
-      stickerNumber: stickerNumber,
+      ...bikeAtualizada,
+      id: bikeAtualizada._id.toString(),
+      hash: bikeAtualizada.hash,
+      stickerNumber: stickerNumber || null,
     };
 
+    console.log('[Bike-Criar] Resposta enviada:', { id: response.id, hash: response.hash, stickerNumber: response.stickerNumber });
     res.status(201).json(response);
   } catch (error) {
-    console.error('Create bike error:', error);
+    console.error('[Bike-Criar] ERRO:', error);
     res.status(500).json({ message: 'Erro ao cadastrar bike.' });
   }
 });
@@ -159,7 +137,6 @@ router.put('/:id', async (req, res) => {
       req.body,
       { new: true }
     );
-    
     if (!bike) return res.status(404).json({ message: 'Bike nao encontrada.' });
     res.json(bike);
   } catch (error) {
@@ -178,7 +155,7 @@ router.post('/:id/furto', async (req, res) => {
     if (!bike) return res.status(404).json({ message: 'Bike nao encontrada.' });
     res.json(bike);
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao ativar alerta de furto.' });
+    res.status(500).json({ message: 'Erro ao ativar alerta.' });
   }
 });
 
@@ -187,7 +164,7 @@ router.delete('/:id', async (req, res) => {
   try {
     const bike = await Bike.findOneAndDelete({ _id: req.params.id, userId: req.userId });
     if (!bike) return res.status(404).json({ message: 'Bike nao encontrada.' });
-    res.json({ message: 'Bike removida com sucesso.' });
+    res.json({ message: 'Bike removida.' });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao remover bike.' });
   }
