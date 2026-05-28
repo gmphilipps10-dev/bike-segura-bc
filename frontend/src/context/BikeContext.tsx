@@ -107,4 +107,6 @@ export function BikeProvider({ children }: { children: ReactNode }) {
 
 export function useBikes() {
   const ctx = useContext(BikeContext);
-  if (!ctx) throw new Error('useBikes must b
+  if (!ctx) throw new Error('useBikes must be used within BikeProvider');
+  return ctx;
+}
