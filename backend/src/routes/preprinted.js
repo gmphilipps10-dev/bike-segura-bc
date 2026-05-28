@@ -18,14 +18,54 @@ function generateHash(stickerNumber) {
     .slice(0, 12);
 }
 
+// ===== FUNCAO PRIVADA: Gera lote de QR codes =====
+async function gerarLoteInterno(quantidade = 100, prefixo = 'BSBC') {
+  const ultimo = await PrePrintedQR.findOne({ stickerNumber: new RegExp(`^${prefixo}-`) })
+    .sort({ stickerNumber: -1 })
+    .select('stickerNumber');
+
+  let sequencia = 1;
+  if (ultimo) {
+    const match = ultimo.stickerNumber.match(/-(\d+)$/);
+    if (match) sequencia = parseInt(match[1]) + 1;
+  }
+
+  const docs = [];
+  for (let i = 0; i < quantidade; i++) {
+    const stickerNumber = generateStickerNumber(prefixo, sequencia + i);
+    const hash = generateHash(stickerNumber);
+    docs.push({ stickerNumber, hash, lote: 'auto', status: 'disponivel' });
+  }
+
+  await PrePrintedQR.insertMany(docs, { ordered: false }).catch(err => {
+    if (err.code !== 11000) throw err;
+  });
+
+  console.log(`[Auto-Lote] ${quantidade} adesivos gerados: ${generateStickerNumber(prefixo, sequencia)} ate ${generateStickerNumber(prefixo, sequencia + quantidade - 1)}`);
+  return docs;
+}
+
 // ===== FUNCAO UTILITARIA PUBLICA =====
 // Busca o proximo QR disponivel e vincula a uma bike
 async function vincularProximoQR(bikeId, userId) {
-  const qr = await PrePrintedQR.findOneAndUpdate(
+  let qr = await PrePrintedQR.findOneAndUpdate(
     { status: 'disponivel' },
     { status: 'vinculado', bikeId, userId, vinculadoAt: new Date() },
     { sort: { stickerNumber: 1 }, new: true }
   );
+
+  // Se nao houver QR disponivel, gera lote automaticamente
+  if (!qr) {
+    console.log('[Auto-Lote] Estoque vazio. Gerando 100 novos adesivos...');
+    await gerarLoteInterno(100, 'BSBC');
+    // Tenta vincular novamente
+    qr = await PrePrintedQR.findOneAndUpdate(
+      { status: 'disponivel' },
+      { status: 'vinculado', bikeId, userId, vinculadoAt: new Date() },
+      { sort: { stickerNumber: 1 }, new: true }
+    );
+  }
+
   if (!qr) return null;
   await Bike.findByIdAndUpdate(bikeId, { hash: qr.hash });
   return qr;
@@ -56,39 +96,17 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 });
 
-// Gerar lote de QR codes pre-impressos
+// Gerar lote de QR codes pre-impressos (manual - admin)
 router.post('/gerar-lote', authMiddleware, async (req, res) => {
   try {
-    const { quantidade = 100, prefixo = 'BSBC', lote = `L${Date.now()}` } = req.body;
+    const { quantidade = 100, prefixo = 'BSBC' } = req.body;
     const qtd = Math.min(parseInt(quantidade), 1000);
-
-    const ultimo = await PrePrintedQR.findOne({ stickerNumber: new RegExp(`^${prefixo}-`) })
-      .sort({ stickerNumber: -1 })
-      .select('stickerNumber');
-
-    let sequencia = 1;
-    if (ultimo) {
-      const match = ultimo.stickerNumber.match(/-(\d+)$/);
-      if (match) sequencia = parseInt(match[1]) + 1;
-    }
-
-    const docs = [];
-    for (let i = 0; i < qtd; i++) {
-      const stickerNumber = generateStickerNumber(prefixo, sequencia + i);
-      const hash = generateHash(stickerNumber);
-      docs.push({ stickerNumber, hash, lote, status: 'disponivel' });
-    }
-
-    await PrePrintedQR.insertMany(docs, { ordered: false }).catch(err => {
-      if (err.code !== 11000) throw err;
-    });
-
+    const docs = await gerarLoteInterno(qtd, prefixo);
     res.status(201).json({
       message: `${qtd} QR codes gerados`,
-      lote,
       prefixo,
-      de: generateStickerNumber(prefixo, sequencia),
-      ate: generateStickerNumber(prefixo, sequencia + qtd - 1),
+      de: docs[0].stickerNumber,
+      ate: docs[docs.length - 1].stickerNumber,
       quantidade: qtd,
     });
   } catch (error) {
