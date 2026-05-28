@@ -27,7 +27,7 @@ export interface BikeData {
 interface BikeContextType {
   bikes: BikeData[];
   loading: boolean;
-  addBike: (bike: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => Promise<void>;
+  addBike: (bike: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => Promise<any>;
   removeBike: (id: string) => Promise<void>;
   toggleProtection: (id: string) => Promise<void>;
   refreshBikes: () => Promise<void>;
@@ -62,12 +62,14 @@ export function BikeProvider({ children }: { children: ReactNode }) {
   }, [token, isLoggedIn]);
 
   const addBike = async (bikeData: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => {
-    if (!token) return;
+    if (!token) return null;
     try {
       const newBike = await apiPost('/bikes', bikeData, token);
       setBikes(prev => [...prev, newBike]);
+      return newBike;
     } catch (err) {
       console.error('Error adding bike:', err);
+      return null;
     }
   };
 
@@ -105,6 +107,4 @@ export function BikeProvider({ children }: { children: ReactNode }) {
 
 export function useBikes() {
   const ctx = useContext(BikeContext);
-  if (!ctx) throw new Error('useBikes must be used within BikeProvider');
-  return ctx;
-}
+  if (!ctx) throw new Error('useBikes must b

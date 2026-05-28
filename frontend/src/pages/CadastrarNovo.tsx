@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Camera, FileText, Tag, MapPin, Link as LinkIcon,
-  Upload, ClipboardList, NotebookPen
+  Upload, ClipboardList, NotebookPen, QrCode, CheckCircle, Copy
 } from 'lucide-react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useBikes } from '../context/BikeContext';
@@ -93,16 +93,39 @@ export default function CadastrarNovo() {
     }
   };
 
-  const handleSubmit = () => {
-    addBike({
-      name: `${form.marca} ${form.modelo}`,
-      type: form.categoria || 'Não informado',
-      brand: form.marca,
-      serie: form.numeroSerie,
-      color: form.cor,
-      value: '',
-      photo: photos['frente'] || photos['latDir'] || null
-    });
+  const [cadastrando, setCadastrando] = useState(false);
+  const [bikeCadastrada, setBikeCadastrada] = useState<any>(null);
+
+  const handleSubmit = async () => {
+    setCadastrando(true);
+    try {
+      const result = await addBike({
+        name: `${form.marca} ${form.modelo}`,
+        type: form.categoria || 'Nao informado',
+        brand: form.marca,
+        serie: form.numeroSerie,
+        color: form.cor,
+        value: '',
+        photo: photos['frente'] || photos['latDir'] || null,
+        caracteristicas: form.caracteristicas,
+        rastreamento: form.tipoRastreamento,
+        plataformaTag: form.plataformaTag,
+      });
+      // @ts-ignore
+      if (result && result.hash) {
+        // @ts-ignore
+        setBikeCadastrada(result);
+      } else {
+        navigate('/equipamentos');
+      }
+    } catch {
+      navigate('/equipamentos');
+    }
+    setCadastrando(false);
+  };
+
+  const handleCloseSuccess = () => {
+    setBikeCadastrada(null);
     navigate('/equipamentos');
   };
 
@@ -342,6 +365,78 @@ export default function CadastrarNovo() {
         <div className="text-center mb-8">
           <RouterLink to="/" className="text-slate-500 text-xs hover:text-amber-400 transition-colors">Cancelar</RouterLink>
         </div>
+
+        {/* ===== MODAL SUCESSO + QR CODE ===== */}
+        <AnimatePresence>
+          {bikeCadastrada && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[500] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                className="w-full max-w-sm glass-card border border-emerald-500/20 rounded-2xl overflow-hidden"
+              >
+                {/* Header */}
+                <div className="p-5 text-center border-b border-white/5">
+                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-3">
+                    <CheckCircle className="w-7 h-7 text-emerald-400" />
+                  </div>
+                  <h3 className="text-white font-bold text-lg">Equipamento Cadastrado!</h3>
+                  <p className="text-slate-400 text-xs mt-1">{bikeCadastrada.name}</p>
+                </div>
+
+                <div className="p-5">
+                  {/* QR Code */}
+                  {bikeCadastrada.hash && (
+                    <div className="text-center mb-4">
+                      <div className="bg-white rounded-xl p-3 inline-block mb-2">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${window.location.origin}${window.location.pathname}#/qr/${bikeCadastrada.hash}`)}`}
+                          alt="QR Code"
+                          className="w-32 h-32"
+                        />
+                      </div>
+
+                      {/* Sticker Number */}
+                      {bikeCadastrada.stickerNumber && (
+                        <div className="glass-card bg-amber-500/5 border border-amber-400/20 px-3 py-2 rounded-lg mb-2">
+                          <p className="text-slate-500 text-[10px]">Adesivo fisico</p>
+                          <p className="text-amber-400 font-mono text-sm font-bold">{bikeCadastrada.stickerNumber}</p>
+                        </div>
+                      )}
+
+                      {/* Hash */}
+                      <div className="glass-card px-3 py-2 rounded-lg flex items-center justify-center gap-2">
+                        <p className="text-slate-400 font-mono text-[10px]">{bikeCadastrada.hash.toUpperCase()}</p>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(bikeCadastrada.hash);
+                          }}
+                          className="cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3 text-slate-500" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-slate-500 text-[10px] text-center mb-4">
+                    Imprima este QR Code em adesivo casca de ovo e cole no quadro da bike.
+                    {bikeCadastrada.stickerNumber ? ` Use o adesivo ${bikeCadastrada.stickerNumber}.` : ''}
+                  </p>
+
+                  <button
+                    onClick={handleCloseSuccess}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] font-bold text-sm cursor-pointer"
+                  >
+                    VER MEUS EQUIPAMENTOS
+                  </button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </div>
