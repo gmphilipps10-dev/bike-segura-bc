@@ -68,7 +68,7 @@ export default function CadastrarNovo() {
   const handleSubmit = async () => {
     setCadastrando(true);
     try {
-      console.log('[Cadastro] Enviando bike...');
+      console.log('[Cadastro] Enviando...');
       const result = await addBike({
         name: `${form.marca} ${form.modelo}`,
         type: form.categoria || 'Nao informado',
@@ -81,14 +81,19 @@ export default function CadastrarNovo() {
         rastreamento: form.tipoRastreamento,
         plataformaTag: form.plataformaTag,
       });
-      console.log('[Cadastro] Resultado:', result);
-      if (result) {
+      console.log('[Cadastro] Resultado:', JSON.stringify(result, null, 2));
+      // SEMPRE mostra modal se tiver resultado, senao navega
+      if (result && (result.id || result._id)) {
+        console.log('[Cadastro] Abrindo modal com:', result.hash || 'sem hash');
         setBikeCadastrada(result);
       } else {
+        console.log('[Cadastro] Sem resultado valido, navegando');
+        alert('Bike cadastrada! (sem dados de retorno)');
         navigate('/equipamentos');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('[Cadastro] Erro:', err);
+      alert('Erro ao cadastrar: ' + (err.message || 'desconhecido'));
       navigate('/equipamentos');
     }
     setCadastrando(false);
@@ -243,34 +248,37 @@ export default function CadastrarNovo() {
                 </div>
 
                 <div className="p-5">
-                  {/* QR Code */}
-                  {bikeCadastrada.hash ? (
-                    <div className="text-center mb-4">
-                      <div className="bg-white rounded-xl p-3 inline-block mb-2">
-                        <img
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${baseUrl}#/qr/${bikeCadastrada.hash}`)}`}
-                          alt="QR"
-                          className="w-32 h-32"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      </div>
-                      {bikeCadastrada.stickerNumber && (
-                        <div className="glass-card bg-amber-500/5 border border-amber-400/20 px-3 py-2 rounded-lg mb-2">
-                          <p className="text-slate-500 text-[10px]">Adesivo</p>
-                          <p className="text-amber-400 font-mono text-sm font-bold">{bikeCadastrada.stickerNumber}</p>
+                  {/* QR Code - sempre mostra algo */}
+                  <div className="text-center mb-4">
+                    {bikeCadastrada.hash ? (
+                      <>
+                        <div className="bg-white rounded-xl p-3 inline-block mb-2">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${baseUrl}#/qr/${bikeCadastrada.hash}`)}`}
+                            alt="QR"
+                            className="w-32 h-32"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
                         </div>
-                      )}
-                      <div className="glass-card px-3 py-2 rounded-lg flex items-center justify-center gap-2">
-                        <p className="text-slate-400 font-mono text-[10px]">{bikeCadastrada.hash.toUpperCase()}</p>
-                        <button onClick={() => navigator.clipboard.writeText(bikeCadastrada.hash)} className="cursor-pointer"><Copy className="w-3 h-3 text-slate-500" /></button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center mb-4 py-4">
-                      <QrCode className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                      <p className="text-slate-500 text-xs">QR Code sera gerado em breve</p>
-                    </div>
-                  )}
+                        {bikeCadastrada.stickerNumber && (
+                          <div className="glass-card bg-amber-500/5 border border-amber-400/20 px-3 py-2 rounded-lg mb-2">
+                            <p className="text-slate-500 text-[10px]">Adesivo</p>
+                            <p className="text-amber-400 font-mono text-sm font-bold">{bikeCadastrada.stickerNumber}</p>
+                          </div>
+                        )}
+                        <div className="glass-card px-3 py-2 rounded-lg flex items-center justify-center gap-2">
+                          <p className="text-slate-400 font-mono text-[10px]">{String(bikeCadastrada.hash).toUpperCase()}</p>
+                          <button onClick={() => navigator.clipboard.writeText(String(bikeCadastrada.hash))} className="cursor-pointer"><Copy className="w-3 h-3 text-slate-500" /></button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <QrCode className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                        <p className="text-slate-500 text-xs">QR Code em processamento</p>
+                        <p className="text-slate-600 text-[10px] mt-1">Verifique em Meus Equipamentos</p>
+                      </>
+                    )}
+                  </div>
 
                   <p className="text-slate-500 text-[10px] text-center mb-4">
                     {bikeCadastrada.stickerNumber
