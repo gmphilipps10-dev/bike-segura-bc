@@ -78,7 +78,8 @@ export default function CadastrarNovo() {
   });
 
   const [photos, setPhotos] = useState<Record<string, string | null>>({});
-
+  const [cadastrando, setCadastrando] = useState(false);
+  const [bikeCadastrada, setBikeCadastrada] = useState<any>(null);
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -92,9 +93,6 @@ export default function CadastrarNovo() {
       reader.readAsDataURL(file);
     }
   };
-
-  const [cadastrando, setCadastrando] = useState(false);
-  const [bikeCadastrada, setBikeCadastrada] = useState<any>(null);
 
   const handleSubmit = async () => {
     setCadastrando(true);
@@ -111,9 +109,7 @@ export default function CadastrarNovo() {
         rastreamento: form.tipoRastreamento,
         plataformaTag: form.plataformaTag,
       });
-      // @ts-ignore
       if (result && result.hash) {
-        // @ts-ignore
         setBikeCadastrada(result);
       } else {
         navigate('/equipamentos');
@@ -348,16 +344,16 @@ export default function CadastrarNovo() {
         {/* ===== BOTAO CADASTRAR ===== */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="mb-6">
           <motion.button
-            whileTap={isFormValid ? { scale: 0.98 } : undefined}
+            whileTap={isFormValid && !cadastrando ? { scale: 0.98 } : undefined}
             onClick={handleSubmit}
-            disabled={!isFormValid}
+            disabled={!isFormValid || cadastrando}
             className={`w-full py-4 rounded-2xl font-bold text-sm tracking-wide transition-all cursor-pointer ${
-              isFormValid
+              isFormValid && !cadastrando
                 ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-[#0c1222] shadow-lg shadow-amber-500/20'
                 : 'bg-white/5 text-slate-500 cursor-not-allowed'
             }`}
           >
-            CADASTRAR BICICLETA
+            {cadastrando ? 'CADASTRANDO...' : 'CADASTRAR BICICLETA'}
           </motion.button>
         </motion.div>
 
