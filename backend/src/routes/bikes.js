@@ -123,20 +123,28 @@ router.post('/', async (req, res) => {
     await bike.save();
 
     // Tenta vincular proximo QR pre-impresso automaticamente
+    let stickerNumber = null;
     const qr = await vincularProximoQR(bike._id, req.userId);
-    if (!qr) {
+    if (qr) {
+      stickerNumber = qr.stickerNumber;
+    } else {
       // Fallback: gera hash dinamico se nao houver QR pre-impresso disponivel
       bike.hash = generateHash(serie);
       await bike.save();
     }
 
-    // Retorna bike populada com dados do QR
+    // Recarrega a bike para ter o hash atualizado
     const bikeResponse = await Bike.findById(bike._id).lean();
-    if (qr) {
-      bikeResponse.stickerNumber = qr.stickerNumber;
-    }
 
-    res.status(201).json(bikeResponse);
+    // Converte _id para id e adiciona stickerNumber se houver
+    const response = {
+      ...bikeResponse,
+      id: bikeResponse._id.toString(),
+      hash: bikeResponse.hash,
+      stickerNumber: stickerNumber,
+    };
+
+    res.status(201).json(response);
   } catch (error) {
     console.error('Create bike error:', error);
     res.status(500).json({ message: 'Erro ao cadastrar bike.' });
