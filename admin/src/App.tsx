@@ -1,0 +1,34 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
+import Clientes from './pages/Clientes'
+import Equipamentos from './pages/Equipamentos'
+import Adesivos from './pages/Adesivos'
+import Relatorios from './pages/Relatorios'
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const { isLoggedIn } = useAuth()
+  return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />
+}
+
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+      <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
+      <Route path="/equipamentos" element={<PrivateRoute><Equipamentos /></PrivateRoute>} />
+      <Route path="/adesivos" element={<PrivateRoute><Adesivos /></PrivateRoute>} />
+      <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
+    </Routes>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
+  )
+}

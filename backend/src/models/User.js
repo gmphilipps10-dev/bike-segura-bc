@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
   contatoEmergencia: { type: String, default: '' },
   plano: { type: String, default: 'free' },
   indicacoes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  isAdmin: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Hash password before saving
