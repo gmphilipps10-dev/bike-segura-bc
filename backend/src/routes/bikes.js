@@ -61,13 +61,24 @@ router.post('/public/:hash/scan', async (req, res) => {
 // ===== AUTH REQUIRED =====
 router.use(authMiddleware);
 
-// Listar
+// Listar bikes do usuario logado
 router.get('/', async (req, res) => {
   try {
     const bikes = await Bike.find({ userId: req.userId });
     res.json(bikes);
   } catch (error) {
     res.status(500).json({ message: 'Erro' });
+  }
+});
+
+// Listar TODAS as bikes (admin)
+router.get('/all', async (req, res) => {
+  try {
+    const bikes = await Bike.find().sort({ createdAt: -1 });
+    res.json(bikes);
+  } catch (error) {
+    console.error('[Admin-Bikes] Erro:', error);
+    res.status(500).json({ message: 'Erro ao listar equipamentos.' });
   }
 });
 

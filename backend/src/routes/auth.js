@@ -155,4 +155,24 @@ router.put('/profile', async (req, res) => {
   }
 });
 
+// Listar todos os usuarios (admin)
+router.get('/users', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Verifica se usuario existe
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+
+    // Retorna todos os usuarios sem a senha
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    console.error('[Admin-Users] Erro:', error);
+    res.status(500).json({ message: 'Erro ao listar usuarios.' });
+  }
+});
+
 module.exports = router;

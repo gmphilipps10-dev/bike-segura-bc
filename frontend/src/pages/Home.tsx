@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
   Bike, Plus, ShieldAlert, User, CreditCard, Users, Map, Store, Tag,
-  AlertTriangle, Share2, Radio
+  AlertTriangle, Share2, Radio, Settings
 } from 'lucide-react';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
@@ -27,6 +27,7 @@ const menuItems = [
   { icon: Map, label: 'Mapa da\nSeguranca', color: 'from-lime-400 to-green-500', path: '/mapa' },
   { icon: Store, label: 'Lojas\nParceiras', color: 'from-orange-400 to-amber-500', path: '/lojas' },
   { icon: Tag, label: 'Anuncie\nAqui', color: 'from-sky-400 to-blue-500', path: '/anuncie' },
+  { icon: Settings, label: 'Painel\nAdmin', color: 'from-slate-400 to-slate-600', path: '/admin' },
 ];
 
 /* ===== Components ===== */
