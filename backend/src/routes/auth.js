@@ -155,6 +155,27 @@ router.put('/profile', async (req, res) => {
   }
 });
 
+// Virar administrador (proprio usuario)
+router.post('/become-admin', async (req, res) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findByIdAndUpdate(
+      decoded.id,
+      { isAdmin: true },
+      { new: true }
+    ).select('-password');
+
+    if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+
+    res.json({ message: 'Agora voce e administrador!', user });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro.' });
+  }
+});
+
 // Listar todos os usuarios (admin)
 router.get('/users', async (req, res) => {
   try {
@@ -162,15 +183,12 @@ router.get('/users', async (req, res) => {
     if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // Verifica se usuario existe
     const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+    if (!user || !user.isAdmin) return res.status(403).json({ message: 'Acesso negado.' });
 
-    // Retorna todos os usuarios sem a senha
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
-    console.error('[Admin-Users] Erro:', error);
     res.status(500).json({ message: 'Erro ao listar usuarios.' });
   }
 });

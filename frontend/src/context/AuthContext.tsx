@@ -11,6 +11,7 @@ export interface UserData {
   nascimento: string;
   endereco: string;
   contatoEmergencia: string;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
@@ -21,6 +22,7 @@ interface AuthContextType {
   register: (data: Omit<UserData, 'id'> & { password: string }) => Promise<boolean>;
   logout: () => void;
   updateUser: (data: Partial<UserData>) => Promise<void>;
+  becomeAdmin: () => Promise<boolean>;
   error: string;
   clearError: () => void;
 }
@@ -132,10 +134,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const becomeAdmin = async (): Promise<boolean> => {
+    if (!token) return false;
+    try {
+      const result = await apiPost('/auth/become-admin', {}, token);
+      if (result.user) {
+        setUser({ ...user, ...result.user } as UserData);
+        return true;
+      }
+    } catch (err: any) {
+      setError(err.message || 'Erro ao tornar-se administrador');
+    }
+    return false;
+  };
+
   const clearError = () => setError('');
 
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn, token, login, register, logout, updateUser, error, clearError }}>
+    <AuthContext.Provider value={{ user, isLoggedIn, token, login, register, logout, updateUser, becomeAdmin, error, clearError }}>
       {children}
     </AuthContext.Provider>
   );

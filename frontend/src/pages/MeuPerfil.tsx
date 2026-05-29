@@ -12,8 +12,9 @@ import { useBikes } from '../context/BikeContext';
 
 export default function MeuPerfil() {
   const navigate = useNavigate();
-  const { user, updateUser, logout } = useAuth();
+  const { user, updateUser, logout, becomeAdmin } = useAuth();
   const { bikes } = useBikes();
+  const [tornandoAdmin, setTornandoAdmin] = useState(false);
 
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
@@ -200,6 +201,19 @@ export default function MeuPerfil() {
             ))}
           </div>
         </motion.section>
+
+        {/* Tornar-se Admin */}
+        {!user?.isAdmin && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }} className="mb-4">
+            <button
+              onClick={async () => { setTornandoAdmin(true); const ok = await becomeAdmin(); if (ok) alert('Voce agora e administrador! Acesse o painel em: ' + window.location.origin + '/admin/'); setTornandoAdmin(false); }}
+              disabled={tornandoAdmin}
+              className="w-full glass-card border border-amber-400/20 p-4 flex items-center justify-center gap-2 cursor-pointer hover:bg-amber-400/10 transition-colors disabled:opacity-50"
+            >
+              <span className="text-amber-400 text-sm font-semibold">{tornandoAdmin ? 'ATIVANDO...' : 'ATIVAR ACESSO ADMIN'}</span>
+            </button>
+          </motion.div>
+        )}
 
         {/* Logout */}
         <motion.div
