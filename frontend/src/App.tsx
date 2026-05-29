@@ -19,6 +19,7 @@ import AdminAdesivos from './pages/AdminAdesivos';
 import AdminRelatorios from './pages/admin/Relatorios';
 import LojasParceiras from './pages/LojasParceiras';
 import AnuncieAqui from './pages/AnuncieAqui';
+import AdminSetup from './pages/AdminSetup';
 import AjudaSuporte from './pages/AjudaSuporte';
 import TermosPoliticas from './pages/TermosPoliticas';
 
@@ -49,6 +50,7 @@ function AppRoutes() {
       <Route path="/admin/relatorios" element={<PrivateRoute><AdminRelatorios /></PrivateRoute>} />
       <Route path="/lojas" element={<PrivateRoute><LojasParceiras /></PrivateRoute>} />
       <Route path="/anuncie" element={<PrivateRoute><AnuncieAqui /></PrivateRoute>} />
+      <Route path="/admin-setup" element={<PrivateRoute><AdminSetup /></PrivateRoute>} />
       <Route path="/ajuda" element={<PrivateRoute><AjudaSuporte /></PrivateRoute>} />
       <Route path="/termos" element={<PrivateRoute><TermosPoliticas /></PrivateRoute>} />
     </Routes>

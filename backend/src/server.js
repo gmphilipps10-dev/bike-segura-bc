@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
@@ -14,6 +15,12 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
 app.use('/api/preprinted', require('./routes/preprinted'));
 app.use('/api/ocorrencias', require('./routes/ocorrencias'));
+
+// Serve static files (logo, assets)
+app.use(express.static(path.join(__dirname, '../public')));
+
+// Serve painel administrativo em /paineladmin/
+app.use('/paineladmin', express.static(path.join(__dirname, '../public/paineladmin')));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -32,12 +39,4 @@ if (!MONGODB_URI) {
 mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('MongoDB Atlas conectado!');
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-      console.log(`Servidor rodando na porta ${PORT}`);
-    });
-  })
-  .catch(err => {
-    console.error('Erro ao conectar MongoDB:', err.message);
-    process.exit(1);
-  });
+    const PO

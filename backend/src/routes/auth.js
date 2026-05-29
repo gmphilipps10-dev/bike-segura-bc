@@ -155,9 +155,16 @@ router.put('/profile', async (req, res) => {
   }
 });
 
-// Virar administrador (proprio usuario)
+// Virar administrador (com PIN de seguranca)
 router.post('/become-admin', async (req, res) => {
   try {
+    const { pin } = req.body;
+    const pinCorreto = process.env.ADMIN_PIN || 'BSBC2025';
+    
+    if (pin !== pinCorreto) {
+      return res.status(403).json({ message: 'PIN incorreto.' });
+    }
+
     const token = req.header('Authorization')?.replace('Bearer ', '');
     if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
 
@@ -176,6 +183,29 @@ router.post('/become-admin', async (req, res) => {
   }
 });
 
+// Login do painel administrativo (senha exclusiva)
+router.post('/painel-login', async (req, res) => {
+  try {
+    const { senha } = req.body;
+    const senhaCorreta = process.env.PAINEL_SENHA || 'bike2025';
+
+    if (senha !== senhaCorreta) {
+      return res.status(403).json({ message: 'Senha incorreta.' });
+    }
+
+    // Gera token JWT especial para o painel
+    const token = jwt.sign(
+      { id: 'painel-admin', isAdmin: true },
+      process.env.JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    res.json({ token, message: 'Login efetuado com sucesso.' });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao fazer login.' });
+  }
+});
+
 // Listar todos os usuarios (admin)
 router.get('/users', async (req, res) => {
   try {
@@ -183,8 +213,8 @@ router.get('/users', async (req, res) => {
     if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user || !user.isAdmin) return res.status(403).json({ message: 'Acesso negado.' });
+    // Aceita tanto token de usuario admin quanto token do painel
+    if (!decoded.isAdmin) return res.status(403).json({ message: 'Acesso negado.' });
 
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json(users);

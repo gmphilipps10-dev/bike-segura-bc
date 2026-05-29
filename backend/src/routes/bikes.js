@@ -71,7 +71,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Listar TODAS as bikes (admin)
+// Listar TODAS as bikes (admin ou painel)
 router.get('/all', async (req, res) => {
   try {
     const bikes = await Bike.find().sort({ createdAt: -1 });

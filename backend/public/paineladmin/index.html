@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bike Segura BC - Painel Administrativo</title>
+  <link rel="stylesheet" href="/paineladmin/style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Login -->
+    <div id="login-page" class="login-container">
+      <div class="login-box">
+        <img src="/logo-oficial.jpg" alt="Bike Segura BC" class="login-logo">
+        <h1>PAINEL ADMINISTRATIVO</h1>
+        <p class="subtitle">Acesso restrito</p>
+        <input type="password" id="senha" placeholder="Senha de acesso" maxlength="20">
+        <button id="btn-login">ENTRAR</button>
+        <p id="erro" class="erro"></p>
+      </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" style="display:none">
+      <nav class="sidebar">
+        <div class="sidebar-header">
+          <img src="/logo-oficial.jpg" alt="">
+          <div>
+            <strong>BIKE SEGURA BC</strong>
+            <small>Painel Admin</small>
+          </div>
+        </div>
+        <ul class="sidebar-menu">
+          <li class="active" data-page="dashboard"><span>Dashboard</span></li>
+          <li data-page="clientes"><span>Clientes</span></li>
+          <li data-page="equipamentos"><span>Equipamentos</span></li>
+          <li data-page="adesivos"><span>Adesivos QR</span></li>
+        </ul>
+        <div class="sidebar-footer">
+          <button onclick="sair()">Sair</button>
+        </div>
+      </nav>
+
+      <main class="main-content">
+        <!-- Dashboard -->
+        <div id="page-dashboard" class="page active">
+          <h2>Dashboard</h2>
+          <div class="cards-grid">
+            <div class="card"><div class="card-icon bg-blue">&#128100;</div><div class="card-value" id="d-clientes">0</div><div class="card-label">Clientes</div></div>
+            <div class="card"><div class="card-icon bg-amber">&#128690;</div><div class="card-value" id="d-equips">0</div><div class="card-label">Equipamentos</div></div>
+            <div class="card"><div class="card-icon bg-green">&#128737;</div><div class="card-value" id="d-protegidos">0</div><div class="card-label">Protegidos</div></div>
+            <div class="card"><div class="card-icon bg-red">&#9888;</div><div class="card-value" id="d-furtos">0</div><div class="card-label">Alertas Furto</div></div>
+            <div class="card"><div class="card-icon bg-purple">&#128242;</div><div class="card-value" id="d-adesivos-disp">0</div><div class="card-label">Adesivos Livres</div></div>
+            <div class="card"><div class="card-icon bg-indigo">&#128202;</div><div class="card-value" id="d-adesivos-usados">0</div><div class="card-label">Adesivos Usados</div></div>
+          </div>
+        </div>
+
+        <!-- Clientes -->
+        <div id="page-clientes" class="page">
+          <h2>Clientes</h2>
+          <input type="text" id="busca-clientes" class="search" placeholder="Buscar por nome, email ou telefone...">
+          <div class="table-container">
+            <table><thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Cadastro</th></tr></thead>
+            <tbody id="t-clientes"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Equipamentos -->
+        <div id="page-equipamentos" class="page">
+          <h2>Equipamentos</h2>
+          <div class="filters">
+            <button class="filter-btn active" data-filter="todos">Todos</button>
+            <button class="filter-btn" data-filter="normal">Ativos</button>
+            <button class="filter-btn" data-filter="furto">Furtados</button>
+          </div>
+          <div class="table-container">
+            <table><thead><tr><th>Nome</th><th>Marca</th><th>Serie</th><th>Status</th><th>Adesivo</th></tr></thead>
+            <tbody id="t-equips"></tbody></table>
+          </div>
+        </div>
+
+        <!-- Adesivos -->
+        <div id="page-adesivos" class="page">
+          <h2>Adesivos QR Code</h2>
+          <div class="actions">
+            <button id="btn-gerar" class="btn-primary">Gerar Lote (+100)</button>
+            <button id="btn-print" class="btn-secondary" onclick="window.print()">Imprimir Folha</button>
+          </div>
+          <div class="filters">
+            <button class="filter-adesivo active" data-afil="disponivel">Disponiveis</button>
+            <button class="filter-adesivo" data-afil="vinculado">Usados</button>
+            <button class="filter-adesivo" data-afil="todos">Todos</button>
+          </div>
+          <div class="grid-adesivos" id="grid-adesivos"></div>
+
+          <!-- Area de impressao -->
+          <div class="print-area">
+            <h3>ADESIVOS BIKE SEGURA BC - Imprimir em adesivo casca de ovo</h3>
+            <div class="print-grid" id="print-grid"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="/paineladmin/app.js"></script>
+</body>
+</html>
