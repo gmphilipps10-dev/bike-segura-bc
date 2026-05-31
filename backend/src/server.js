@@ -15,6 +15,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
 app.use('/api/preprinted', require('./routes/preprinted'));
 app.use('/api/ocorrencias', require('./routes/ocorrencias'));
+app.use('/api/pagamentos', require('./routes/pagamentos'));
 
 // Serve static files
 const publicPath = path.join(__dirname, '../public');
