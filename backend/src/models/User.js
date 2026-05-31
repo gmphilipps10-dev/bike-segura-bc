@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema({
   nascimento: { type: String, default: '' },
   endereco: { type: String, default: '' },
   contatoEmergencia: { type: String, default: '' },
-  plano: { type: String, default: 'free' },
+  plano: { type: String, enum: ['free', 'bronze', 'prata', 'ouro', 'diamante'], default: 'free' },
   indicacoes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isAdmin: { type: Boolean, default: false },
 }, { timestamps: true });

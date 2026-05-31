@@ -1,13 +1,31 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ArrowLeft, Check, Shield, Crown, Gem, Medal,
+  ArrowLeft, Check, Shield, Crown, Gem, Medal, Award,
   HelpCircle, Bike
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 
 const plans = [
+  {
+    id: 'bronze',
+    name: 'Bronze',
+    subtitle: 'Cadastro + Alerta de Furto',
+    icon: Award,
+    price: 'R$ 50,00',
+    period: '/ano',
+    color: 'from-amber-600 to-amber-700',
+    borderColor: 'border-amber-600/30',
+    popular: false,
+    features: [
+      'Acesso ao App Bike Segura BC',
+      'Cadastro do proprietario e equipamentos',
+      'Botao de alerta de furto',
+      'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
+      'Sem rastreamento',
+    ],
+  },
   {
     id: 'prata',
     name: 'Prata',
