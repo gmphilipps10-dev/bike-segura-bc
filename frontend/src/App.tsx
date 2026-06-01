@@ -16,6 +16,7 @@ import LojasParceiras from './pages/LojasParceiras';
 import AnuncieAqui from './pages/AnuncieAqui';
 import AjudaSuporte from './pages/AjudaSuporte';
 import TermosPoliticas from './pages/TermosPoliticas';
+import AdminApp from './admin/AdminApp';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
@@ -41,6 +42,7 @@ function AppRoutes() {
       <Route path="/anuncie" element={<PrivateRoute><AnuncieAqui /></PrivateRoute>} />
       <Route path="/ajuda" element={<PrivateRoute><AjudaSuporte /></PrivateRoute>} />
       <Route path="/termos" element={<PrivateRoute><TermosPoliticas /></PrivateRoute>} />
+      <Route path="/paineladmin/*" element={<AdminApp />} />
     </Routes>
   );
 }
