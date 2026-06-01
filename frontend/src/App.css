@@ -1,0 +1,80 @@
+/* App-specific styles */
+
+/* Ensure smooth transitions */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glass card enhancements */
+.glass-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  pointer-events: none;
+}
+
+/* Menu item hover glow */
+.glass-card-hover::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    135deg,
+    rgba(245, 197, 24, 0.15),
+    transparent 50%,
+    rgba(52, 211, 153, 0.1)
+  );
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.glass-card-hover:hover::after {
+  opacity: 1;
+}
+
+/* Emergency button enhancements */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* Selection color */
+::selection {
+  background: rgba(245, 197, 24, 0.3);
+  color: white;
+}
+
+/* Prevent overscroll bounce on mobile */
+html, body {
+  overscroll-behavior-y: none;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
