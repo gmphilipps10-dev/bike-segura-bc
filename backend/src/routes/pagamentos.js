@@ -19,24 +19,61 @@ const adminAuth = async (req, res, next) => {
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '';
 const ASAAS_ENV = process.env.ASAAS_ENV === 'production' ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/api/v3';
 
+console.log('[ASAAS] Ambiente:', ASAAS_ENV);
+console.log('[ASAAS] API Key configurada:', ASAAS_API_KEY ? 'SIM (' + ASAAS_API_KEY.substring(0, 20) + '...)' : 'NAO');
+
 async function asaasRequest(endpoint, method = 'GET', body = null) {
   if (!ASAAS_API_KEY) throw new Error('ASAAS_API_KEY não configurada');
-  const res = await fetch(`${ASAAS_ENV}${endpoint}`, {
+  const url = `${ASAAS_ENV}${endpoint}`;
+  console.log('[ASAAS] Request:', method, url);
+  const res = await fetch(url, {
     method,
     headers: { 'Content-Type': 'application/json', 'access_token': ASAAS_API_KEY },
     body: body ? JSON.stringify(body) : null,
   });
-  return res.json();
+  const data = await res.json();
+  if (data.errors) {
+    console.error('[ASAAS] Erro:', data.errors);
+    throw new Error(data.errors[0]?.description || 'Erro na API Asaas');
+  }
+  return data;
 }
 
-// ===== STATUS DO ASAAS (admin) =====
-router.get('/status', adminAuth, async (req, res) => {
-  res.json({
-    configurado: !!ASAAS_API_KEY,
-    ambiente: process.env.ASAAS_ENV === 'production' ? 'producao' : 'sandbox',
-    apiKeyPresente: ASAAS_API_KEY ? 'sim' : 'nao',
-    mensagem: ASAAS_API_KEY ? 'Integracao com Asaas configurada' : 'ASAAS_API_KEY nao configurada. Configure a variavel de ambiente na DigitalOcean.'
-  });
+// ===== STATUS DO ASAAS (publico - para teste) =====
+router.get('/status', async (req, res) => {
+  try {
+    if (!ASAAS_API_KEY) {
+      return res.json({
+        configurado: false,
+        ambiente: ASAAS_ENV.includes('sandbox') ? 'sandbox' : 'producao',
+        apiKeyPresente: 'nao',
+        envVarName: 'ASAAS_API_KEY',
+        envVarValue: process.env.ASAAS_API_KEY ? 'definida (oculta)' : 'NAO DEFINIDA',
+        mensagem: 'ASAAS_API_KEY nao configurada. Adicione a variavel de ambiente na DigitalOcean.'
+      });
+    }
+
+    // Testa conectividade com Asaas listando clientes
+    const teste = await asaasRequest('/customers?limit=1');
+    
+    res.json({
+      configurado: true,
+      ambiente: ASAAS_ENV.includes('sandbox') ? 'sandbox' : 'producao',
+      apiKeyPresente: 'sim',
+      apiKeyPrefix: ASAAS_API_KEY.substring(0, 15) + '...',
+      conectividade: teste.object === 'list' ? 'OK' : 'Falha',
+      mensagem: 'Integracao com Asaas funcionando corretamente'
+    });
+  } catch (error) {
+    console.error('[ASAAS] Erro no status:', error.message);
+    res.json({
+      configurado: true,
+      ambiente: ASAAS_ENV.includes('sandbox') ? 'sandbox' : 'producao',
+      apiKeyPresente: 'sim',
+      conectividade: 'Erro: ' + error.message,
+      mensagem: 'API Key configurada mas houve erro ao conectar: ' + error.message
+    });
+  }
 });
 
 // ===== LISTAR PAGAMENTOS (admin) =====
@@ -73,7 +110,7 @@ router.post('/criar', adminAuth, async (req, res) => {
     const { userId, plano, valor, dataVencimento, metodoPagamento } = req.body;
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
-    if (!ASAAS_API_KEY) return res.status(500).json({ message: 'ASAAS_API_KEY não configurada. Configure a variável de ambiente.' });
+    if (!ASAAS_API_KEY) return res.status(500).json({ message: 'ASAAS_API_KEY não configurada.' });
 
     // 1. Criar ou buscar cliente no Asaas
     const clientesAsaas = await asaasRequest(`/customers?email=${encodeURIComponent(user.email)}`);
@@ -116,7 +153,7 @@ router.post('/criar', adminAuth, async (req, res) => {
       userEmail: user.email,
       userCpf: user.cpf,
       plano,
-      valor: valor * 100, // centavos
+      valor: valor * 100,
       asaasId: cobranca.id,
       status: cobranca.status === 'CONFIRMED' ? 'pago' : 'pendente',
       metodoPagamento,
