@@ -15,15 +15,14 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#0f172a] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/logo-oficial.jpg" alt="Bike Segura BC" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4 shadow-lg" />
+          <img src="/logo-oficial.jpg" alt="" className="w-20 h-20 rounded-2xl object-cover mx-auto mb-4" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
           <h1 className="text-2xl font-bold text-white">PAINEL ADMINISTRATIVO</h1>
-          <p className="text-slate-400 text-sm mt-1">Acesso restrito</p>
+          <p className="text-slate-500 text-sm mt-1">Acesso restrito</p>
         </div>
-
-        <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="glass-panel p-6 space-y-4">
           <div>
             <label className="block text-slate-400 text-xs mb-1.5">Email</label>
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="admin@bikesegurabc.com" required />
@@ -36,10 +35,7 @@ export default function Login() {
             {loading ? 'Entrando...' : 'ENTRAR'}
           </button>
         </form>
-
-        <p className="text-center text-slate-600 text-xs mt-6">
-          Bike Segura BC - Sua bike protegida!
-        </p>
+        <p className="text-center text-slate-600 text-xs mt-6">Bike Segura BC - Sua bike protegida!</p>
       </div>
     </div>
   )

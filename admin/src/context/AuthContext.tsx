@@ -38,12 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       const data = await res.json()
       if (data.token && data.user) {
-        // Verifica se e admin
         const meRes = await fetch(`${API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${data.token}` },
         })
         const meData = await meRes.json()
-        
         if (meData.isAdmin) {
           localStorage.setItem('admin_token', data.token)
           localStorage.setItem('admin_user', JSON.stringify(meData))
@@ -51,14 +49,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(true)
           return true
         }
-        // Nao e admin
         alert('Acesso negado. Esta area e exclusiva para administradores.')
         return false
       }
       return false
-    } catch {
-      return false
-    }
+    } catch { return false }
   }
 
   const logout = () => {
@@ -75,6 +70,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-export function useAuth() {
-  return useContext(AuthContext)
-}
+export function useAuth() { return useContext(AuthContext) }
