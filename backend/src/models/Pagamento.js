@@ -19,7 +19,7 @@ const pagamentoSchema = new mongoose.Schema({
   historico: [{
     data: { type: Date, default: Date.now },
     status: { type: String },
-    descricao: { type, String }
+    descricao: { type: String }
   }]
 }, { timestamps: true });
 
