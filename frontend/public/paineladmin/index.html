@@ -6,7 +6,7 @@
   <title>Bike Segura BC - Painel Administrativo</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #fff; }
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #0f172a; color: #fff; }
     .hidden { display: none !important; }
 
     /* Login */
@@ -84,6 +84,10 @@
     .badge-danger { background: rgba(239,68,68,0.2); color: #f87171; }
     .badge-info { background: rgba(59,130,246,0.2); color: #60a5fa; }
     .badge-default { background: rgba(100,116,139,0.2); color: #94a3b8; }
+    .badge-bronze { background: rgba(180,83,9,0.2); color: #d97706; }
+    .badge-prata { background: rgba(148,163,184,0.2); color: #cbd5e1; }
+    .badge-ouro { background: rgba(234,179,8,0.2); color: #facc15; }
+    .badge-diamante { background: rgba(59,130,246,0.2); color: #60a5fa; }
 
     .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
     .btn-primary { background: #fbbf24; color: #0f172a; }
@@ -97,6 +101,8 @@
     .alert-danger p { color: #f87171; font-size: 0.875rem; }
     .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); }
     .alert-success p { color: #34d399; font-size: 0.75rem; }
+    .alert-warning { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3); }
+    .alert-warning p { color: #fbbf24; font-size: 0.875rem; }
 
     .equip-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; }
     .equip-item img, .equip-placeholder { width: 48px; height: 48px; border-radius: 0.5rem; object-fit: cover; flex-shrink: 0; }
@@ -123,9 +129,21 @@
     .plano-card .plano-preco { text-align: right; }
     .plano-card .plano-preco .valor { color: #fff; font-weight: 700; font-size: 1.125rem; }
     .plano-card .plano-preco .periodo { color: #64748b; font-size: 0.75rem; }
+    .plano-recursos { margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); }
+    .plano-recursos li { color: #94a3b8; font-size: 0.75rem; padding: 0.125rem 0; list-style: none; display: flex; align-items: center; gap: 0.5rem; }
+    .plano-recursos li::before { content: "\2713"; color: #34d399; font-weight: 700; }
 
     .page-section { display: none; }
     .page-section.active { display: block; }
+
+    .asaas-status { padding: 1rem 1.25rem; margin-bottom: 1rem; }
+    .asaas-status .status-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .asaas-status .status-row:last-child { margin-bottom: 0; }
+    .asaas-status .status-label { color: #94a3b8; font-size: 0.75rem; min-width: 120px; }
+    .asaas-status .status-value { color: #fff; font-size: 0.875rem; font-weight: 500; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .status-dot.on { background: #34d399; }
+    .status-dot.off { background: #f87171; }
 
     @media(max-width:768px){
       .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; z-index: 100; transition: left 0.3s; }
@@ -141,9 +159,7 @@
     .loading { color: #64748b; font-size: 0.875rem; }
     .empty { color: #64748b; text-align: center; padding: 2rem; }
 
-    .info-box { padding: 1.5rem; margin-top: 2rem; }
-    .info-box h3 { color: #fff; font-weight: 700; margin-bottom: 0.5rem; }
-    .info-box p { color: #94a3b8; font-size: 0.875rem; }
+    .text-center { text-align: center; }
   </style>
 </head>
 <body>
@@ -153,16 +169,16 @@
   <div class="login-box">
     <img src="/logo-oficial.jpg" alt="Bike Segura BC" onerror="this.style.display='none'" />
     <h1>PAINEL ADMINISTRATIVO</h1>
-    <p>Acesso restrito</p>
+    <p>Acesso restrito aos administradores</p>
     <form class="login-form" id="login-form">
-      <label>Email</label>
-      <input type="email" id="login-email" placeholder="admin@bikesegurabc.com" required />
+      <label>Email ou Telefone</label>
+      <input type="text" id="login-email" placeholder="Digite seu email" required />
       <label>Senha</label>
-      <input type="password" id="login-password" placeholder="Sua senha" required />
+      <input type="password" id="login-password" placeholder="Digite sua senha" required />
       <button type="submit" id="login-btn">ENTRAR</button>
       <p class="login-error hidden" id="login-error"></p>
     </form>
-    <p style="color:#475569;font-size:0.75rem;margin-top:1.5rem;">Bike Segura BC - Sua bike protegida!</p>
+    <p style="color:#475569;font-size:0.75rem;margin-top:1.5rem;">Bike Segura BC</p>
   </div>
 </div>
 
@@ -226,27 +242,21 @@
     <div class="page-section active" id="page-dashboard">
       <header><h1>Dashboard</h1><p>Visao geral da plataforma</p></header>
       <div class="grid-3" id="dashboard-cards"></div>
-      <div class="card" style="margin-top:2rem;padding:1.5rem;">
-        <h3 style="color:#fff;font-size:1.125rem;font-weight:600;margin-bottom:0.5rem;">Status do Sistema</h3>
-        <div style="display:flex;align-items:center;gap:0.5rem;">
-          <div style="width:8px;height:8px;border-radius:50%;background:#34d399;animation:pulse 2s infinite;"></div>
-          <span style="color:#34d399;font-size:0.875rem;">Operacional</span>
-        </div>
-      </div>
+      <div class="grid-4" id="dashboard-planos" style="margin-top:1rem;"></div>
     </div>
 
     <!-- Clientes -->
     <div class="page-section" id="page-clientes">
       <header><h1>Clientes</h1><p id="clientes-count">0 cadastrados</p></header>
-      <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="clientes-search" placeholder="Buscar..." oninput="filterClientes()" /></div>
-      <div class="card table-container"><table><thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Cadastro</th></tr></thead><tbody id="clientes-table"></tbody></table></div>
+      <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="clientes-search" placeholder="Buscar por nome, email ou telefone..." oninput="filterClientes()" /></div>
+      <div class="card table-container"><table><thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Plano</th><th>Cadastro</th></tr></thead><tbody id="clientes-table"></tbody></table></div>
     </div>
 
     <!-- Equipamentos -->
     <div class="page-section" id="page-equipamentos">
       <header><h1>Equipamentos</h1><p id="equips-count">0 cadastrados</p></header>
       <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
-        <div class="search-box" style="margin:0;flex:1;max-width:400px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="equips-search" placeholder="Buscar..." oninput="filterEquips()" /></div>
+        <div class="search-box" style="margin:0;flex:1;max-width:400px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="equips-search" placeholder="Buscar por nome ou numero de serie..." oninput="filterEquips()" /></div>
         <div class="filters"><button class="active" onclick="setEquipFiltro('todos',this)">TODOS</button><button onclick="setEquipFiltro('normal',this)">ATIVOS</button><button onclick="setEquipFiltro('furto',this)">FURTADOS</button></div>
       </div>
       <div id="equips-list"></div>
@@ -267,16 +277,22 @@
 
     <!-- Planos -->
     <div class="page-section" id="page-planos">
-      <header><h1>Planos</h1><p>Gerenciamento de planos e assinaturas</p></header>
+      <header><h1>Planos</h1><p>Planos de assinatura disponiveis</p></header>
       <div class="grid-4" id="planos-stats"></div>
       <h2 style="color:#fff;font-size:1.125rem;font-weight:700;margin:2rem 0 1rem;">Detalhes dos Planos</h2>
       <div class="grid-2" id="planos-list"></div>
-      <div class="card info-box"><h3>Informacoes</h3><p>Nao ha plano gratuito. Todos os usuarios devem assinar um dos planos para proteger suas bikes. O plano e renovado anualmente.</p></div>
     </div>
 
     <!-- Pagamentos -->
     <div class="page-section" id="page-pagamentos">
       <header><h1>Pagamentos</h1><p>Gestao de cobrancas e faturamento</p></header>
+
+      <!-- Status Asaas -->
+      <div class="card asaas-status" id="asaas-status-card">
+        <h3 style="color:#fff;font-size:0.875rem;font-weight:600;margin-bottom:0.75rem;">Integracao Asaas</h3>
+        <div id="asaas-status-content"><p class="loading">Verificando...</p></div>
+      </div>
+
       <div class="grid-4" id="pagamentos-stats"></div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin:1rem 0;flex-wrap:wrap;gap:1rem;">
         <div class="filters"><button class="active" onclick="setPagamentoFiltro('todos',this)">TODOS</button><button onclick="setPagamentoFiltro('pago',this)">PAGO</button><button onclick="setPagamentoFiltro('pendente',this)">PENDENTE</button><button onclick="setPagamentoFiltro('atrasado',this)">ATRASADO</button><button onclick="setPagamentoFiltro('cancelado',this)">CANCELADO</button></div>
@@ -309,7 +325,6 @@ document.getElementById('login-form').addEventListener('submit', async function(
   const err = document.getElementById('login-error');
   btn.disabled = true; btn.textContent = 'Entrando...'; err.classList.add('hidden');
   try {
-    // Primeiro tenta login normal
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     let res = await fetch(`${API_BASE}/auth/login`, {
@@ -318,7 +333,6 @@ document.getElementById('login-form').addEventListener('submit', async function(
     });
     let data = await res.json();
     if (data.token) {
-      // Verifica se eh admin
       const meRes = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${data.token}` } });
       const meData = await meRes.json();
       if (meData.isAdmin) {
@@ -328,7 +342,6 @@ document.getElementById('login-form').addEventListener('submit', async function(
         return;
       }
     }
-    // Tenta login do painel
     res = await fetch(`${API_BASE}/auth/painel-login`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ senha: password })
@@ -389,10 +402,22 @@ async function apiGet(path) {
   } catch { return null; }
 }
 
+function planoBadge(plano) {
+  const map = {
+    bronze: 'badge-bronze',
+    prata: 'badge-prata',
+    ouro: 'badge-ouro',
+    diamante: 'badge-diamante',
+  };
+  return `<span class="badge ${map[plano] || 'badge-default'}">${(plano || 'N/A').toUpperCase()}</span>`;
+}
+
 // Dashboard
 async function loadDashboard() {
   const container = document.getElementById('dashboard-cards');
+  const planosContainer = document.getElementById('dashboard-planos');
   container.innerHTML = '<p class="loading">Carregando...</p>';
+  planosContainer.innerHTML = '';
   const [users, bikes, qr] = await Promise.all([apiGet('/auth/users'), apiGet('/bikes/all'), apiGet('/preprinted')]);
   const totalClientes = Array.isArray(users) ? users.length : 0;
   const totalEquip = Array.isArray(bikes) ? bikes.length : 0;
@@ -401,20 +426,42 @@ async function loadDashboard() {
   const disp = qr ? (qr.disponiveis || 0) : 0;
   const usados = qr ? (qr.vinculados || 0) : 0;
 
+  const planoCounts = {
+    bronze: Array.isArray(users) ? users.filter(u => u.plano === 'bronze').length : 0,
+    prata: Array.isArray(users) ? users.filter(u => u.plano === 'prata').length : 0,
+    ouro: Array.isArray(users) ? users.filter(u => u.plano === 'ouro').length : 0,
+    diamante: Array.isArray(users) ? users.filter(u => u.plano === 'diamante').length : 0,
+  };
+
   const cards = [
-    { title: 'Clientes', value: totalClientes, color: 'text-blue-400', bg: 'bg-blue-400/10', icon: 'users' },
-    { title: 'Equipamentos', value: totalEquip, color: 'text-amber-400', bg: 'bg-amber-400/10', icon: 'bike' },
-    { title: 'Protegidos', value: protegidos, color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: 'shield' },
-    { title: 'Alertas Furto', value: alertas, color: 'text-red-400', bg: 'bg-red-400/10', icon: 'alert' },
-    { title: 'Adesivos Livres', value: disp, color: 'text-purple-400', bg: 'bg-purple-400/10', icon: 'qr' },
-    { title: 'Adesivos Usados', value: usados, color: 'text-indigo-400', bg: 'bg-indigo-400/10', icon: 'activity' },
+    { title: 'Clientes', value: totalClientes, color: 'text-blue-400', bg: 'bg-blue-400/10', icon: 'users', link: 'clientes' },
+    { title: 'Equipamentos', value: totalEquip, color: 'text-amber-400', bg: 'bg-amber-400/10', icon: 'bike', link: 'equipamentos' },
+    { title: 'Protegidos', value: protegidos, color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: 'shield', link: 'equipamentos' },
+    { title: 'Alertas Furto', value: alertas, color: 'text-red-400', bg: 'bg-red-400/10', icon: 'alert', link: 'equipamentos' },
+    { title: 'Adesivos Livres', value: disp, color: 'text-purple-400', bg: 'bg-purple-400/10', icon: 'qr', link: 'adesivos' },
+    { title: 'Adesivos Usados', value: usados, color: 'text-indigo-400', bg: 'bg-indigo-400/10', icon: 'activity', link: 'adesivos' },
   ];
 
   container.innerHTML = cards.map(c => `
-    <div class="card card-hover" onclick="navigate('${c.title === 'Clientes' ? 'clientes' : c.title.includes('Adesivos') ? 'adesivos' : 'equipamentos'}')">
+    <div class="card card-hover" onclick="navigate('${c.link}')">
       <div class="stat-icon ${c.bg}">${svgIcon(c.icon, c.color)}</div>
       <div class="stat-value">${c.value}</div>
       <div class="stat-label">${c.title}</div>
+    </div>
+  `).join('');
+
+  const planoCards = [
+    { label: 'Bronze', value: planoCounts.bronze, color: 'text-amber-600', bg: 'bg-amber-500/10' },
+    { label: 'Prata', value: planoCounts.prata, color: 'text-slate-300', bg: 'bg-slate-400/10' },
+    { label: 'Ouro', value: planoCounts.ouro, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+    { label: 'Diamante', value: planoCounts.diamante, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  ];
+
+  planosContainer.innerHTML = planoCards.map(p => `
+    <div class="${p.bg} border border-white/5 rounded-xl p-4">
+      <p class="${p.color} text-xs font-medium">${p.label}</p>
+      <p class="${p.color} text-xl font-bold mt-1">${p.value}</p>
+      <p class="text-slate-500 text-[10px]">assinantes</p>
     </div>
   `).join('');
 }
@@ -434,7 +481,7 @@ function svgIcon(name, color) {
 // Clientes
 async function loadClientes() {
   const container = document.getElementById('clientes-table');
-  container.innerHTML = '<tr><td colspan="4" class="loading">Carregando...</td></tr>';
+  container.innerHTML = '<tr><td colspan="5" class="loading">Carregando...</td></tr>';
   const data = await apiGet('/auth/users');
   allClientes = Array.isArray(data) ? data : [];
   document.getElementById('clientes-count').textContent = allClientes.length + ' cadastrados';
@@ -449,11 +496,12 @@ function renderClientes() {
     (c.phone || '').includes(search)
   ) : allClientes;
   const container = document.getElementById('clientes-table');
-  if (filtrados.length === 0) { container.innerHTML = '<tr><td colspan="4" class="empty">Nenhum cliente encontrado</td></tr>'; return; }
+  if (filtrados.length === 0) { container.innerHTML = '<tr><td colspan="5" class="empty">Nenhum cliente encontrado</td></tr>'; return; }
   container.innerHTML = filtrados.map(c => `
     <tr><td class="text-white font-medium">${c.name || '-'}</td>
     <td style="color:#94a3b8;">${c.email || '-'}</td>
     <td style="color:#94a3b8;">${c.phone || '-'}</td>
+    <td>${planoBadge(c.plano)}</td>
     <td style="color:#64748b;font-size:0.75rem;">${c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '-'}</td></tr>
   `).join('');
 }
@@ -542,7 +590,7 @@ async function gerarLote() {
     });
     const data = await res.json();
     if (data) {
-      document.getElementById('adesivos-msg').innerHTML = `<div class="alert alert-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>${data.quantidade} adesivos: ${data.de} ate ${data.ate}</p></div>`;
+      document.getElementById('adesivos-msg').innerHTML = `<div class="alert alert-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>${data.quantidade} adesivos gerados: ${data.de} ate ${data.ate}</p></div>`;
       loadAdesivos();
     }
   } catch {
@@ -580,10 +628,10 @@ async function loadPlanos() {
   `).join('');
 
   const PLANOS = [
-    { nome: 'Bronze', preco: 50, cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', desc: 'Protecao basica com QR Code' },
-    { nome: 'Prata', preco: 150, cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', desc: 'Protecao intermediaria' },
-    { nome: 'Ouro', preco: 300, cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', desc: 'Protecao avancada' },
-    { nome: 'Diamante', preco: 450, cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', desc: 'Protecao premium completa' },
+    { nome: 'Bronze', preco: 50, cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', desc: 'Protecao basica', recursos: ['1 bike protegida', 'QR Code de identificacao', 'Alerta de furto', 'Consulta publica'] },
+    { nome: 'Prata', preco: 150, cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', desc: 'Protecao intermediaria', recursos: ['3 bikes protegidas', 'QR Code de identificacao', 'Alerta de furto com BO', 'Consulta publica', 'Historico de scans'] },
+    { nome: 'Ouro', preco: 300, cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', desc: 'Protecao avancada', recursos: ['5 bikes protegidas', 'QR Code de identificacao', 'Alerta de furto com BO', 'Consulta publica', 'Historico de scans', 'Prioridade em recuperacao'] },
+    { nome: 'Diamante', preco: 450, cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', desc: 'Protecao premium', recursos: ['Bikes ilimitadas', 'QR Code de identificacao', 'Alerta de furto com BO', 'Consulta publica', 'Historico de scans', 'Prioridade maxima', 'Suporte prioritario'] },
   ];
 
   listDiv.innerHTML = PLANOS.map(p => `
@@ -595,6 +643,9 @@ async function loadPlanos() {
         </div>
         <div class="plano-preco"><p class="valor">R$${p.preco}</p><p class="periodo">/ano</p></div>
       </div>
+      <ul class="plano-recursos">
+        ${p.recursos.map(r => `<li>${r}</li>`).join('')}
+      </ul>
     </div>
   `).join('');
 }
@@ -603,7 +654,33 @@ async function loadPlanos() {
 async function loadPagamentos() {
   const tbody = document.getElementById('pagamentos-table');
   const statsDiv = document.getElementById('pagamentos-stats');
+  const asaasDiv = document.getElementById('asaas-status-content');
   tbody.innerHTML = '<tr><td colspan="6" class="loading">Carregando...</td></tr>';
+
+  // Verifica status Asaas
+  try {
+    const asaasRes = await fetch(`${API_BASE}/pagamentos/status`);
+    const asaasData = await asaasRes.json();
+    asaasDiv.innerHTML = `
+      <div class="status-row">
+        <span class="status-label">Status:</span>
+        <span class="status-dot ${asaasData.asaas_configurado ? 'on' : 'off'}"></span>
+        <span class="status-value">${asaasData.asaas_configurado ? 'Configurado' : 'Nao configurado'}</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Ambiente:</span>
+        <span class="status-value" style="text-transform:capitalize;">${asaasData.asaas_env}</span>
+      </div>
+      <div class="status-row">
+        <span class="status-label">Chave API:</span>
+        <span class="status-value" style="font-family:monospace;font-size:0.75rem;">${asaasData.asaas_key_primeiros_4}</span>
+      </div>
+      ${!asaasData.asaas_configurado ? `<div class="status-row" style="margin-top:0.5rem;"><span class="status-value" style="color:#fbbf24;font-size:0.75rem;">${asaasData.mensagem}</span></div>` : ''}
+    `;
+  } catch {
+    asaasDiv.innerHTML = '<p style="color:#f87171;font-size:0.875rem;">Erro ao verificar integracao Asaas</p>';
+  }
+
   const [pags, st] = await Promise.all([apiGet('/pagamentos'), apiGet('/pagamentos/stats')]);
   allPagamentos = Array.isArray(pags) ? pags : [];
   const stats = st || {};
@@ -681,6 +758,10 @@ async function loadRelatorios() {
     furtos: b.filter(x => x.status === 'furto').length,
     adesivosDisp: qr ? (qr.disponiveis || 0) : 0,
     adesivosUsados: qr ? (qr.vinculados || 0) : 0,
+    bronze: u.filter(x => x.plano === 'bronze').length,
+    prata: u.filter(x => x.plano === 'prata').length,
+    ouro: u.filter(x => x.plano === 'ouro').length,
+    diamante: u.filter(x => x.plano === 'diamante').length,
   };
 
   container.innerHTML = `
@@ -689,8 +770,11 @@ async function loadRelatorios() {
         <svg class="text-blue-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <h2 style="color:#fff;font-weight:700;">Clientes</h2>
       </div>
-      <div class="grid-3">
-        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.totalClientes}</p><p style="color:#64748b;font-size:0.75rem;">Total</p></div>
+      <div class="grid-4">
+        <div class="card text-center"><p style="font-size:1.25rem;font-weight:700;color:#fff;">${stats.totalClientes}</p><p style="color:#64748b;font-size:0.625rem;">Total</p></div>
+        <div class="card text-center"><p style="font-size:1.25rem;font-weight:700;color:#d97706;">${stats.bronze}</p><p style="color:#64748b;font-size:0.625rem;">Bronze</p></div>
+        <div class="card text-center"><p style="font-size:1.25rem;font-weight:700;color:#94a3b8;">${stats.prata}</p><p style="color:#64748b;font-size:0.625rem;">Prata</p></div>
+        <div class="card text-center"><p style="font-size:1.25rem;font-weight:700;color:#facc15;">${stats.ouro}</p><p style="color:#64748b;font-size:0.625rem;">Ouro</p></div>
       </div>
     </div>
     <div class="card" style="margin-bottom:1rem;">
