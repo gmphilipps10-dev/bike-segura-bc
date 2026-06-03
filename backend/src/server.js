@@ -28,6 +28,12 @@ app.get('/paineladmin/*', (req, res) => {
   res.sendFile(path.join(publicPath, 'paineladmin', 'index.html'));
 });
 
+// Fallback SPA para o frontend principal (React HashRouter)
+// Todas as rotas nao-API servem o index.html do frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'index.html'));
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' });
