@@ -175,42 +175,42 @@
     }
 
     .sticker-page {
-      width: 210mm; min-height: 297mm; padding: 8mm;
+      width: 210mm; min-height: 297mm; padding: 6mm;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 3mm;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4mm;
       box-sizing: border-box;
     }
     .sticker-print {
-      width: 36mm; height: 42mm;
+      width: 46mm; height: 56mm;
       border: 1px solid #d4a017;
       border-radius: 2mm;
-      padding: 1.5mm;
+      padding: 2mm;
       display: flex; flex-direction: column; align-items: center;
       text-align: center; page-break-inside: avoid;
       background: #fff;
     }
     .sticker-print .st-brand {
       font-family: Arial, sans-serif;
-      font-size: 4.5pt; font-weight: bold; color: #d4a017;
-      margin-bottom: 0.5mm;
+      font-size: 5pt; font-weight: bold; color: #d4a017;
+      margin-bottom: 1mm;
       letter-spacing: 0.3px;
     }
     .sticker-print .qr-box {
-      width: 24mm; height: 24mm;
+      width: 28mm; height: 28mm;
       display: flex; align-items: center; justify-content: center;
-      margin-bottom: 0.5mm;
+      margin-bottom: 1mm;
     }
     .sticker-print .qr-box img { width: 100% !important; height: 100% !important; }
     .sticker-print .st-num {
-      font-family: 'Courier New', monospace; font-size: 5.5pt; font-weight: bold;
+      font-family: 'Courier New', monospace; font-size: 6pt; font-weight: bold;
       color: #000; letter-spacing: 0.5px;
     }
     .sticker-print .st-hash {
-      font-family: 'Courier New', monospace; font-size: 4pt; color: #666;
+      font-family: 'Courier New', monospace; font-size: 4.5pt; color: #666;
     }
     .sticker-print .st-url {
-      font-size: 3.5pt; color: #999;
+      font-size: 4pt; color: #999;
     }
 
     /* Preview modal */
@@ -222,43 +222,43 @@
     }
     .preview-overlay.show { display: flex; }
     .preview-sheet {
-      background: #fff; color: #000; padding: 8mm;
+      background: #fff; color: #000; padding: 6mm;
       width: 210mm; min-height: 297mm; margin: 0 auto;
       display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      gap: 3mm;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4mm;
       box-shadow: 0 20px 60px rgba(0,0,0,0.5);
     }
     .preview-sheet .sticker-print {
-      width: 36mm; height: 42mm;
+      width: 46mm; height: 56mm;
       border: 1px solid #d4a017;
       border-radius: 2mm;
-      padding: 1.5mm;
+      padding: 2mm;
       display: flex; flex-direction: column; align-items: center;
       text-align: center; background: #fff;
     }
     .preview-sheet .sticker-print .st-brand {
       font-family: Arial, sans-serif;
-      font-size: 4.5pt; font-weight: bold; color: #d4a017;
-      margin-bottom: 0.5mm;
+      font-size: 5pt; font-weight: bold; color: #d4a017;
+      margin-bottom: 1mm;
       letter-spacing: 0.3px;
     }
     .preview-sheet .sticker-print .qr-box {
-      width: 24mm; height: 24mm;
-      margin-bottom: 0.5mm;
+      width: 28mm; height: 28mm;
+      margin-bottom: 1mm;
     }
     .preview-sheet .sticker-print .qr-box img {
       width: 100% !important; height: 100% !important;
     }
     .preview-sheet .sticker-print .st-num {
-      font-family: 'Courier New', monospace; font-size: 5.5pt; font-weight: bold;
+      font-family: 'Courier New', monospace; font-size: 6pt; font-weight: bold;
       color: #000; letter-spacing: 0.5px;
     }
     .preview-sheet .sticker-print .st-hash {
-      font-family: 'Courier New', monospace; font-size: 4pt; color: #666;
+      font-family: 'Courier New', monospace; font-size: 4.5pt; color: #666;
     }
     .preview-sheet .sticker-print .st-url {
-      font-size: 3.5pt; color: #999;
+      font-size: 4pt; color: #999;
     }
     .preview-close {
       position: fixed; top: 1rem; right: 1rem; z-index: 1001;
@@ -742,7 +742,8 @@ function abrirPreviewImpressao() {
     const div = document.createElement('div');
     div.className = 'sticker-print';
     const qrId = 'qr-' + item.stickerNumber.replace(/[^a-zA-Z0-9]/g, '');
-    const consultaUrl = `${baseUrl}/s/${item.stickerNumber}`;
+    // URL curta: sem https://www para QR Code menos denso
+    const consultaUrl = `bikesegurabc.com.br/s/${item.stickerNumber}`;
     div.innerHTML = `
       <div class="st-brand">BIKE SEGURA BC</div>
       <div class="qr-box" id="${qrId}"></div>
@@ -758,9 +759,9 @@ function abrirPreviewImpressao() {
       if (el && typeof QRCode !== 'undefined') {
         new QRCode(el, {
           text: consultaUrl,
-          width: 100, height: 100,
+          width: 120, height: 120,
           colorDark: '#000000', colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.H,
+          correctLevel: QRCode.CorrectLevel.M,
         });
       }
     }, 50);

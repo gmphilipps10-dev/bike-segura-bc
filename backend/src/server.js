@@ -15,12 +15,25 @@ app.use(express.json());
 
 const Bike = require('./models/Bike');
 const User = require('./models/User');
+const PrePrintedQR = require('./models/PrePrintedQR');
 
 // Consulta pelo stickerNumber (BSBC-XXXX) - mais curto e facil de ler
 app.get('/s/:stickerNumber', async (req, res) => {
   try {
-    // Busca a bike vinculada a este adesivo
-    const bike = await Bike.findOne({ stickerNumber: req.params.stickerNumber.toUpperCase() });
+    // 1. Busca o adesivo pelo stickerNumber
+    const qr = await PrePrintedQR.findOne({ stickerNumber: req.params.stickerNumber.toUpperCase() });
+    if (!qr) {
+      return res.status(404).send(`<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bike Segura BC</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui,sans-serif;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+.card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:1rem;padding:2rem;text-align:center;max-width:400px}
+.icon{font-size:3rem;margin-bottom:1rem}h1{font-size:1.25rem;margin-bottom:0.5rem}p{color:#94a3b8;font-size:0.875rem}</style></head>
+<body><div class="card"><div class="icon">⚠️</div><h1>Adesivo nao encontrado</h1><p>Este adesivo nao existe no sistema.</p></div></body></html>`);
+    }
+
+    // 2. Busca a bike vinculada a este adesivo pelo hash
+    const bike = await Bike.findOne({ hash: qr.hash });
     if (!bike) {
       return res.status(404).send(`<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
