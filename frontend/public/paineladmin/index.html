@@ -742,7 +742,8 @@ function abrirPreviewImpressao() {
     const div = document.createElement('div');
     div.className = 'sticker-print';
     const qrId = 'qr-' + item.stickerNumber.replace(/[^a-zA-Z0-9]/g, '');
-    const consultaUrl = `${baseUrl}/qr/${item.hash}`;
+    const shortHash = item.hash.slice(0, 12);
+    const consultaUrl = `${baseUrl}/q/${shortHash}`;
     div.innerHTML = `
       <div class="st-brand">BIKE SEGURA BC</div>
       <div class="qr-box" id="${qrId}"></div>
@@ -758,9 +759,9 @@ function abrirPreviewImpressao() {
       if (el && typeof QRCode !== 'undefined') {
         new QRCode(el, {
           text: consultaUrl,
-          width: 90, height: 90,
+          width: 100, height: 100,
           colorDark: '#000000', colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M,
+          correctLevel: QRCode.CorrectLevel.H,
         });
       }
     }, 50);
