@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Users, Bike, QrCode, ShieldAlert, TrendingUp, Activity } from 'lucide-react'
+import { Users, Bike, QrCode, ShieldAlert, TrendingUp, Activity } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
 const API_BASE = '/bike-segura-bc-backend/api'

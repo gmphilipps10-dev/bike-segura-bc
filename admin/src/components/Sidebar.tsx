@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Bike, QrCode, Activity, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Bike, QrCode, Activity, CreditCard, ClipboardList, LogOut } from './Icons'
 import { useAuth } from '../context/AuthContext'
 
 const menu = [
@@ -7,6 +7,8 @@ const menu = [
   { path: '/clientes', label: 'Clientes', icon: Users },
   { path: '/equipamentos', label: 'Equipamentos', icon: Bike },
   { path: '/adesivos', label: 'Adesivos QR', icon: QrCode },
+  { path: '/planos', label: 'Planos', icon: ClipboardList },
+  { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
   { path: '/relatorios', label: 'Relatorios', icon: Activity },
 ]
 

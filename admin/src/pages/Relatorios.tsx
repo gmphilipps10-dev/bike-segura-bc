@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, Bike, QrCode } from 'lucide-react'
+import { Users, Bike, QrCode } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
 const API_BASE = '/bike-segura-bc-backend/api'

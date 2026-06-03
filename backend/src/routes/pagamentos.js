@@ -29,6 +29,23 @@ async function asaasRequest(endpoint, method = 'GET', body = null) {
   return res.json();
 }
 
+// ===== STATUS / DIAGNOSTICO (publico) =====
+router.get('/status', async (req, res) => {
+  try {
+    const asaasKey = process.env.ASAAS_API_KEY || '';
+    const asaasEnv = process.env.ASAAS_ENV === 'production' ? 'producao' : 'sandbox';
+    res.json({
+      asaas_configurado: !!asaasKey,
+      asaas_env: asaasEnv,
+      asaas_key_primeiros_4: asaasKey ? asaasKey.slice(0, 4) + '****' : 'NAO_CONFIGURADO',
+      mensagem: asaasKey ? 'ASAAS_API_KEY configurada corretamente' : 'ASAAS_API_KEY NAO encontrada. Verifique as variaveis de ambiente.',
+      variaveis_disponiveis: Object.keys(process.env).filter(k => k.includes('ASAAS') || k.includes('API_KEY')).map(k => k.replace(/./g, (c, i) => i < 2 ? c : '*')),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao verificar status: ' + error.message });
+  }
+});
+
 // ===== LISTAR PAGAMENTOS (admin) =====
 router.get('/', adminAuth, async (req, res) => {
   try {

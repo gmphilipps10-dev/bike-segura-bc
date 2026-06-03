@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Bike, ShieldAlert } from 'lucide-react'
+import { Search, Bike } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
 const API_BASE = '/bike-segura-bc-backend/api'

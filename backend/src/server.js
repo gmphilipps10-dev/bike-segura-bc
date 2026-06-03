@@ -23,6 +23,10 @@ app.use(express.static(publicPath));
 
 // Serve painel administrativo
 app.use('/paineladmin', express.static(path.join(publicPath, 'paineladmin')));
+// Fallback para SPA do painel admin
+app.get('/paineladmin/*', (req, res) => {
+  res.sendFile(path.join(publicPath, 'paineladmin', 'index.html'));
+});
 
 // Health check
 app.get('/api/health', (req, res) => {

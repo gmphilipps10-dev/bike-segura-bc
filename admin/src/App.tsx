@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard'
 import Clientes from './pages/Clientes'
 import Equipamentos from './pages/Equipamentos'
 import Adesivos from './pages/Adesivos'
+import Planos from './pages/Planos'
+import Pagamentos from './pages/Pagamentos'
 import Relatorios from './pages/Relatorios'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -20,6 +22,8 @@ function AppRoutes() {
       <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
       <Route path="/equipamentos" element={<PrivateRoute><Equipamentos /></PrivateRoute>} />
       <Route path="/adesivos" element={<PrivateRoute><Adesivos /></PrivateRoute>} />
+      <Route path="/planos" element={<PrivateRoute><Planos /></PrivateRoute>} />
+      <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
       <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
     </Routes>
   )

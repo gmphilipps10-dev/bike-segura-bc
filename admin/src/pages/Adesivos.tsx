@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Hash, CheckCircle, AlertTriangle, Printer, Plus } from 'lucide-react'
+import { Hash, CheckCircle, AlertTriangle, Printer, Plus } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
 const API_BASE = '/bike-segura-bc-backend/api'

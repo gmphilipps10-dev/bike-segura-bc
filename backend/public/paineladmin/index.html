@@ -1,13 +1,722 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bike Segura BC - Painel Admin</title>
-    <script type="module" crossorigin src="./assets/index-Bp-jKkUx.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-D7PsrID-.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bike Segura BC - Painel Administrativo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #0f172a; color: #fff; }
+    .hidden { display: none !important; }
+
+    /* Login */
+    .login-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a); padding: 1rem; }
+    .login-box { width: 100%; max-width: 360px; text-align: center; }
+    .login-box img { width: 80px; height: 80px; border-radius: 1rem; object-fit: cover; margin-bottom: 1.5rem; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+    .login-box h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .login-box p { color: #94a3b8; font-size: 0.875rem; }
+    .login-form { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 1rem; padding: 1.5rem; margin-top: 1.5rem; }
+    .login-form label { display: block; text-align: left; color: #94a3b8; font-size: 0.75rem; margin-bottom: 0.375rem; }
+    .login-form input { width: 100%; padding: 0.625rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; color: #fff; font-size: 0.875rem; margin-bottom: 1rem; outline: none; }
+    .login-form input:focus { border-color: rgba(251,191,36,0.5); }
+    .login-form button { width: 100%; padding: 0.75rem; background: #fbbf24; color: #0f172a; font-weight: 600; border: none; border-radius: 0.5rem; cursor: pointer; font-size: 0.875rem; transition: background 0.2s; }
+    .login-form button:hover { background: #f59e0b; }
+    .login-form button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .login-error { color: #f87171; font-size: 0.75rem; margin-top: 0.75rem; }
+
+    /* Layout */
+    .app-layout { display: flex; min-height: 100vh; }
+    .sidebar { width: 260px; background: rgba(30,41,59,0.5); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+    .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .sidebar-header .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .sidebar-header img { width: 40px; height: 40px; border-radius: 0.75rem; object-fit: cover; }
+    .sidebar-header h2 { font-size: 0.875rem; font-weight: 700; }
+    .sidebar-header span { font-size: 0.625rem; color: #64748b; }
+    .sidebar nav { flex: 1; padding: 1rem; }
+    .sidebar nav a { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.875rem; border-radius: 0.5rem; color: #94a3b8; text-decoration: none; font-size: 0.875rem; transition: all 0.2s; margin-bottom: 0.25rem; }
+    .sidebar nav a:hover { color: #fff; background: rgba(255,255,255,0.05); }
+    .sidebar nav a.active { color: #fbbf24; background: rgba(251,191,36,0.1); }
+    .sidebar nav a svg { width: 16px; height: 16px; }
+    .sidebar-footer { padding: 1rem; border-top: 1px solid rgba(255,255,255,0.05); }
+    .sidebar-footer button { display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 0.875rem; border-radius: 0.5rem; color: #94a3b8; background: none; border: none; cursor: pointer; font-size: 0.875rem; width: 100%; transition: color 0.2s; }
+    .sidebar-footer button:hover { color: #f87171; }
+    .sidebar-footer button svg { width: 16px; height: 16px; }
+
+    .main { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; }
+    .main header { margin-bottom: 1.5rem; }
+    .main header h1 { font-size: 1.5rem; font-weight: 700; }
+    .main header p { color: #94a3b8; font-size: 0.875rem; margin-top: 0.25rem; }
+
+    /* Cards */
+    .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; padding: 1.25rem; }
+    .card-hover { transition: all 0.3s; cursor: pointer; text-decoration: none; color: inherit; display: block; }
+    .card-hover:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+    .stat-icon { width: 40px; height: 40px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 0.75rem; }
+    .stat-icon svg { width: 20px; height: 20px; }
+    .stat-value { font-size: 1.875rem; font-weight: 700; }
+    .stat-label { color: #64748b; font-size: 0.75rem; margin-top: 0.25rem; }
+
+    .search-box { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.75rem; max-width: 400px; margin-bottom: 1rem; }
+    .search-box input { background: transparent; border: none; color: #fff; font-size: 0.875rem; outline: none; width: 100%; }
+    .search-box input::placeholder { color: #475569; }
+    .search-box svg { width: 16px; height: 16px; color: #64748b; flex-shrink: 0; }
+
+    .filters { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filters button { padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.625rem; font-weight: 700; border: none; cursor: pointer; transition: all 0.2s; }
+    .filters button.active { background: #fbbf24; color: #0f172a; }
+    .filters button:not(.active) { background: rgba(255,255,255,0.05); color: #94a3b8; backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+
+    /* Table */
+    .table-container { overflow-x: auto; }
+    table { width: 100%; font-size: 0.875rem; border-collapse: collapse; }
+    thead { background: rgba(255,255,255,0.05); color: #94a3b8; font-size: 0.625rem; text-transform: uppercase; }
+    th, td { padding: 0.75rem; text-align: left; }
+    tbody tr { border-top: 1px solid rgba(255,255,255,0.05); }
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    .badge { font-size: 0.625rem; font-weight: 700; padding: 0.125rem 0.5rem; border-radius: 0.25rem; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .badge-success { background: rgba(16,185,129,0.2); color: #34d399; }
+    .badge-warning { background: rgba(245,158,11,0.2); color: #fbbf24; }
+    .badge-danger { background: rgba(239,68,68,0.2); color: #f87171; }
+    .badge-info { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .badge-default { background: rgba(100,116,139,0.2); color: #94a3b8; }
+
+    .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .btn-primary { background: #fbbf24; color: #0f172a; }
+    .btn-primary:hover { background: #f59e0b; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+    .alert { padding: 1rem; border-radius: 0.75rem; margin-bottom: 1rem; display: flex; align-items: start; gap: 0.75rem; }
+    .alert-danger { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+    .alert-danger p { color: #f87171; font-size: 0.875rem; }
+    .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); }
+    .alert-success p { color: #34d399; font-size: 0.75rem; }
+
+    .equip-item { display: flex; align-items: center; gap: 1rem; padding: 1rem; }
+    .equip-item img, .equip-placeholder { width: 48px; height: 48px; border-radius: 0.5rem; object-fit: cover; flex-shrink: 0; }
+    .equip-placeholder { background: rgba(251,191,36,0.1); display: flex; align-items: center; justify-content: center; }
+    .equip-placeholder svg { width: 24px; height: 24px; color: #fbbf24; }
+    .equip-info { flex: 1; min-width: 0; }
+    .equip-info .name-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .equip-info .name-row .name { color: #fff; font-weight: 500; }
+    .equip-info .details { color: #64748b; font-size: 0.75rem; }
+    .equip-info .serial { color: #475569; font-size: 0.625rem; font-family: monospace; margin-top: 0.125rem; }
+
+    .sticker-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    @media(min-width:768px){ .sticker-grid { grid-template-columns: repeat(4, 1fr); } }
+    .sticker-item { padding: 0.75rem; }
+    .sticker-item .num { font-family: monospace; font-size: 0.75rem; font-weight: 700; color: #fff; }
+    .sticker-item .hash { font-family: monospace; font-size: 0.5625rem; color: #475569; }
+    .sticker-item .status { font-size: 0.5rem; font-weight: 700; padding: 0.125rem 0.375rem; border-radius: 0.25rem; margin-top: 0.25rem; display: inline-block; }
+
+    .plano-card { padding: 1.25rem; margin-bottom: 1rem; }
+    .plano-card .plano-header { display: flex; align-items: center; justify-content: space-between; }
+    .plano-card .plano-info { display: flex; align-items: center; gap: 0.75rem; }
+    .plano-card .plano-icon { width: 40px; height: 40px; border-radius: 0.5rem; display: flex; align-items: center; justify-content: center; }
+    .plano-card .plano-icon svg { width: 20px; height: 20px; }
+    .plano-card .plano-preco { text-align: right; }
+    .plano-card .plano-preco .valor { color: #fff; font-weight: 700; font-size: 1.125rem; }
+    .plano-card .plano-preco .periodo { color: #64748b; font-size: 0.75rem; }
+
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
+    @media(max-width:768px){
+      .sidebar { position: fixed; left: -260px; top: 0; height: 100vh; z-index: 100; transition: left 0.3s; }
+      .sidebar.open { left: 0; }
+      .main { padding: 1rem; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .menu-toggle { display: block; position: fixed; top: 1rem; left: 1rem; z-index: 101; background: rgba(15,23,42,0.9); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.5rem; border-radius: 0.5rem; cursor: pointer; }
+    }
+    @media(min-width:769px){ .menu-toggle { display: none; } }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+    .overlay.show { display: block; }
+
+    .loading { color: #64748b; font-size: 0.875rem; }
+    .empty { color: #64748b; text-align: center; padding: 2rem; }
+
+    .info-box { padding: 1.5rem; margin-top: 2rem; }
+    .info-box h3 { color: #fff; font-weight: 700; margin-bottom: 0.5rem; }
+    .info-box p { color: #94a3b8; font-size: 0.875rem; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-page" class="login-page">
+  <div class="login-box">
+    <img src="/logo-oficial.jpg" alt="Bike Segura BC" onerror="this.style.display='none'" />
+    <h1>PAINEL ADMINISTRATIVO</h1>
+    <p>Acesso restrito</p>
+    <form class="login-form" id="login-form">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="admin@bikesegurabc.com" required />
+      <label>Senha</label>
+      <input type="password" id="login-password" placeholder="Sua senha" required />
+      <button type="submit" id="login-btn">ENTRAR</button>
+      <p class="login-error hidden" id="login-error"></p>
+    </form>
+    <p style="color:#475569;font-size:0.75rem;margin-top:1.5rem;">Bike Segura BC - Sua bike protegida!</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-layout" class="app-layout hidden">
+  <button class="menu-toggle" id="menu-toggle" onclick="toggleSidebar()">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <img src="/logo-oficial.jpg" alt="" onerror="this.style.display='none'" />
+        <div>
+          <h2>BIKE SEGURA BC</h2>
+          <span>Painel Admin</span>
+        </div>
+      </div>
+    </div>
+    <nav id="nav-menu">
+      <a href="#" data-page="dashboard" class="active" onclick="navigate('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+        Dashboard
+      </a>
+      <a href="#" data-page="clientes" onclick="navigate('clientes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clientes
+      </a>
+      <a href="#" data-page="equipamentos" onclick="navigate('equipamentos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+        Equipamentos
+      </a>
+      <a href="#" data-page="adesivos" onclick="navigate('adesivos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg>
+        Adesivos QR
+      </a>
+      <a href="#" data-page="planos" onclick="navigate('planos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+        Planos
+      </a>
+      <a href="#" data-page="pagamentos" onclick="navigate('pagamentos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+        Pagamentos
+      </a>
+      <a href="#" data-page="relatorios" onclick="navigate('relatorios')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>
+        Relatorios
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button onclick="logout()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <div class="main" id="main-content">
+    <!-- Dashboard -->
+    <div class="page-section active" id="page-dashboard">
+      <header><h1>Dashboard</h1><p>Visao geral da plataforma</p></header>
+      <div class="grid-3" id="dashboard-cards"></div>
+      <div class="card" style="margin-top:2rem;padding:1.5rem;">
+        <h3 style="color:#fff;font-size:1.125rem;font-weight:600;margin-bottom:0.5rem;">Status do Sistema</h3>
+        <div style="display:flex;align-items:center;gap:0.5rem;">
+          <div style="width:8px;height:8px;border-radius:50%;background:#34d399;animation:pulse 2s infinite;"></div>
+          <span style="color:#34d399;font-size:0.875rem;">Operacional</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clientes -->
+    <div class="page-section" id="page-clientes">
+      <header><h1>Clientes</h1><p id="clientes-count">0 cadastrados</p></header>
+      <div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="clientes-search" placeholder="Buscar..." oninput="filterClientes()" /></div>
+      <div class="card table-container"><table><thead><tr><th>Nome</th><th>Email</th><th>Telefone</th><th>Cadastro</th></tr></thead><tbody id="clientes-table"></tbody></table></div>
+    </div>
+
+    <!-- Equipamentos -->
+    <div class="page-section" id="page-equipamentos">
+      <header><h1>Equipamentos</h1><p id="equips-count">0 cadastrados</p></header>
+      <div style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+        <div class="search-box" style="margin:0;flex:1;max-width:400px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><input type="text" id="equips-search" placeholder="Buscar..." oninput="filterEquips()" /></div>
+        <div class="filters"><button class="active" onclick="setEquipFiltro('todos',this)">TODOS</button><button onclick="setEquipFiltro('normal',this)">ATIVOS</button><button onclick="setEquipFiltro('furto',this)">FURTADOS</button></div>
+      </div>
+      <div id="equips-list"></div>
+    </div>
+
+    <!-- Adesivos -->
+    <div class="page-section" id="page-adesivos">
+      <header><h1>Adesivos QR Code</h1><p id="adesivos-stats">0 disponiveis / 0 em uso</p></header>
+      <div id="adesivos-alert"></div>
+      <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+        <button class="btn btn-primary" id="btn-gerar-lote" onclick="gerarLote()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Gerar Lote (+100)</button>
+        <button class="btn btn-secondary" onclick="window.print()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg> Imprimir</button>
+      </div>
+      <div id="adesivos-msg"></div>
+      <div class="filters"><button class="active" onclick="setAdesivoFiltro('disponivel',this)">DISPONIVEIS</button><button onclick="setAdesivoFiltro('vinculado',this)">USADOS</button><button onclick="setAdesivoFiltro('todos',this)">TODOS</button></div>
+      <div class="sticker-grid" id="adesivos-grid"></div>
+    </div>
+
+    <!-- Planos -->
+    <div class="page-section" id="page-planos">
+      <header><h1>Planos</h1><p>Gerenciamento de planos e assinaturas</p></header>
+      <div class="grid-4" id="planos-stats"></div>
+      <h2 style="color:#fff;font-size:1.125rem;font-weight:700;margin:2rem 0 1rem;">Detalhes dos Planos</h2>
+      <div class="grid-2" id="planos-list"></div>
+      <div class="card info-box"><h3>Informacoes</h3><p>Nao ha plano gratuito. Todos os usuarios devem assinar um dos planos para proteger suas bikes. O plano e renovado anualmente.</p></div>
+    </div>
+
+    <!-- Pagamentos -->
+    <div class="page-section" id="page-pagamentos">
+      <header><h1>Pagamentos</h1><p>Gestao de cobrancas e faturamento</p></header>
+      <div class="grid-4" id="pagamentos-stats"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:1rem 0;flex-wrap:wrap;gap:1rem;">
+        <div class="filters"><button class="active" onclick="setPagamentoFiltro('todos',this)">TODOS</button><button onclick="setPagamentoFiltro('pago',this)">PAGO</button><button onclick="setPagamentoFiltro('pendente',this)">PENDENTE</button><button onclick="setPagamentoFiltro('atrasado',this)">ATRASADO</button><button onclick="setPagamentoFiltro('cancelado',this)">CANCELADO</button></div>
+        <button class="btn btn-secondary" onclick="exportarCSV()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Exportar CSV</button>
+      </div>
+      <div class="card table-container"><table><thead><tr><th>Usuario</th><th>Plano</th><th>Valor</th><th>Status</th><th>Metodo</th><th>Vencimento</th></tr></thead><tbody id="pagamentos-table"></tbody></table></div>
+    </div>
+
+    <!-- Relatorios -->
+    <div class="page-section" id="page-relatorios">
+      <header><h1>Relatorios</h1></header>
+      <div id="relatorios-content"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/bike-segura-bc-backend/api';
+let token = localStorage.getItem('admin_token') || '';
+let allClientes = [], allEquips = [], allPagamentos = [];
+let equipFiltro = 'todos', adesivoFiltro = 'disponivel', pagamentoFiltro = 'todos';
+
+// Auth check
+if (token) { showApp(); loadDashboard(); }
+
+// Login
+document.getElementById('login-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  btn.disabled = true; btn.textContent = 'Entrando...'; err.classList.add('hidden');
+  try {
+    // Primeiro tenta login normal
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    let res = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    let data = await res.json();
+    if (data.token) {
+      // Verifica se eh admin
+      const meRes = await fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${data.token}` } });
+      const meData = await meRes.json();
+      if (meData.isAdmin) {
+        token = data.token;
+        localStorage.setItem('admin_token', token);
+        showApp(); loadDashboard();
+        return;
+      }
+    }
+    // Tenta login do painel
+    res = await fetch(`${API_BASE}/auth/painel-login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ senha: password })
+    });
+    data = await res.json();
+    if (data.token) {
+      token = data.token;
+      localStorage.setItem('admin_token', token);
+      showApp(); loadDashboard();
+    } else {
+      throw new Error(data.message || 'Credenciais invalidas');
+    }
+  } catch (error) {
+    err.textContent = error.message || 'Erro ao fazer login';
+    err.classList.remove('hidden');
+  } finally {
+    btn.disabled = false; btn.textContent = 'ENTRAR';
+  }
+});
+
+function showApp() {
+  document.getElementById('login-page').classList.add('hidden');
+  document.getElementById('app-layout').classList.remove('hidden');
+}
+
+function logout() {
+  localStorage.removeItem('admin_token');
+  localStorage.removeItem('admin_user');
+  token = '';
+  location.reload();
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay').classList.toggle('show');
+}
+
+function navigate(page) {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('#nav-menu a').forEach(a => a.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  if (window.innerWidth <= 768) toggleSidebar();
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'clientes') loadClientes();
+  if (page === 'equipamentos') loadEquipamentos();
+  if (page === 'adesivos') loadAdesivos();
+  if (page === 'planos') loadPlanos();
+  if (page === 'pagamentos') loadPagamentos();
+  if (page === 'relatorios') loadRelatorios();
+}
+
+async function apiGet(path) {
+  try {
+    const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
+}
+
+// Dashboard
+async function loadDashboard() {
+  const container = document.getElementById('dashboard-cards');
+  container.innerHTML = '<p class="loading">Carregando...</p>';
+  const [users, bikes, qr] = await Promise.all([apiGet('/auth/users'), apiGet('/bikes/all'), apiGet('/preprinted')]);
+  const totalClientes = Array.isArray(users) ? users.length : 0;
+  const totalEquip = Array.isArray(bikes) ? bikes.length : 0;
+  const protegidos = Array.isArray(bikes) ? bikes.filter(b => b.protected).length : 0;
+  const alertas = Array.isArray(bikes) ? bikes.filter(b => b.status === 'furto').length : 0;
+  const disp = qr ? (qr.disponiveis || 0) : 0;
+  const usados = qr ? (qr.vinculados || 0) : 0;
+
+  const cards = [
+    { title: 'Clientes', value: totalClientes, color: 'text-blue-400', bg: 'bg-blue-400/10', icon: 'users' },
+    { title: 'Equipamentos', value: totalEquip, color: 'text-amber-400', bg: 'bg-amber-400/10', icon: 'bike' },
+    { title: 'Protegidos', value: protegidos, color: 'text-emerald-400', bg: 'bg-emerald-400/10', icon: 'shield' },
+    { title: 'Alertas Furto', value: alertas, color: 'text-red-400', bg: 'bg-red-400/10', icon: 'alert' },
+    { title: 'Adesivos Livres', value: disp, color: 'text-purple-400', bg: 'bg-purple-400/10', icon: 'qr' },
+    { title: 'Adesivos Usados', value: usados, color: 'text-indigo-400', bg: 'bg-indigo-400/10', icon: 'activity' },
+  ];
+
+  container.innerHTML = cards.map(c => `
+    <div class="card card-hover" onclick="navigate('${c.title === 'Clientes' ? 'clientes' : c.title.includes('Adesivos') ? 'adesivos' : 'equipamentos'}')">
+      <div class="stat-icon ${c.bg}">${svgIcon(c.icon, c.color)}</div>
+      <div class="stat-value">${c.value}</div>
+      <div class="stat-label">${c.title}</div>
+    </div>
+  `).join('');
+}
+
+function svgIcon(name, color) {
+  const icons = {
+    users: `<svg class="${color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+    bike: `<svg class="${color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>`,
+    shield: `<svg class="${color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`,
+    alert: `<svg class="${color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>`,
+    qr: `<svg class="${color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/></svg>`,
+    activity: `<svg class="${color}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/></svg>`,
+  };
+  return icons[name] || '';
+}
+
+// Clientes
+async function loadClientes() {
+  const container = document.getElementById('clientes-table');
+  container.innerHTML = '<tr><td colspan="4" class="loading">Carregando...</td></tr>';
+  const data = await apiGet('/auth/users');
+  allClientes = Array.isArray(data) ? data : [];
+  document.getElementById('clientes-count').textContent = allClientes.length + ' cadastrados';
+  renderClientes();
+}
+
+function renderClientes() {
+  const search = document.getElementById('clientes-search').value.toLowerCase();
+  const filtrados = search ? allClientes.filter(c =>
+    (c.name || '').toLowerCase().includes(search) ||
+    (c.email || '').includes(search) ||
+    (c.phone || '').includes(search)
+  ) : allClientes;
+  const container = document.getElementById('clientes-table');
+  if (filtrados.length === 0) { container.innerHTML = '<tr><td colspan="4" class="empty">Nenhum cliente encontrado</td></tr>'; return; }
+  container.innerHTML = filtrados.map(c => `
+    <tr><td class="text-white font-medium">${c.name || '-'}</td>
+    <td style="color:#94a3b8;">${c.email || '-'}</td>
+    <td style="color:#94a3b8;">${c.phone || '-'}</td>
+    <td style="color:#64748b;font-size:0.75rem;">${c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '-'}</td></tr>
+  `).join('');
+}
+
+function filterClientes() { renderClientes(); }
+
+// Equipamentos
+async function loadEquipamentos() {
+  const container = document.getElementById('equips-list');
+  container.innerHTML = '<p class="loading">Carregando...</p>';
+  const data = await apiGet('/bikes/all');
+  allEquips = Array.isArray(data) ? data : [];
+  document.getElementById('equips-count').textContent = allEquips.length + ' cadastrados';
+  renderEquips();
+}
+
+function renderEquips() {
+  const search = document.getElementById('equips-search').value.toLowerCase();
+  let f = allEquips;
+  if (search) f = f.filter(e => (e.name || '').toLowerCase().includes(search) || (e.serie || '').includes(search));
+  if (equipFiltro !== 'todos') f = f.filter(e => e.status === equipFiltro);
+  const container = document.getElementById('equips-list');
+  if (f.length === 0) { container.innerHTML = '<p class="empty">Nenhum equipamento encontrado</p>'; return; }
+  container.innerHTML = f.map(e => `
+    <div class="card equip-item">
+      ${e.photo ? `<img src="${e.photo}" alt="" />` : `<div class="equip-placeholder">${svgIcon('bike', 'text-amber-400')}</div>`}
+      <div class="equip-info">
+        <div class="name-row">
+          <span class="name">${e.name}</span>
+          <span class="badge ${e.status === 'furto' ? 'badge-danger' : e.protected ? 'badge-success' : 'badge-default'}">${e.status === 'furto' ? 'FURTADO' : e.protected ? 'PROTEGIDO' : 'REGULAR'}</span>
+        </div>
+        <p class="details">${e.brand} - ${e.type} - ${e.color}</p>
+        <p class="serial">${e.serie} ${e.stickerNumber ? '| ' + e.stickerNumber : ''}</p>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterEquips() { renderEquips(); }
+function setEquipFiltro(f, btn) {
+  equipFiltro = f;
+  document.querySelectorAll('#page-equipamentos .filters button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEquips();
+}
+
+// Adesivos
+async function loadAdesivos() {
+  const grid = document.getElementById('adesivos-grid');
+  grid.innerHTML = '<p class="loading">Carregando...</p>';
+  const status = adesivoFiltro !== 'todos' ? `&status=${adesivoFiltro}` : '';
+  const data = await apiGet(`/preprinted?limit=100${status}`);
+  const items = data ? (data.items || []) : [];
+  const stats = { total: data ? (data.total || 0) : 0, disponiveis: data ? (data.disponiveis || 0) : 0, vinculados: data ? (data.vinculados || 0) : 0 };
+  document.getElementById('adesivos-stats').textContent = `${stats.disponiveis} disponiveis / ${stats.vinculados} em uso`;
+
+  const alertDiv = document.getElementById('adesivos-alert');
+  if (stats.disponiveis < 10) {
+    alertDiv.innerHTML = `<div class="alert alert-danger"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p>Estoque baixo! Apenas ${stats.disponiveis} adesivos.</p></div>`;
+  } else { alertDiv.innerHTML = ''; }
+
+  if (items.length === 0) { grid.innerHTML = '<p class="empty">Nenhum adesivo encontrado</p>'; return; }
+  grid.innerHTML = items.map(item => `
+    <div class="card sticker-item ${item.status === 'disponivel' ? 'border-emerald-500/10' : 'opacity-60'}">
+      <p class="num">${item.stickerNumber}</p>
+      <p class="hash">${(item.hash || '').slice(0, 8).toUpperCase()}</p>
+      <span class="status ${item.status === 'disponivel' ? 'badge-success' : 'badge-warning'}">${item.status === 'disponivel' ? 'LIVRE' : 'USADO'}</span>
+    </div>
+  `).join('');
+}
+
+function setAdesivoFiltro(f, btn) {
+  adesivoFiltro = f;
+  document.querySelectorAll('#page-adesivos .filters button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAdesivos();
+}
+
+async function gerarLote() {
+  const btn = document.getElementById('btn-gerar-lote');
+  btn.disabled = true; btn.innerHTML = 'Gerando...';
+  try {
+    const res = await fetch(`${API_BASE}/preprinted/gerar-lote`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ quantidade: 100 })
+    });
+    const data = await res.json();
+    if (data) {
+      document.getElementById('adesivos-msg').innerHTML = `<div class="alert alert-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>${data.quantidade} adesivos: ${data.de} ate ${data.ate}</p></div>`;
+      loadAdesivos();
+    }
+  } catch {
+    document.getElementById('adesivos-msg').innerHTML = '<div class="alert alert-danger"><p>Erro ao gerar lote</p></div>';
+  } finally {
+    btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Gerar Lote (+100)';
+  }
+}
+
+// Planos
+async function loadPlanos() {
+  const statsDiv = document.getElementById('planos-stats');
+  const listDiv = document.getElementById('planos-list');
+  statsDiv.innerHTML = '<p class="loading">Carregando...</p>';
+  const data = await apiGet('/auth/users');
+  const users = Array.isArray(data) ? data : [];
+  const stats = {
+    bronze: users.filter(u => u.plano === 'bronze').length,
+    prata: users.filter(u => u.plano === 'prata').length,
+    ouro: users.filter(u => u.plano === 'ouro').length,
+    diamante: users.filter(u => u.plano === 'diamante').length,
+  };
+
+  statsDiv.innerHTML = [
+    { label: 'Bronze', value: stats.bronze, color: 'text-amber-600', bg: 'bg-amber-500/10' },
+    { label: 'Prata', value: stats.prata, color: 'text-slate-300', bg: 'bg-slate-400/10' },
+    { label: 'Ouro', value: stats.ouro, color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
+    { label: 'Diamante', value: stats.diamante, color: 'text-blue-400', bg: 'bg-blue-400/10' },
+  ].map(s => `
+    <div class="${s.bg} border border-white/5 rounded-xl p-5">
+      <p class="${s.color} text-sm font-medium">${s.label}</p>
+      <p class="${s.color} text-3xl font-bold mt-2">${s.value}</p>
+      <p class="text-slate-500 text-xs mt-1">assinantes</p>
+    </div>
+  `).join('');
+
+  const PLANOS = [
+    { nome: 'Bronze', preco: 50, cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', desc: 'Protecao basica com QR Code' },
+    { nome: 'Prata', preco: 150, cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', desc: 'Protecao intermediaria' },
+    { nome: 'Ouro', preco: 300, cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', desc: 'Protecao avancada' },
+    { nome: 'Diamante', preco: 450, cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', desc: 'Protecao premium completa' },
+  ];
+
+  listDiv.innerHTML = PLANOS.map(p => `
+    <div class="card plano-card border ${p.border}">
+      <div class="plano-header">
+        <div class="plano-info">
+          <div class="plano-icon ${p.bg}"><span class="${p.cor}" style="font-size:1.25rem;">&#9733;</span></div>
+          <div><h3 class="${p.cor} font-bold">${p.nome}</h3><p style="color:#64748b;font-size:0.75rem;">${p.desc}</p></div>
+        </div>
+        <div class="plano-preco"><p class="valor">R$${p.preco}</p><p class="periodo">/ano</p></div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Pagamentos
+async function loadPagamentos() {
+  const tbody = document.getElementById('pagamentos-table');
+  const statsDiv = document.getElementById('pagamentos-stats');
+  tbody.innerHTML = '<tr><td colspan="6" class="loading">Carregando...</td></tr>';
+  const [pags, st] = await Promise.all([apiGet('/pagamentos'), apiGet('/pagamentos/stats')]);
+  allPagamentos = Array.isArray(pags) ? pags : [];
+  const stats = st || {};
+  statsDiv.innerHTML = [
+    { label: 'Total Cobrancas', value: stats.total || 0, color: 'text-white', border: '' },
+    { label: 'Pagos', value: `${stats.pagos || 0} <span style="color:#64748b;font-size:0.625rem;">R$${((stats.faturamentoTotal || 0) / 100).toFixed(2)}</span>`, color: 'text-emerald-400', border: 'border-emerald-500/10' },
+    { label: 'Pendentes', value: `${stats.pendentes || 0} <span style="color:#64748b;font-size:0.625rem;">R$${((stats.faturamentoPendente || 0) / 100).toFixed(2)}</span>`, color: 'text-amber-400', border: 'border-amber-500/10' },
+    { label: 'Atrasados', value: `${stats.atrasados || 0} <span style="color:#64748b;font-size:0.625rem;">R$${((stats.faturamentoAtrasado || 0) / 100).toFixed(2)}</span>`, color: 'text-red-400', border: 'border-red-500/10' },
+  ].map(s => `
+    <div class="card p-4 ${s.border}"><p style="color:#64748b;font-size:0.75rem;">${s.label}</p><p class="${s.color} text-2xl font-bold">${s.value}</p></div>
+  `).join('');
+  renderPagamentos();
+}
+
+function renderPagamentos() {
+  const filtrados = pagamentoFiltro === 'todos' ? allPagamentos : allPagamentos.filter(p => p.status === pagamentoFiltro);
+  const tbody = document.getElementById('pagamentos-table');
+  if (filtrados.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="empty">Nenhum pagamento encontrado</td></tr>'; return; }
+
+  const statusConfig = {
+    pago: { label: 'PAGO', cor: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+    pendente: { label: 'PENDENTE', cor: 'text-amber-400', bg: 'bg-amber-500/10' },
+    atrasado: { label: 'ATRASADO', cor: 'text-red-400', bg: 'bg-red-500/10' },
+    cancelado: { label: 'CANCELADO', cor: 'text-slate-400', bg: 'bg-slate-500/10' },
+  };
+
+  tbody.innerHTML = filtrados.map(p => {
+    const cfg = statusConfig[p.status] || statusConfig.pendente;
+    return `<tr><td class="text-white font-medium">${p.userName || '-'}</td>
+    <td style="color:#94a3b8;text-transform:capitalize;">${p.plano || '-'}</td>
+    <td class="text-white">R$${((p.valor || 0) / 100).toFixed(2)}</td>
+    <td><span class="badge ${cfg.bg} ${cfg.cor}">${cfg.label}</span></td>
+    <td style="color:#94a3b8;font-size:0.75rem;text-transform:uppercase;">${p.metodoPagamento || '-'}</td>
+    <td style="color:#64748b;font-size:0.75rem;">${p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-BR') : '-'}</td></tr>`;
+  }).join('');
+}
+
+function setPagamentoFiltro(f, btn) {
+  pagamentoFiltro = f;
+  document.querySelectorAll('#page-pagamentos .filters button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderPagamentos();
+}
+
+function exportarCSV() {
+  const filtrados = pagamentoFiltro === 'todos' ? allPagamentos : allPagamentos.filter(p => p.status === pagamentoFiltro);
+  const headers = ['Usuario', 'Plano', 'Valor', 'Status', 'Metodo', 'Data Vencimento', 'Data Pagamento', 'Asaas ID'];
+  const rows = filtrados.map(p => [
+    p.userName || '-', p.plano || '-', `R$${((p.valor || 0) / 100).toFixed(2)}`,
+    p.status || '-', p.metodoPagamento || '-',
+    p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-BR') : '-',
+    p.dataPagamento ? new Date(p.dataPagamento).toLocaleDateString('pt-BR') : '-', p.asaasId || '-',
+  ]);
+  const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `pagamentos-${pagamentoFiltro}-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Relatorios
+async function loadRelatorios() {
+  const container = document.getElementById('relatorios-content');
+  container.innerHTML = '<p class="loading">Carregando...</p>';
+  const [users, bikes, qr] = await Promise.all([apiGet('/auth/users'), apiGet('/bikes/all'), apiGet('/preprinted')]);
+  const u = Array.isArray(users) ? users : [];
+  const b = Array.isArray(bikes) ? bikes : [];
+  const stats = {
+    totalClientes: u.length,
+    totalEquip: b.length,
+    protegidos: b.filter(x => x.protected).length,
+    furtos: b.filter(x => x.status === 'furto').length,
+    adesivosDisp: qr ? (qr.disponiveis || 0) : 0,
+    adesivosUsados: qr ? (qr.vinculados || 0) : 0,
+  };
+
+  container.innerHTML = `
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+        <svg class="text-blue-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <h2 style="color:#fff;font-weight:700;">Clientes</h2>
+      </div>
+      <div class="grid-3">
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.totalClientes}</p><p style="color:#64748b;font-size:0.75rem;">Total</p></div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+        <svg class="text-amber-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18.5" cy="17.5" r="3.5"/><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="15" cy="5" r="1"/><path d="M12 17.5V14l-3-3 4-3 2 3h2"/></svg>
+        <h2 style="color:#fff;font-weight:700;">Equipamentos</h2>
+      </div>
+      <div class="grid-3">
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.totalEquip}</p><p style="color:#64748b;font-size:0.75rem;">Total</p></div>
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.protegidos}</p><p style="color:#64748b;font-size:0.75rem;">Protegidos</p></div>
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.furtos}</p><p style="color:#64748b;font-size:0.75rem;">Furtados</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:1rem;">
+        <svg class="text-purple-400" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/></svg>
+        <h2 style="color:#fff;font-weight:700;">Adesivos QR</h2>
+      </div>
+      <div class="grid-3">
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.adesivosDisp}</p><p style="color:#64748b;font-size:0.75rem;">Disponiveis</p></div>
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.adesivosUsados}</p><p style="color:#64748b;font-size:0.75rem;">Em uso</p></div>
+        <div class="card text-center"><p style="font-size:1.5rem;font-weight:700;color:#fff;">${stats.adesivosDisp + stats.adesivosUsados}</p><p style="color:#64748b;font-size:0.75rem;">Total</p></div>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
 </html>

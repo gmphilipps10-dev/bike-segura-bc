@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Search, Mail, Phone, Calendar } from 'lucide-react'
+import { Search, Mail, Phone, Calendar } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
 const API_BASE = '/bike-segura-bc-backend/api'
