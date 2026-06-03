@@ -21,7 +21,9 @@ const PrePrintedQR = require('./models/PrePrintedQR');
 app.get('/s/:stickerNumber', async (req, res) => {
   try {
     // 1. Busca o adesivo pelo stickerNumber
+    console.log('[Consulta] Buscando adesivo:', req.params.stickerNumber);
     const qr = await PrePrintedQR.findOne({ stickerNumber: req.params.stickerNumber.toUpperCase() });
+    console.log('[Consulta] Resultado:', qr ? 'ENCONTRADO ' + qr.stickerNumber : 'NAO ENCONTRADO');
     if (!qr) {
       return res.status(404).send(`<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +35,9 @@ app.get('/s/:stickerNumber', async (req, res) => {
     }
 
     // 2. Busca a bike vinculada a este adesivo pelo hash
+    console.log('[Consulta] Buscando bike com hash:', qr.hash.slice(0, 8));
     const bike = await Bike.findOne({ hash: qr.hash });
+    console.log('[Consulta] Bike:', bike ? 'ENCONTRADA ' + bike.name : 'NAO ENCONTRADA');
     if (!bike) {
       return res.status(404).send(`<!DOCTYPE html>
 <html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
