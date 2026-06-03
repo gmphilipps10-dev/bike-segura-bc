@@ -51,6 +51,7 @@ export default function CadastrarNovo() {
   const [photos, setPhotos] = useState<Record<string, string | null>>({});
   const [cadastrando, setCadastrando] = useState(false);
   const [bikeCadastrada, setBikeCadastrada] = useState<any>(null);
+  const [showPlanPrompt, setShowPlanPrompt] = useState(false);
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -86,6 +87,7 @@ export default function CadastrarNovo() {
       if (result && (result.id || result._id)) {
         console.log('[Cadastro] Abrindo modal com:', result.hash || 'sem hash');
         setBikeCadastrada(result);
+        setShowPlanPrompt(true);
       } else {
         console.log('[Cadastro] Sem resultado valido, navegando');
         alert('Bike cadastrada! (sem dados de retorno)');
@@ -286,8 +288,16 @@ export default function CadastrarNovo() {
                       : 'Imprima este QR Code em adesivo casca de ovo e cole no quadro.'}
                   </p>
 
-                  <button onClick={() => { setBikeCadastrada(null); navigate('/equipamentos'); }} className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] font-bold text-sm cursor-pointer">
-                    MEUS EQUIPAMENTOS
+                  {/* Botao escolher plano */}
+                  <button
+                    onClick={() => { setBikeCadastrada(null); navigate('/planos'); }}
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 text-[#0c1222] font-bold text-sm cursor-pointer mb-3"
+                  >
+                    ESCOLHER PLANO DE PROTECAO
+                  </button>
+
+                  <button onClick={() => { setBikeCadastrada(null); navigate('/equipamentos'); }} className="w-full py-3 rounded-xl glass-card text-slate-400 text-sm cursor-pointer">
+                    Meus Equipamentos
                   </button>
                 </div>
               </motion.div>

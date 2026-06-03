@@ -12,6 +12,9 @@ const userSchema = new mongoose.Schema({
   endereco: { type: String, default: '' },
   contatoEmergencia: { type: String, default: '' },
   plano: { type: String, enum: ['free', 'bronze', 'prata', 'ouro', 'diamante'], default: 'free' },
+  planoAtivo: { type: Boolean, default: false },
+  planoDataAtivacao: { type: Date, default: null },
+  planoDataExpiracao: { type: Date, default: null },
   indicacoes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isAdmin: { type: Boolean, default: false },
 }, { timestamps: true });

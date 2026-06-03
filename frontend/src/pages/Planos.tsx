@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Check, Shield, Crown, Gem, Medal, Award,
   HelpCircle, Bike
@@ -83,8 +84,13 @@ const plans = [
 ];
 
 export default function Planos() {
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showFaq, setShowFaq] = useState(false);
+
+  const handleAssinar = (planId: string) => {
+    navigate(`/pagamento?plano=${planId}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#0c1222] relative overflow-x-hidden">
@@ -182,6 +188,7 @@ export default function Planos() {
                   {/* CTA */}
                   <motion.button
                     whileTap={{ scale: 0.98 }}
+                    onClick={() => handleAssinar(plan.id)}
                     className={`w-full mt-5 py-3.5 rounded-xl font-bold text-sm tracking-wide cursor-pointer transition-all ${
                       plan.popular
                         ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-[#0c1222] shadow-lg shadow-amber-500/20'

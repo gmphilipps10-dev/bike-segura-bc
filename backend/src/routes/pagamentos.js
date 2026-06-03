@@ -15,6 +15,16 @@ const adminAuth = async (req, res, next) => {
   } catch { res.status(401).json({ message: 'Token inválido.' }); }
 };
 
+const userAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'Token não fornecido.' });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch { res.status(401).json({ message: 'Token inválido.' }); }
+};
+
 // ===== ASAAS API =====
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '';
 const ASAAS_ENV = process.env.ASAAS_ENV === 'production' ? 'https://api.asaas.com/v3' : 'https://sandbox.asaas.com/api/v3';
@@ -178,6 +188,116 @@ router.post('/webhook', async (req, res) => {
     await pag.save();
     res.status(200).json({ received: true });
   } catch (error) { console.error('[Webhook] Erro:', error); res.status(200).json({ received: true }); }
+});
+
+// ===== CRIAR COBRANCA PELO USUARIO (autenticado) =====
+router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
+  try {
+    const { plano, valor, metodoPagamento } = req.body;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    if (!ASAAS_API_KEY) return res.status(500).json({ message: 'ASAAS_API_KEY não configurada.' });
+
+    // Calcula data de vencimento (3 dias)
+    const dataVencimento = new Date();
+    dataVencimento.setDate(dataVencimento.getDate() + 3);
+    const dueDate = dataVencimento.toISOString().split('T')[0];
+
+    // 1. Criar ou buscar cliente no Asaas
+    const clientesAsaas = await asaasRequest(`/customers?email=${encodeURIComponent(user.email)}`);
+    let customerId;
+    if (clientesAsaas.data && clientesAsaas.data.length > 0) {
+      customerId = clientesAsaas.data[0].id;
+    } else {
+      const novoCliente = await asaasRequest('/customers', 'POST', {
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        cpfCnpj: user.cpf ? user.cpf.replace(/\D/g, '') : '',
+      });
+      customerId = novoCliente.id;
+    }
+
+    // 2. Criar cobrança no Asaas
+    const cobranca = await asaasRequest('/payments', 'POST', {
+      customer: customerId,
+      billingType: metodoPagamento === 'pix' ? 'PIX' : metodoPagamento === 'boleto' ? 'BOLETO' : 'CREDIT_CARD',
+      value: valor,
+      dueDate: dueDate,
+      description: `Bike Segura BC - Plano ${plano.toUpperCase()}`,
+    });
+
+    // 3. Se PIX, buscar QR Code
+    let pixQrCode = '', pixPayload = '';
+    if (metodoPagamento === 'pix' && cobranca.id) {
+      try {
+        const pixInfo = await asaasRequest(`/payments/${cobranca.id}/pixQrCode`);
+        pixQrCode = pixInfo.encodedImage || '';
+        pixPayload = pixInfo.payload || '';
+      } catch { /* ignora erro do PIX */ }
+    }
+
+    // 4. Salvar no MongoDB
+    const pagamento = new Pagamento({
+      userId: user._id,
+      userName: user.name,
+      userEmail: user.email,
+      userCpf: user.cpf,
+      plano,
+      valor: valor * 100,
+      asaasId: cobranca.id,
+      status: 'pendente',
+      metodoPagamento,
+      dataVencimento: new Date(dueDate),
+      linkPagamento: cobranca.invoiceUrl || '',
+      pixQrCode,
+      pixPayload,
+      boletoUrl: cobranca.bankSlipUrl || '',
+      historico: [{ status: 'pendente', descricao: 'Cobrança criada pelo usuário' }],
+    });
+    await pagamento.save();
+
+    // 5. Atualiza plano do usuário
+    user.plano = plano;
+    await user.save();
+
+    res.json({
+      success: true,
+      pagamento: {
+        id: pagamento._id,
+        plano,
+        valor: valor * 100,
+        status: 'pendente',
+        linkPagamento: cobranca.invoiceUrl,
+        pixQrCode,
+        pixPayload,
+        boletoUrl: cobranca.bankSlipUrl,
+        dataVencimento: dueDate,
+      },
+      mensagem: 'Cobrança criada com sucesso! Efetue o pagamento para ativar seu plano.',
+    });
+  } catch (error) {
+    console.error('[Pagamento] Erro:', error);
+    res.status(500).json({ message: 'Erro ao criar cobrança: ' + error.message });
+  }
+});
+
+// ===== VERIFICAR MEU PLANO (autenticado) =====
+router.get('/meu-plano', userAuth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
+    const pagamento = await Pagamento.findOne({ userId: user._id }).sort({ createdAt: -1 });
+    res.json({
+      plano: user.plano,
+      planoAtivo: user.planoAtivo,
+      planoDataAtivacao: user.planoDataAtivacao,
+      planoDataExpiracao: user.planoDataExpiracao,
+      ultimoPagamento: pagamento || null,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao verificar plano.' });
+  }
 });
 
 module.exports = router;

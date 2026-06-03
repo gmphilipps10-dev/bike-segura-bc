@@ -11,6 +11,8 @@ export interface UserData {
   nascimento: string;
   endereco: string;
   contatoEmergencia: string;
+  plano?: string;
+  planoAtivo?: boolean;
   isAdmin?: boolean;
 }
 
