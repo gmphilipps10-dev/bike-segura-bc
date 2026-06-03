@@ -17,6 +17,8 @@ router.get('/public/:hash', async (req, res) => {
     bike.lastScanAt = new Date();
     await bike.save();
 
+    // LGPD: quando furtado, mostra dados mais completos (interesse legitimo art. 7, VII)
+    const isFurtada = bike.status === 'furto';
     res.json({
       id: bike._id,
       hash: bike.hash,
@@ -29,8 +31,9 @@ router.get('/public/:hash', async (req, res) => {
       photo: bike.photo,
       status: bike.status,
       protected: bike.protected,
-      ownerName: owner ? owner.name.split(' ').map((n, i) => i === 0 ? n : n.charAt(0) + '.').join(' ') : 'Usuario',
-      ownerPhone: owner ? owner.phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-****') : '',
+      ownerName: owner ? (isFurtada ? owner.name : owner.name.split(' ').map((n, i) => i === 0 ? n : n.charAt(0) + '.').join(' ')) : 'Usuario',
+      ownerPhone: owner ? (isFurtada ? owner.phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3') : owner.phone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-****')) : '',
+      ownerEmail: isFurtada && owner ? owner.email : '',
       ownerSince: bike.createdAt ? new Date(bike.createdAt).getFullYear().toString() : '2025',
       boRegistered: !!bike.boNumber,
       boNumber: bike.boNumber,

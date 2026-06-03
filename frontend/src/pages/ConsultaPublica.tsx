@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bike, Shield, ShieldAlert, MapPin, QrCode, Calendar,
-  User, Phone, FileText, AlertTriangle, CheckCircle,
+  User, Phone, Mail, FileText, AlertTriangle, CheckCircle,
   Eye, Clock, ChevronRight, Radio, X, Send, Loader2,
   ExternalLink
 } from 'lucide-react';
@@ -25,6 +25,7 @@ interface PublicBikeData {
   protected: boolean;
   ownerName: string;
   ownerPhone: string;
+  ownerEmail: string;
   ownerSince: string;
   boRegistered: boolean;
   boNumber: string;
@@ -370,9 +371,19 @@ export default function ConsultaPublica() {
           <h3 className="text-amber-400 font-bold text-xs tracking-wider mb-3">PROPRIETARIO</h3>
           <DataRow icon={User} label="Nome" value={bike.ownerName} />
           <DataRow icon={Phone} label="Contato" value={bike.ownerPhone} />
+          {bike.ownerEmail && (
+            <DataRow icon={Mail} label="E-mail" value={bike.ownerEmail} />
+          )}
           <DataRow icon={Calendar} label="Proprietario desde" value={bike.ownerSince} />
           {bike.boRegistered && (
             <DataRow icon={FileText} label="BO Registrado" value={bike.boNumber} highlight />
+          )}
+          {bike.status === 'furto' && (
+            <div className="mt-2 p-2 rounded-lg bg-amber-500/5 border border-amber-500/10">
+              <p className="text-amber-400/70 text-[10px]">
+                Dados exibidos conforme LGPD (Art. 7, VII) para auxiliar na recuperacao do equipamento.
+              </p>
+            </div>
           )}
         </motion.div>
 
