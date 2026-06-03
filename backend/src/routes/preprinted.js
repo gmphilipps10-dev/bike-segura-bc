@@ -75,4 +75,17 @@ router.get('/buscar/:stickerNumber', authMiddleware, async (req, res) => {
   }
 });
 
+// Rota publica para consultar adesivo pelo stickerNumber (para QR Code)
+router.get('/sticker/:stickerNumber', async (req, res) => {
+  try {
+    const qr = await PrePrintedQR.findOne({
+      stickerNumber: req.params.stickerNumber.toUpperCase()
+    });
+    if (!qr) return res.status(404).json({ error: 'Adesivo nao encontrado' });
+    res.json({ hash: qr.hash, stickerNumber: qr.stickerNumber, status: qr.status });
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao buscar adesivo' });
+  }
+});
+
 module.exports = router;

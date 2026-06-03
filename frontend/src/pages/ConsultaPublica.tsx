@@ -198,13 +198,33 @@ function ReportModal({ hash, onClose }: { hash: string; onClose: () => void }) {
 
 /* ===== Page ===== */
 export default function ConsultaPublica() {
-  const { hash } = useParams<{ hash: string }>();
+  const { hash, stickerNumber } = useParams<{ hash?: string; stickerNumber?: string }>();
   const [bike, setBike] = useState<PublicBikeData | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showReport, setShowReport] = useState(false);
 
   useEffect(() => {
+    // Rota /s/BSBC-XXXX - busca pelo stickerNumber
+    if (stickerNumber) {
+      fetch(`${API_BASE}/preprinted/sticker/${stickerNumber.toUpperCase()}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          if (!d || !d.hash) { setNotFound(true); setLoading(false); return; }
+          fetch(`${API_BASE}/bikes/public/${d.hash}`)
+            .then(async res => {
+              if (!res.ok) { setNotFound(true); return; }
+              const data = await res.json();
+              setBike(data);
+            })
+            .catch(() => setNotFound(true))
+            .finally(() => setLoading(false));
+        })
+        .catch(() => { setNotFound(true); setLoading(false); });
+      return;
+    }
+
+    // Rota /qr/:hash ou /consulta/:hash - busca direta
     if (!hash) { setNotFound(true); setLoading(false); return; }
 
     fetch(`${API_BASE}/bikes/public/${hash}`)
@@ -215,7 +235,7 @@ export default function ConsultaPublica() {
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [hash]);
+  }, [hash, stickerNumber]);
 
   const handleShare = async () => {
     const url = window.location.href;

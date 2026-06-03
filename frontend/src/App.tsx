@@ -45,6 +45,7 @@ function AppRoutes() {
         <Route path="/indicar/:codigo" element={<IndicarLanding />} />
         <Route path="/qr/:hash" element={<ConsultaPublica />} />
         <Route path="/consulta/:hash" element={<ConsultaPublica />} />
+        <Route path="/s/:stickerNumber" element={<ConsultaPublica />} />
         <Route path="/lojas" element={<TrialGuard isLoggedIn={isLoggedIn}><LojasParceiras /></TrialGuard>} />
         <Route path="/anuncie" element={<TrialGuard isLoggedIn={isLoggedIn}><AnuncieAqui /></TrialGuard>} />
         <Route path="/ajuda" element={<TrialGuard isLoggedIn={isLoggedIn}><AjudaSuporte /></TrialGuard>} />
