@@ -39,6 +39,10 @@ async function asaasRequest(endpoint, method = 'GET', body = null) {
   return res.json();
 }
 
+// Token do webhook (use este valor no campo 'Token de autenticacao' do Asaas)
+// URL completa do webhook: /api/pagamentos/webhook?token=<TOKEN>
+// O token tambem pode ser enviado via header 'asaas-access-token'
+
 // ===== STATUS / DIAGNOSTICO (publico) =====
 router.get('/status', async (req, res) => {
   try {
@@ -171,6 +175,14 @@ router.post('/:id/cancelar', adminAuth, async (req, res) => {
 // ===== WEBHOOK DO ASAAS =====
 router.post('/webhook', async (req, res) => {
   try {
+    // Valida token de autenticacao do webhook
+    const webhookToken = req.query.token || req.headers['asaas-access-token'];
+    const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
+    if (expectedToken && webhookToken !== expectedToken) {
+      console.warn('[Webhook] Token invalido recebido');
+      return res.status(401).json({ message: 'Token invalido' });
+    }
+
     const { event, payment } = req.body;
     if (!payment || !payment.id) return res.status(200).json({ received: true });
     const pag = await Pagamento.findOne({ asaasId: payment.id });
