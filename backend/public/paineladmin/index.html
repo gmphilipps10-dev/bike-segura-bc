@@ -757,7 +757,7 @@ function abrirPreviewImpressao() {
     div.className = 'sticker-print';
     const qrId = 'qr-' + item.stickerNumber.replace(/[^a-zA-Z0-9]/g, '');
     // URL completa com HashRouter para consulta publica
-    const consultaUrl = `${baseUrl}/#/s/${item.stickerNumber}`;
+    const consultaUrl = `${baseUrl}/s/${item.stickerNumber}`;
     div.innerHTML = `
       <div class="st-brand">BIKE SEGURA BC</div>
       <div class="qr-box" id="${qrId}"></div>

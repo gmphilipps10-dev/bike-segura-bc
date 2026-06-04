@@ -399,7 +399,7 @@ export default function AdminAdesivos() {
           </div>
           <div className="grid grid-cols-5 gap-2">
             {items.filter(i => i.status === 'disponivel').map(item => {
-              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/#/s/${item.stickerNumber}`)}`;
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/s/${item.stickerNumber}`)}`;
               return (
                 <div key={item._id} className="border border-gray-300 rounded p-1.5 text-center">
                   <img src={qrUrl} alt="" className="w-10 h-10 mx-auto mb-0.5" />

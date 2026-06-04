@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BikeProvider } from './context/BikeContext';
 import TrialGuard from './components/TrialGuard';
@@ -59,9 +59,9 @@ function App() {
   return (
     <AuthProvider>
       <BikeProvider>
-        <HashRouter>
+        <BrowserRouter>
           <AppRoutes />
-        </HashRouter>
+        </BrowserRouter>
       </BikeProvider>
     </AuthProvider>
   );

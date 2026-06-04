@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Bike Segura BC</title>
+  <script>
+    // ==========================================================
+    // REDIRECIONAMENTO SPA - QR Codes lidos sem # (hash)
+    // ==========================================================
+    // Quando um QR Code com URL /#/s/BSBC-XXXX eh lido por um
+    // celular que remove o #, o servidor recebe /s/BSBC-XXXX
+    // e retorna este 404.html. O script abaixo redireciona
+    // automaticamente para a URL correta com #.
+    //
+    // Exemplo:
+    //   Entrada:  https://www.bikesegurabc.com.br/s/BSBC-0047
+    //   Saida:    https://www.bikesegurabc.com.br/#/s/BSBC-0047
+    // ==========================================================
+    (function() {
+      var path = window.location.pathname;
+      var search = window.location.search || '';
+
+      // Redireciona /s/XXXX para /#/s/XXXX (QR Code sem #)
+      if (path.match(/^\/s\//)) {
+        window.location.replace('/#' + path + search);
+      }
+      // Redireciona /qr/XXXX para /#/qr/XXXX
+      else if (path.match(/^\/qr\//)) {
+        window.location.replace('/#' + path + search);
+      }
+      // Redireciona /consulta/XXXX para /#/consulta/XXXX
+      else if (path.match(/^\/consulta\//)) {
+        window.location.replace('/#' + path + search);
+      }
+      // Qualquer outra rota: vai para o SPA
+      else {
+        window.location.replace('/#' + path + search);
+      }
+    })();
+  </script>
+</head>
+<body>
+  <p>Redirecionando para o Bike Segura BC...</p>
+</body>
+</html>

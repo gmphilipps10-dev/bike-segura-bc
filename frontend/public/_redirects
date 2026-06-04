@@ -1,5 +1,0 @@
-# Redirecionar /s/BSBC-XXXX para /#/s/BSBC-XXXX (para QR Codes lidos sem #)
-/s/* /#/s/:splat 301
-
-# SPA catch-all: qualquer outra rota retorna index.html
-/* /index.html 200
