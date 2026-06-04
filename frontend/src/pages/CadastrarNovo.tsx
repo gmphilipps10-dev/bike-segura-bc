@@ -252,7 +252,7 @@ export default function CadastrarNovo() {
                 <div className="p-5">
                   {/* QR Code - sempre mostra algo */}
                   <div className="text-center mb-4">
-                    {bikeCadastrada.hash ? (
+                    {bikeCadastrada.hash || bikeCadastrada.stickerNumber ? (
                       <>
                         <div className="bg-white rounded-xl p-3 inline-block mb-2">
                           <img
