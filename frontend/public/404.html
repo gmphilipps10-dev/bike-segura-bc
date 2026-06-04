@@ -5,41 +5,29 @@
   <title>Bike Segura BC</title>
   <script>
     // ==========================================================
-    // REDIRECIONAMENTO SPA - QR Codes lidos sem # (hash)
+    // SPA FALLBACK - BrowserRouter (SEM #)
     // ==========================================================
-    // Quando um QR Code com URL /#/s/BSBC-XXXX eh lido por um
-    // celular que remove o #, o servidor recebe /s/BSBC-XXXX
-    // e retorna este 404.html. O script abaixo redireciona
-    // automaticamente para a URL correta com #.
-    //
-    // Exemplo:
-    //   Entrada:  https://www.bikesegurabc.com.br/s/BSBC-0047
-    //   Saida:    https://www.bikesegurabc.com.br/#/s/BSBC-0047
+    // Este arquivo serve como fallback para rotas do BrowserRouter.
+    // Quando o servidor recebe /s/BSBC-XXXX, serve este arquivo,
+    // que preserva a URL e deixa o React Router processar a rota.
     // ==========================================================
     (function() {
-      var path = window.location.pathname;
-      var search = window.location.search || '';
-
-      // Redireciona /s/XXXX para /#/s/XXXX (QR Code sem #)
-      if (path.match(/^\/s\//)) {
-        window.location.replace('/#' + path + search);
-      }
-      // Redireciona /qr/XXXX para /#/qr/XXXX
-      else if (path.match(/^\/qr\//)) {
-        window.location.replace('/#' + path + search);
-      }
-      // Redireciona /consulta/XXXX para /#/consulta/XXXX
-      else if (path.match(/^\/consulta\//)) {
-        window.location.replace('/#' + path + search);
-      }
-      // Qualquer outra rota: vai para o SPA
-      else {
-        window.location.replace('/#' + path + search);
+      // Previne loop infinito - so redireciona uma vez
+      if (window.location.search.indexOf('spa=1') !== -1) {
+        // Ja redirecionou, mostra o app normalmente
+        document.write('<div id="root"></div>');
+      } else {
+        // Preserva a URL atual e recarrega com flag para evitar loop
+        var url = window.location.pathname + window.location.search;
+        var hash = window.location.hash || '';
+        window.location.replace(url + (url.indexOf('?') === -1 ? '?' : '&') + 'spa=1' + hash);
       }
     })();
   </script>
 </head>
 <body>
-  <p>Redirecionando para o Bike Segura BC...</p>
+  <noscript>
+    <p>JavaScript eh necessario para usar o Bike Segura BC.</p>
+  </noscript>
 </body>
 </html>

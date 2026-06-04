@@ -194,6 +194,27 @@ export default function Home() {
           {/* Indique e Ganhe */}
           <ReferralCTA />
 
+          {/* Versiculo Biblico */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="shrink-0 text-center my-3"
+          >
+            <p
+              className="text-white/80 text-xs md:text-sm leading-relaxed tracking-wide"
+              style={{ fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
+            >
+              &ldquo;Eu sou o caminho, a verdade e a vida. Ningu&eacute;m vem ao Pai sen&atilde;o por mim&rdquo;
+            </p>
+            <p
+              className="text-white/50 text-[10px] md:text-xs mt-1 tracking-wider"
+              style={{ fontFamily: "'Georgia', 'Times New Roman', serif", fontStyle: 'italic' }}
+            >
+              Jo&atilde;o 14:6
+            </p>
+          </motion.div>
+
         </div>
       </div>
 
