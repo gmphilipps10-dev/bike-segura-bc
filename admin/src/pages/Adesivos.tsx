@@ -16,9 +16,19 @@ export default function Adesivos() {
   const fetchData = () => {
     const status = filtro !== 'todos' ? `&status=${filtro}` : ''
     fetch(`${API_BASE}/preprinted?limit=100${status}`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : { items: [], total: 0, disponiveis: 0, vinculados: 0 })
-      .then(d => { setItems(d.items || []); setStats({ total: d.total || 0, disponiveis: d.disponiveis || 0, vinculados: d.vinculados || 0 }); setLoading(false) })
-      .catch(() => setLoading(false))
+      .then(r => {
+        if (!r.ok) {
+          console.error('[Adesivos] Erro API:', r.status, r.statusText)
+          return { items: [], total: 0, disponiveis: 0, vinculados: 0 }
+        }
+        return r.json()
+      })
+      .then(d => {
+        setItems(d.items || [])
+        setStats({ total: d.total || 0, disponiveis: d.disponiveis || 0, vinculados: d.vinculados || 0 })
+        setLoading(false)
+      })
+      .catch(err => { console.error('[Adesivos] Erro:', err); setLoading(false) })
   }
 
   useEffect(() => { fetchData() }, [filtro, token])
@@ -29,8 +39,24 @@ export default function Adesivos() {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ quantidade: 100 })
     })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d) setMsg(`${d.quantidade} adesivos: ${d.de} ate ${d.ate}`); fetchData() })
+      .then(r => {
+        if (!r.ok) {
+          console.error('[GerarLote] Erro:', r.status)
+          setMsg('Erro ao gerar lote. Tente novamente.')
+          return null
+        }
+        return r.json()
+      })
+      .then(d => {
+        if (d && d.quantidade) {
+          setMsg(`${d.quantidade} adesivos gerados: ${d.de} ate ${d.ate}`)
+          fetchData()
+        } else if (d) {
+          setMsg('Lote gerado com sucesso!')
+          fetchData()
+        }
+      })
+      .catch(err => { console.error('[GerarLote] Erro:', err); setMsg('Erro ao gerar lote.') })
       .finally(() => setGerando(false))
   }
 
@@ -84,7 +110,7 @@ export default function Adesivos() {
           <h2 className="text-center text-black font-bold text-sm mb-4">ADESIVOS BIKE SEGURA BC</h2>
           <div className="grid grid-cols-5 gap-2">
             {items.filter(i => i.status === 'disponivel').map(item => {
-              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/qr/${item.hash}`)}`
+              const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(`${window.location.origin}/#/s/${item.stickerNumber}`)}`
               return (
                 <div key={item._id} className="border border-gray-300 rounded p-1.5 text-center">
                   <img src={qrUrl} alt="" className="w-10 h-10 mx-auto mb-0.5" />
