@@ -519,6 +519,11 @@ function navigate(page) {
 async function apiGet(path) {
   try {
     const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401) {
+      // Token expirou, faz logout
+      logout();
+      return null;
+    }
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
@@ -707,19 +712,28 @@ function setAdesivoFiltro(f, btn) {
 
 async function gerarLote() {
   const btn = document.getElementById('btn-gerar-lote');
+  const msgDiv = document.getElementById('adesivos-msg');
   btn.disabled = true; btn.innerHTML = 'Gerando...';
+  msgDiv.innerHTML = '';
   try {
     const res = await fetch(`${API_BASE}/preprinted/gerar-lote`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ quantidade: 100 })
     });
-    const data = await res.json();
-    if (data) {
-      document.getElementById('adesivos-msg').innerHTML = `<div class="alert alert-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>${data.quantidade} adesivos gerados: ${data.de} ate ${data.ate}</p></div>`;
-      loadAdesivos();
+    if (res.status === 401) {
+      logout();
+      return;
     }
-  } catch {
-    document.getElementById('adesivos-msg').innerHTML = '<div class="alert alert-danger"><p>Erro ao gerar lote</p></div>';
+    const data = await res.json();
+    if (res.ok && data && data.quantidade) {
+      msgDiv.innerHTML = `<div class="alert alert-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><p>${data.quantidade} adesivos gerados: ${data.de} ate ${data.ate}</p></div>`;
+      loadAdesivos();
+    } else {
+      const erro = data && data.message ? data.message : 'Erro ao gerar lote. Tente novamente.';
+      msgDiv.innerHTML = `<div class="alert alert-danger"><p>${erro}</p></div>`;
+    }
+  } catch (err) {
+    msgDiv.innerHTML = '<div class="alert alert-danger"><p>Erro de conexao. Verifique sua internet.</p></div>';
   } finally {
     btn.disabled = false; btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Gerar Lote (+100)';
   }
