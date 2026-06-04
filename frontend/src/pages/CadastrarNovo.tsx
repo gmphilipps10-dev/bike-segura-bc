@@ -256,7 +256,7 @@ export default function CadastrarNovo() {
                       <>
                         <div className="bg-white rounded-xl p-3 inline-block mb-2">
                           <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${window.location.origin}%2F%23%2Fs%2F${encodeURIComponent(bikeCadastrada.stickerNumber || bikeCadastrada.hash)}`}
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(`${window.location.origin}/#/s/${bikeCadastrada.stickerNumber || bikeCadastrada.hash}`)}`}
                             alt="QR"
                             className="w-32 h-32"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
