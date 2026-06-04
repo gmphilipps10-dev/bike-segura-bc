@@ -19,6 +19,7 @@ import LojasParceiras from './pages/LojasParceiras';
 import AnuncieAqui from './pages/AnuncieAqui';
 import AjudaSuporte from './pages/AjudaSuporte';
 import TermosPoliticas from './pages/TermosPoliticas';
+import InstalarPWA from './pages/InstalarPWA';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
@@ -50,6 +51,7 @@ function AppRoutes() {
         <Route path="/anuncie" element={<TrialGuard isLoggedIn={isLoggedIn}><AnuncieAqui /></TrialGuard>} />
         <Route path="/ajuda" element={<TrialGuard isLoggedIn={isLoggedIn}><AjudaSuporte /></TrialGuard>} />
         <Route path="/termos" element={<TrialGuard isLoggedIn={isLoggedIn}><TermosPoliticas /></TrialGuard>} />
+        <Route path="/instalar" element={<InstalarPWA />} />
       </Routes>
     </>
   );
