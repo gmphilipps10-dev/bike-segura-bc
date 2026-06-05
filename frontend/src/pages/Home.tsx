@@ -161,7 +161,7 @@ export default function Home() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-10 pt-4 flex flex-col flex-1 min-h-0" style={{ paddingBottom: '6rem' }}>
+        <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-10 pt-4 pb-24 flex flex-col flex-1 min-h-0">
 
           {/* Header */}
           <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">
