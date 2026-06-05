@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BikeProvider } from './context/BikeContext';
 import TrialGuard from './components/TrialGuard';
@@ -29,6 +30,16 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
+
+  // SPA redirect handler: le a rota salva pelo 404.html e navega para ela
+  useEffect(() => {
+    const redirect = sessionStorage.getItem('__spa_redirect__');
+    if (redirect) {
+      sessionStorage.removeItem('__spa_redirect__');
+      navigate(redirect, { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <>

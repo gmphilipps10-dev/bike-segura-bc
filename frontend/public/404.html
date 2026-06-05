@@ -1,33 +1,23 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="utf-8">
-  <title>Bike Segura BC</title>
-  <script>
-    // ==========================================================
-    // SPA FALLBACK - BrowserRouter (SEM #)
-    // ==========================================================
-    // Este arquivo serve como fallback para rotas do BrowserRouter.
-    // Quando o servidor recebe /s/BSBC-XXXX, serve este arquivo,
-    // que preserva a URL e deixa o React Router processar a rota.
-    // ==========================================================
-    (function() {
-      // Previne loop infinito - so redireciona uma vez
-      if (window.location.search.indexOf('spa=1') !== -1) {
-        // Ja redirecionou, mostra o app normalmente
-        document.write('<div id="root"></div>');
-      } else {
-        // Preserva a URL atual e recarrega com flag para evitar loop
-        var url = window.location.pathname + window.location.search;
-        var hash = window.location.hash || '';
-        window.location.replace(url + (url.indexOf('?') === -1 ? '?' : '&') + 'spa=1' + hash);
-      }
-    })();
-  </script>
-</head>
-<body>
-  <noscript>
-    <p>JavaScript eh necessario para usar o Bike Segura BC.</p>
-  </noscript>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#0c1222" />
+    <title>Bike Segura BC</title>
+    <script>
+      // SPA FALLBACK: salva a rota original e redireciona para /
+      // O App.tsx le o sessionStorage e navega para a rota correta
+      (function() {
+        var path = window.location.pathname + window.location.search + window.location.hash;
+        if (path !== '/') {
+          sessionStorage.setItem('__spa_redirect__', path);
+        }
+        window.location.replace('/');
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecionando...</p>
+  </body>
 </html>
