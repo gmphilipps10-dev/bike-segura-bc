@@ -4,6 +4,7 @@ import {
   Download, Shield, MapPin, Radio, Eye, Bike,
   CircleCheck, ScanLine
 } from 'lucide-react';
+import './InstalarPWA.print.css';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -33,7 +34,7 @@ export default function InstalarPWA() {
     setDeferredPrompt(null);
   };
 
-  // QR Code aponta DIRETO para a HOME do app (nao para /instalar)
+  // QR Code aponta DIRETO para a HOME do app
   const appUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/`
     : 'https://www.bikesegurabc.com.br/';
@@ -54,15 +55,14 @@ export default function InstalarPWA() {
 
   return (
     <>
-      {/* ===== VERSAO DIGITAL ===== */}
+      {/* ===== VERSAO DIGITAL (tela) ===== */}
       <div className="screen-only min-h-screen bg-black text-white overflow-x-hidden">
 
         {/* HERO */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0c1222] via-[#1a1500] to-[#0c1222]" />
-          <div className="absolute inset-0 opacity-30" style={{
-            backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(251,191,36,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(251,191,36,0.1) 0%, transparent 40%)'
-          }} />
+          <div className="absolute inset-0 opacity-30"
+            style={{ backgroundImage: 'radial-gradient(circle at 20% 50%, rgba(251,191,36,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(251,191,36,0.1) 0%, transparent 40%)' }} />
 
           <div className="relative z-10 max-w-5xl mx-auto px-6 pt-12 pb-16 md:pt-20 md:pb-24">
             <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -104,9 +104,7 @@ export default function InstalarPWA() {
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(appUrl)}`}
                     alt="QR Code" className="w-52 h-52 md:w-64 md:h-64" />
                 </div>
-                <p className="text-amber-400 font-bold text-sm mt-4 tracking-wider">
-                  APONTE A CAMERA E BAIXE
-                </p>
+                <p className="text-amber-400 font-bold text-sm mt-4 tracking-wider">APONTE A CAMERA E BAIXE</p>
               </motion.div>
             </div>
           </div>
@@ -196,9 +194,8 @@ export default function InstalarPWA() {
         {/* CTA FINAL */}
         <section className="relative py-20 md:py-28 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[#0c1222] to-[#1a1500]" />
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(251,191,36,0.2) 0%, transparent 60%)'
-          }} />
+          <div className="absolute inset-0 opacity-20"
+            style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, rgba(251,191,36,0.2) 0%, transparent 60%)' }} />
 
           <div className="relative z-10 max-w-2xl mx-auto px-6 text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
@@ -297,10 +294,10 @@ export default function InstalarPWA() {
             </div>
             <div className="cartaz-qr-info">
               <p className="cartaz-qr-chamada">BAIXE O APP AGORA!</p>
-              <p className="cartaz-qr-sub">Aponte a camera do celular<br/>para o QR Code</p>
+              <p className="cartaz-qr-sub">Aponte a camera do celular<br />para o QR Code</p>
               <div className="cartaz-qr-instrucoes">
                 <p><span className="cartaz-qr-dot" /> Escaneie o QR Code</p>
-                <p><span className="cartaz-qr-dot" /> Toque em "Adicionar a tela inicial"</p>
+                <p><span className="cartaz-qr-dot" /> Toque em &quot;Adicionar a tela inicial&quot;</p>
                 <p><span className="cartaz-qr-dot" /> Pronto! Sua bike esta protegida</p>
               </div>
             </div>
@@ -329,216 +326,11 @@ export default function InstalarPWA() {
           {/* RODAPE */}
           <div className="cartaz-rodape">
             <p><strong>www.bikesegurabc.com.br</strong> &middot; Balneario Camboriu - SC</p>
-            <p style={{fontSize:'8pt', marginTop:'2mm', opacity:0.7}}>Proteja o que e seu. Cadastre sua bike hoje mesmo.</p>
+            <p className="cartaz-rodape-small">Proteja o que e seu. Cadastre sua bike hoje mesmo.</p>
           </div>
 
         </div>
       </div>
-
-      {/* ===== ESTILOS PRINT ===== */}
-      <style>{`{`
-        `@media print {`
-          `  @page { size: A4 portrait; margin: 0; }`
-          `  body { background: #0c1222 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }`
-          `}`
-
-          `.screen-only { display: block; }`
-          `.print-only { display: none; }`
-
-          `@media print {`
-          `  .screen-only { display: none !important; }`
-          `  .print-only { display: block !important; }`
-          `}`
-
-          /* === CARTAZ A4 === */
-          `.cartaz-container {`
-          `  width: 210mm;`
-          `  min-height: 297mm;`
-          `  padding: 12mm 14mm;`
-          `  box-sizing: border-box;`
-          `  background: linear-gradient(180deg, #0c1222 0%, #111827 100%);`
-          `  color: #fff;`
-          `  font-family: 'Inter', system-ui, -apple-system, sans-serif;`
-          `  display: flex;`
-          `  flex-direction: column;`
-          `}`
-
-          `.cartaz-topo {`
-          `  display: flex;`
-          `  align-items: center;`
-          `  gap: 4mm;`
-          `  padding-bottom: 5mm;`
-          `  border-bottom: 2px solid #d4a017;`
-          `  margin-bottom: 6mm;`
-          `}`
-          `.cartaz-topo-logo {`
-          `  width: 16mm;`
-          `  height: 16mm;`
-          `  border-radius: 3mm;`
-          `  object-fit: cover;`
-          `}`
-          `.cartaz-topo-titulo {`
-          `  font-size: 16pt;`
-          `  font-weight: 900;`
-          `  color: #fff;`
-          `  margin: 0;`
-          `  letter-spacing: 0.5px;`
-          `}`
-          `.cartaz-topo-slogan {`
-          `  font-size: 8pt;`
-          `  color: #d4a017;`
-          `  margin: 0;`
-          `  font-weight: 600;`
-          `}`
-
-          `.cartaz-headline-box {`
-          `  text-align: center;`
-          `  margin-bottom: 7mm;`
-          `}`
-          `.cartaz-headline-h2 {`
-          `  font-size: 30pt;`
-          `  font-weight: 900;`
-          `  color: #fff;`
-          `  margin: 0 0 3mm;`
-          `  line-height: 1.15;`
-          `  letter-spacing: -0.5px;`
-          `}`
-          `.cartaz-headline-destaque {`
-          `  color: #fbbf24;`
-          `}`
-          `.cartaz-headline-sub {`
-          `  font-size: 10.5pt;`
-          `  color: #cbd5e1;`
-          `  margin: 0;`
-          `  line-height: 1.5;`
-          `}`
-          `.cartaz-headline-strong {`
-          `  color: #fbbf24;`
-          `}`
-
-          `.cartaz-passos {`
-          `  display: flex;`
-          `  gap: 4mm;`
-          `  margin-bottom: 8mm;`
-          `}`
-          `.cartaz-passo {`
-          `  flex: 1;`
-          `  background: rgba(255,255,255,0.04);`
-          `  border: 1px solid rgba(255,255,255,0.08);`
-          `  border-radius: 3mm;`
-          `  padding: 4mm;`
-          `  text-align: center;`
-          `}`
-          `.cartaz-passo-num {`
-          `  width: 8mm;`
-          `  height: 8mm;`
-          `  border-radius: 50%;`
-          `  background: #fbbf24;`
-          `  color: #0c1222;`
-          `  font-weight: 900;`
-          `  font-size: 11pt;`
-          `  display: flex;`
-          `  align-items: center;`
-          `  justify-content: center;`
-          `  margin: 0 auto 2mm;`
-          `}`
-          `.cartaz-passo-txt {`
-          `  font-size: 8.5pt;`
-          `  color: #e2e8f0;`
-          `  margin: 0;`
-          `  line-height: 1.4;`
-          `}`
-          `.cartaz-passo-txt strong {`
-          `  color: #fff;`
-          `}`
-
-          `.cartaz-qr-area {`
-          `  display: flex;`
-          `  align-items: center;`
-          `  gap: 8mm;`
-          `  background: linear-gradient(135deg, #0f172a, #1a1500);`
-          `  border: 2px solid rgba(251,191,36,0.3);`
-          `  border-radius: 5mm;`
-          `  padding: 8mm;`
-          `  margin-bottom: 6mm;`
-          `}`
-          `.cartaz-qr-wrapper {`
-          `  background: #fff;`
-          `  border-radius: 4mm;`
-          `  padding: 3mm;`
-          `  flex-shrink: 0;`
-          `}`
-          `.cartaz-qr-img {`
-          `  width: 42mm;`
-          `  height: 42mm;`
-          `  display: block;`
-          `}`
-          `.cartaz-qr-info {`
-          `  flex: 1;`
-          `}`
-          `.cartaz-qr-chamada {`
-          `  font-size: 18pt;`
-          `  font-weight: 900;`
-          `  color: #fbbf24;`
-          `  margin: 0 0 2mm;`
-          `}`
-          `.cartaz-qr-sub {`
-          `  font-size: 10pt;`
-          `  color: #cbd5e1;`
-          `  margin: 0 0 4mm;`
-          `  line-height: 1.4;`
-          `}`
-          `.cartaz-qr-instrucoes p {`
-          `  font-size: 9pt;`
-          `  color: #fff;`
-          `  margin: 0 0 2mm;`
-          `  display: flex;`
-          `  align-items: center;`
-          `  gap: 2mm;`
-          `}`
-          `.cartaz-qr-dot {`
-          `  width: 3mm;`
-          `  height: 3mm;`
-          `  border-radius: 50%;`
-          `  background: #fbbf24;`
-          `  display: inline-block;`
-          `  flex-shrink: 0;`
-          `}`
-
-          `.cartaz-beneficios-row {`
-          `  display: flex;`
-          `  justify-content: space-around;`
-          `  gap: 3mm;`
-          `  margin-bottom: 6mm;`
-          `}`
-          `.cartaz-beneficio {`
-          `  display: flex;`
-          `  flex-direction: column;`
-          `  align-items: center;`
-          `  gap: 1.5mm;`
-          `  font-size: 8pt;`
-          `  color: #e2e8f0;`
-          `  font-weight: 600;`
-          `  text-align: center;`
-          `}`
-          `.cartaz-beneficio-icone {`
-          `  width: 5mm;`
-          `  height: 5mm;`
-          `  color: #fbbf24;`
-          `}`
-
-          `.cartaz-rodape {`
-          `  margin-top: auto;`
-          `  text-align: center;`
-          `  padding-top: 4mm;`
-          `  border-top: 1px solid rgba(255,255,255,0.1);`
-          `}`
-          `.cartaz-rodape p {`
-          `  font-size: 9pt;`
-          `  color: #94a3b8;`
-          `  margin: 0;`
-          `}`
-        `}`}</style>
     </>
   );
 }
