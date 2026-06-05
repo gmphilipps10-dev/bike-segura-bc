@@ -4,7 +4,6 @@ import {
   Download, Smartphone, Monitor, Share2, ChevronRight, Shield,
   QrCode, Eye, Radio, MapPin
 } from 'lucide-react';
-import './Baixar.print.css';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
