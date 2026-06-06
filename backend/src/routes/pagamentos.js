@@ -195,7 +195,16 @@ router.post('/webhook', async (req, res) => {
     };
     const novoStatus = statusMap[event] || statusMap[payment.status] || pag.status;
     pag.status = novoStatus;
-    if (novoStatus === 'pago') pag.dataPagamento = new Date();
+    if (novoStatus === 'pago') {
+      pag.dataPagamento = new Date();
+      // Ativa o plano do usuario automaticamente quando o pagamento e confirmado
+      await User.findByIdAndUpdate(pag.userId, {
+        planoAtivo: true,
+        plano: pag.plano,
+        planoDataAtivacao: new Date(),
+      });
+      console.log(`[Webhook] Plano ${pag.plano} ativado para usuario ${pag.userId}`);
+    }
     pag.historico.push({ status: novoStatus, descricao: `Webhook Asaas: ${event || payment.status}` });
     await pag.save();
     res.status(200).json({ received: true });
