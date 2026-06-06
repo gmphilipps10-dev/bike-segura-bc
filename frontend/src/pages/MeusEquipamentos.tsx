@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Plus, Shield, ShieldCheck, MapPin, QrCode,
-  X, Copy, Check, ExternalLink, Share2, Download
+  X, Copy, Check, ExternalLink, Share2, Download,
+  Pencil, Trash2, AlertTriangle, Save
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
@@ -135,9 +136,134 @@ function QRModal({ bike, onClose }: { bike: any; onClose: () => void }) {
   );
 }
 
+function DeleteConfirmModal({ bike, onConfirm, onClose }: { bike: any; onConfirm: () => void; onClose: () => void }) {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm glass-card border border-red-500/20 rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
+        <div className="p-5 text-center">
+          <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-3">
+            <AlertTriangle className="w-7 h-7 text-red-400" />
+          </div>
+          <h3 className="text-white font-bold text-lg mb-1">Excluir equipamento?</h3>
+          <p className="text-slate-400 text-xs mb-4">
+            Tem certeza que deseja excluir <strong className="text-white">{bike.name}</strong>?<br />
+            Esta acao nao pode ser desfeita.
+          </p>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-3 rounded-xl glass-card text-white text-sm font-semibold cursor-pointer">Cancelar</button>
+            <button onClick={onConfirm} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-bold cursor-pointer">Excluir</button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function EditBikeModal({ bike, onSave, onClose }: { bike: any; onSave: (id: string, data: any) => Promise<any>; onClose: () => void }) {
+  const [form, setForm] = useState({
+    brand: bike.brand || '',
+    name: bike.name || '',
+    color: bike.color || '',
+    serie: bike.serie || '',
+    type: bike.type || '',
+    caracteristicas: bike.caracteristicas || '',
+    rastreamento: bike.rastreamento || '',
+    plataformaTag: bike.plataformaTag || '',
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleChange = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
+
+  const handleSave = async () => {
+    if (!form.brand || !form.name || !form.color || !form.serie) return;
+    setSaving(true);
+    await onSave(bike.id, {
+      brand: form.brand,
+      name: form.name,
+      color: form.color,
+      serie: form.serie,
+      type: form.type,
+      caracteristicas: form.caracteristicas,
+      rastreamento: form.rastreamento,
+      plataformaTag: form.plataformaTag,
+    });
+    setSaving(false);
+    onClose();
+  };
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm glass-card border border-white/10 rounded-2xl overflow-hidden max-h-[85vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center">
+              <Pencil className="w-4 h-4 text-[#0c1222]" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-sm">Editar Equipamento</h3>
+              <p className="text-slate-400 text-[10px]">{bike.name}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-lg glass-card flex items-center justify-center cursor-pointer"><X className="w-4 h-4 text-slate-400" /></button>
+        </div>
+
+        {/* Form */}
+        <div className="p-4 space-y-3 overflow-y-auto flex-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-slate-400 text-[11px] mb-1.5 block">Marca <span className="text-amber-400">*</span></label>
+              <input type="text" value={form.brand} onChange={e => handleChange('brand', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+            </div>
+            <div>
+              <label className="text-slate-400 text-[11px] mb-1.5 block">Modelo <span className="text-amber-400">*</span></label>
+              <input type="text" value={form.name} onChange={e => handleChange('name', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-slate-400 text-[11px] mb-1.5 block">Cor <span className="text-amber-400">*</span></label>
+              <input type="text" value={form.color} onChange={e => handleChange('color', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+            </div>
+            <div>
+              <label className="text-slate-400 text-[11px] mb-1.5 block">N. Serie <span className="text-amber-400">*</span></label>
+              <input type="text" value={form.serie} onChange={e => handleChange('serie', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+            </div>
+          </div>
+          <div>
+            <label className="text-slate-400 text-[11px] mb-1.5 block">Categoria</label>
+            <input type="text" value={form.type} onChange={e => handleChange('type', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+          </div>
+          <div>
+            <label className="text-slate-400 text-[11px] mb-1.5 block">Caracteristicas</label>
+            <textarea rows={2} value={form.caracteristicas} onChange={e => handleChange('caracteristicas', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none resize-none" />
+          </div>
+          <div>
+            <label className="text-slate-400 text-[11px] mb-1.5 block">Rastreamento</label>
+            <input type="text" value={form.rastreamento} onChange={e => handleChange('rastreamento', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+          </div>
+          <div>
+            <label className="text-slate-400 text-[11px] mb-1.5 block">Plataforma TAG</label>
+            <input type="text" value={form.plataformaTag} onChange={e => handleChange('plataformaTag', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none" />
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-white/5 shrink-0">
+          <button onClick={handleSave} disabled={saving || !form.brand || !form.name || !form.color || !form.serie} className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer ${saving ? 'bg-white/5 text-slate-500' : 'bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222]'}`}>
+            <Save className="w-4 h-4" /> {saving ? 'SALVANDO...' : 'SALVAR ALTERACOES'}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function MeusEquipamentos() {
-  const { bikes } = useBikes();
+  const { bikes, removeBike, updateBike } = useBikes();
   const [selectedBike, setSelectedBike] = useState<any>(null);
+  const [bikeToDelete, setBikeToDelete] = useState<any>(null);
+  const [bikeToEdit, setBikeToEdit] = useState<any>(null);
   const activeCount = bikes.filter(b => b.protected).length;
 
   return (
@@ -238,7 +364,25 @@ export default function MeusEquipamentos() {
                   </button>
                 )}
 
-                <div className="flex items-center justify-between">
+                {/* Actions: Edit / Delete */}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => setBikeToEdit(bike)}
+                    className="flex-1 py-2 rounded-lg glass-card flex items-center justify-center gap-1.5 text-slate-300 text-xs hover:border-amber-400/30 transition-colors cursor-pointer"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => setBikeToDelete(bike)}
+                    className="flex-1 py-2 rounded-lg glass-card flex items-center justify-center gap-1.5 text-red-400 text-xs hover:border-red-500/30 hover:bg-red-500/5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Excluir
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between mt-3">
                   <div className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-slate-500" />
                     <span className="text-slate-400 text-xs">{bike.location}</span>
@@ -287,6 +431,31 @@ export default function MeusEquipamentos() {
       <AnimatePresence>
         {selectedBike && (
           <QRModal bike={selectedBike} onClose={() => setSelectedBike(null)} />
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirm Modal */}
+      <AnimatePresence>
+        {bikeToDelete && (
+          <DeleteConfirmModal
+            bike={bikeToDelete}
+            onConfirm={async () => {
+              await removeBike(bikeToDelete.id);
+              setBikeToDelete(null);
+            }}
+            onClose={() => setBikeToDelete(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Edit Bike Modal */}
+      <AnimatePresence>
+        {bikeToEdit && (
+          <EditBikeModal
+            bike={bikeToEdit}
+            onSave={updateBike}
+            onClose={() => setBikeToEdit(null)}
+          />
         )}
       </AnimatePresence>
     </div>
