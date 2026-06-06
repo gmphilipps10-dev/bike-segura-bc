@@ -11,11 +11,19 @@ import AlertaFurtoModal from '../components/AlertaFurtoModal';
 import BottomNav from '../components/BottomNav';
 
 /* ===== Data ===== */
-const newsItems = [
+const fallbackNews = [
   { id: 1, tag: 'BRASIL', title: 'Furtos de bicicleta explodem no Rio, impulsionados por bike elétrica', desc: 'Casos mais que dobraram: subiu de 331 para 724 registros — aumento de 119%', source: 'CBN Globo', date: 'Abr 2025' },
   { id: 2, tag: 'SEGURANÇA', title: 'Nova tecnologia de rastreamento reduz roubos de bikes em 45%', desc: 'Dispositivos GPS inteligentes e alertas em tempo real transformam a recuperação', source: 'TechCycling', date: 'Mai 2025' },
   { id: 3, tag: 'DICA', title: '5 formas de proteger sua bike enquanto pedala pela cidade', desc: 'Especialistas recomendam combinação de tecnologia e hábitos preventivos', source: 'BikeMag', date: 'Mai 2025' }
 ];
+
+interface NoticiaReal {
+  titulo: string;
+  categoria: string;
+  url: string;
+  fonte: string;
+  data: string;
+}
 
 const menuItems = [
   { icon: Bike, label: 'Meus\nEquipamentos', color: 'from-amber-400 to-yellow-500', path: '/equipamentos' },
@@ -51,20 +59,83 @@ function StatusBadge({ count }: { count: number }) {
 
 function NewsCarousel() {
   const [current, setCurrent] = useState(0);
-  useEffect(() => { const t = setInterval(() => setCurrent(p => (p + 1) % newsItems.length), 4000); return () => clearInterval(t); }, []);
+  const [noticias, setNoticias] = useState<NoticiaReal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Busca noticias reais da prefeitura
+  useEffect(() => {
+    fetch('/bike-segura-bc-backend/api/noticias')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.noticias && data.noticias.length > 0) {
+          setNoticias(data.noticias.slice(0, 5)); // Max 5 noticias
+        }
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  // Dados a exibir: noticias reais ou fallback
+  const items = noticias.length > 0
+    ? noticias.map((n, i) => ({
+        id: i,
+        tag: n.categoria?.toUpperCase() || 'BC',
+        title: n.titulo,
+        desc: `Fonte: ${n.fonte}`,
+        url: n.url,
+      }))
+    : fallbackNews;
+
+  // Auto-rotacao
+  useEffect(() => {
+    if (items.length <= 1) return;
+    const t = setInterval(() => setCurrent(p => (p + 1) % items.length), 5000);
+    return () => clearInterval(t);
+  }, [items.length]);
+
+  if (loading) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-3 shrink-0">
+        <div className="glass-card p-4 animate-pulse">
+          <div className="h-4 w-16 bg-amber-500/20 rounded mb-2" />
+          <div className="h-4 w-3/4 bg-white/10 rounded mb-1.5" />
+          <div className="h-3 w-1/2 bg-slate-600/30 rounded" />
+        </div>
+      </motion.div>
+    );
+  }
+
+  const item = items[current];
+  const isReal = noticias.length > 0;
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-3 shrink-0">
       <div className="relative overflow-hidden rounded-xl">
+        {isReal && (
+          <div className="absolute top-2 right-2 z-10">
+            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[8px] font-bold">PREFEITURA BC</span>
+          </div>
+        )}
         <AnimatePresence mode="wait">
-          <motion.div key={current} initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }} transition={{ duration: 0.4 }} className="glass-card p-4 relative overflow-hidden">
-            <span className="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold tracking-wider">{newsItems[current].tag}</span>
-            <h3 className="text-white font-semibold text-sm leading-snug mt-2 mb-1.5">{newsItems[current].title}</h3>
-            <p className="text-slate-400 text-xs leading-relaxed">{newsItems[current].desc}</p>
+          <motion.div
+            key={current}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            transition={{ duration: 0.4 }}
+            className="glass-card p-4 relative overflow-hidden cursor-pointer"
+            onClick={() => isReal && item.url ? window.open(item.url, '_blank') : null}
+          >
+            <span className="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold tracking-wider">{item.tag}</span>
+            <h3 className={`text-white font-semibold text-sm leading-snug mt-2 mb-1.5 ${isReal ? 'hover:text-amber-300 transition-colors' : ''}`}>{item.title}</h3>
+            <p className="text-slate-400 text-xs leading-relaxed">{item.desc}</p>
+            {isReal && <p className="text-emerald-400/60 text-[10px] mt-1.5">Clique para ler mais →</p>}
           </motion.div>
         </AnimatePresence>
         <div className="flex items-center justify-center gap-1.5 mt-2">
-          {newsItems.map((_, i) => <button key={i} onClick={() => setCurrent(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`} />)}
+          {items.map((_, i) => (
+            <button key={i} onClick={() => setCurrent(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`} />
+          ))}
         </div>
       </div>
     </motion.div>
