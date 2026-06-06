@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { CreditCard, CheckCircle, Clock, AlertTriangle, XCircle, Download } from '../components/Icons'
+import { CreditCard, CheckCircle, Clock, AlertTriangle, XCircle, Download, FileText, Table } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
+import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 
 const API_BASE = '/bike-segura-bc-backend/api'
 
@@ -47,26 +48,49 @@ export default function Pagamentos() {
     cancelado: { label: 'CANCELADO', cor: 'text-slate-400', bg: 'bg-slate-500/10', icon: XCircle },
   }
 
-  const exportarCSV = () => {
+  const getExportData = () => {
     const headers = ['Usuario', 'Plano', 'Valor', 'Status', 'Metodo', 'Data Vencimento', 'Data Pagamento', 'Asaas ID']
     const rows = filtrados.map(p => [
       p.userName || '-',
       p.plano || '-',
-      `R$${((p.valor || 0) / 100).toFixed(2)}`,
+      `R$ ${((p.valor || 0) / 100).toFixed(2)}`,
       p.status || '-',
       p.metodoPagamento || '-',
       p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-BR') : '-',
       p.dataPagamento ? new Date(p.dataPagamento).toLocaleDateString('pt-BR') : '-',
       p.asaasId || '-',
     ])
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `pagamentos-${filtro}-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
+    return { headers, rows }
+  }
+
+  const handleExportarCSV = () => {
+    const { headers, rows } = getExportData()
+    exportarCSV(`pagamentos-${filtro}`, headers, rows)
+  }
+
+  const handleExportarPDF = () => {
+    const { headers, rows } = getExportData()
+    exportarPDF(
+      'Relatorio de Pagamentos',
+      `Filtro: ${filtro.toUpperCase()} | Total: ${filtrados.length} registros`,
+      headers, rows,
+      [
+        { label: 'Total cobrancas', value: String(stats.total) },
+        { label: 'Pagos', value: `R$ ${(stats.faturamentoTotal / 100).toFixed(2)}` },
+        { label: 'Pendentes', value: `R$ ${(stats.faturamentoPendente / 100).toFixed(2)}` },
+        { label: 'Atrasados', value: `R$ ${(stats.faturamentoAtrasado / 100).toFixed(2)}` },
+      ]
+    )
+  }
+
+  const handleExportarExcel = () => {
+    const { headers, rows } = getExportData()
+    exportarExcel(`pagamentos-${filtro}`, 'Pagamentos', headers, rows, [
+      { label: 'Total cobrancas', value: String(stats.total) },
+      { label: 'Pagos', value: `R$ ${(stats.faturamentoTotal / 100).toFixed(2)}` },
+      { label: 'Pendentes', value: `R$ ${(stats.faturamentoPendente / 100).toFixed(2)}` },
+      { label: 'Atrasados', value: `R$ ${(stats.faturamentoAtrasado / 100).toFixed(2)}` },
+    ])
   }
 
   return (
@@ -111,9 +135,17 @@ export default function Pagamentos() {
                   </button>
                 ))}
               </div>
-              <button onClick={exportarCSV} className="btn-secondary flex items-center gap-2 text-xs">
-                <Download className="w-3 h-3" />Exportar CSV
-              </button>
+              <div className="flex gap-2">
+                <button onClick={handleExportarCSV} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar CSV">
+                  <Download className="w-3 h-3" />CSV
+                </button>
+                <button onClick={handleExportarPDF} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar PDF">
+                  <FileText className="w-3 h-3" />PDF
+                </button>
+                <button onClick={handleExportarExcel} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar Excel">
+                  <Table className="w-3 h-3" />Excel
+                </button>
+              </div>
             </div>
 
             <div className="glass-card overflow-hidden">
