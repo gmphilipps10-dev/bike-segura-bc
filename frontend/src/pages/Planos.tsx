@@ -24,6 +24,7 @@ const plans = [
       'Cadastro do proprietario e equipamentos',
       'Botao de alerta de furto',
       'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
+      'Adesivo ultradestrutivel identificador',
       'Sem rastreamento',
     ],
   },
@@ -40,9 +41,11 @@ const plans = [
     features: [
       'Acesso ao App Bike Segura BC',
       'Suporte via WhatsApp',
-      'Botão de alerta de furto',
-      'Acionamento via ACT (Acordo de Cooperação Técnica)',
-      'Instalação de TAG (iOS ou Android)',
+      'Botao de alerta de furto',
+      'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
+      'Instalacao de TAG (iOS ou Android)',
+      'Adesivo ultradestrutivel identificador',
+      'Recuperacao assistida',
     ],
   },
   {
@@ -58,9 +61,11 @@ const plans = [
     features: [
       'Acesso ao App Bike Segura BC',
       'Suporte via WhatsApp',
-      'Botão de alerta de furto',
-      'Acionamento via ACT (Acordo de Cooperação Técnica)',
-      'Instalação de rastreador GPS 4G',
+      'Botao de alerta de furto',
+      'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
+      'Instalacao de rastreador GPS 4G',
+      'Adesivo ultradestrutivel identificador',
+      'Recuperacao assistida',
     ],
   },
   {
@@ -76,9 +81,11 @@ const plans = [
     features: [
       'Acesso ao App Bike Segura BC',
       'Suporte via WhatsApp',
-      'Botão de alerta de furto',
-      'Acionamento das forças de segurança via ACT',
-      'Instalação de TAG (iOS ou Android) + rastreador GPS 4G',
+      'Botao de alerta de furto',
+      'Acionamento das forcas de seguranca via ACT',
+      'Instalacao de TAG (iOS ou Android) + rastreador GPS 4G',
+      'Adesivo ultradestrutivel identificador',
+      'Recuperacao assistida',
     ],
   },
 ];
