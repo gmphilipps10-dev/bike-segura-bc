@@ -42,6 +42,9 @@ router.post('/register', async (req, res) => {
         nascimento: user.nascimento,
         endereco: user.endereco,
         contatoEmergencia: user.contatoEmergencia,
+        plano: user.plano,
+        planoAtivo: user.planoAtivo,
+        isAdmin: user.isAdmin,
       }
     });
   } catch (error) {
@@ -89,6 +92,9 @@ router.post('/login', async (req, res) => {
         nascimento: user.nascimento,
         endereco: user.endereco,
         contatoEmergencia: user.contatoEmergencia,
+        plano: user.plano,
+        planoAtivo: user.planoAtivo,
+        isAdmin: user.isAdmin,
       }
     });
   } catch (error) {
@@ -118,6 +124,9 @@ router.get('/me', async (req, res) => {
       nascimento: user.nascimento,
       endereco: user.endereco,
       contatoEmergencia: user.contatoEmergencia,
+      plano: user.plano,
+      planoAtivo: user.planoAtivo,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     res.status(401).json({ message: 'Token invalido.' });
@@ -148,6 +157,9 @@ router.put('/profile', async (req, res) => {
       nascimento: user.nascimento,
       endereco: user.endereco,
       contatoEmergencia: user.contatoEmergencia,
+      plano: user.plano,
+      planoAtivo: user.planoAtivo,
+      isAdmin: user.isAdmin,
     });
   } catch (error) {
     console.error('Update profile error:', error);
@@ -177,7 +189,23 @@ router.post('/become-admin', async (req, res) => {
 
     if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
 
-    res.json({ message: 'Agora voce e administrador!', user });
+    res.json({
+      message: 'Agora voce e administrador!',
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        cpf: user.cpf,
+        rg: user.rg,
+        nascimento: user.nascimento,
+        endereco: user.endereco,
+        contatoEmergencia: user.contatoEmergencia,
+        plano: user.plano,
+        planoAtivo: user.planoAtivo,
+        isAdmin: user.isAdmin,
+      }
+    });
   } catch (error) {
     res.status(500).json({ message: 'Erro.' });
   }
