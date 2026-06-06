@@ -1,9 +1,11 @@
+import type { UserData } from '../context/AuthContext';
+
 const VISITOR_START_KEY = 'bike_segura_visitor_start';
 const TRIAL_DAYS_FREE = 3;
 const TRIAL_DAYS_WARNING = 3;
 const TRIAL_DAYS_TOTAL = TRIAL_DAYS_FREE + TRIAL_DAYS_WARNING;
 
-export type TrialStatus = 'free' | 'warning' | 'expired';
+export type TrialStatus = 'free' | 'warning' | 'expired' | 'active';
 
 export interface TrialState {
   status: TrialStatus;
@@ -21,7 +23,17 @@ function getStartDate(): number {
   return parseInt(start);
 }
 
-export function useTrial(): TrialState {
+export function useTrial(user?: UserData): TrialState {
+  // Se o usuario tem plano ativo, retorna status 'active' (acesso total)
+  if (user?.planoAtivo) {
+    return {
+      status: 'active',
+      daysElapsed: 0,
+      daysRemaining: Infinity,
+      isVisitor: false,
+    };
+  }
+
   const startDate = getStartDate();
   const now = Date.now();
   const msElapsed = now - startDate;
