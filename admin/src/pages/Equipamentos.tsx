@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Search, Bike } from '../components/Icons'
+import { Search, Bike, Download, FileText, Table } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
+import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 
 const API_BASE = '/bike-segura-bc-backend/api'
 
@@ -22,6 +23,27 @@ export default function Equipamentos() {
   if (busca) f = f.filter(e => e.name?.toLowerCase().includes(busca.toLowerCase()) || e.serie?.includes(busca))
   if (filtro !== 'todos') f = f.filter(e => e.status === filtro)
 
+  const getExportData = () => {
+    const headers = ['Nome', 'Marca', 'Tipo', 'Cor', 'Serie', 'Sticker', 'Status', 'Protegido', 'Rastreamento', 'Dono']
+    const rows = f.map(e => [
+      e.name || '-',
+      e.brand || '-',
+      e.type || '-',
+      e.color || '-',
+      e.serie || '-',
+      e.stickerNumber || '-',
+      e.status === 'furto' ? 'Furtado' : e.status === 'recuperada' ? 'Recuperada' : 'Ativo',
+      e.protected ? 'Sim' : 'Nao',
+      e.rastreamento || 'Nenhum',
+      e.userId?.name || e.userId?.email || '-',
+    ])
+    return { headers, rows }
+  }
+
+  const handleExportarCSV = () => { const { headers, rows } = getExportData(); exportarCSV(`equipamentos-${filtro}`, headers, rows) }
+  const handleExportarPDF = () => { const { headers, rows } = getExportData(); exportarPDF('Relatorio de Equipamentos', `${f.length} equipamentos | Filtro: ${filtro.toUpperCase()}`, headers, rows, [{ label: 'Total', value: String(f.length) }, { label: 'Furtados', value: String(f.filter(x => x.status === 'furto').length) }]) }
+  const handleExportarExcel = () => { const { headers, rows } = getExportData(); exportarExcel(`equipamentos-${filtro}`, 'Equipamentos', headers, rows, [{ label: 'Total', value: String(f.length) }, { label: 'Furtados', value: String(f.filter(x => x.status === 'furto').length) }]) }
+
   return (
     <div className="flex min-h-screen bg-slate-900">
       <Sidebar />
@@ -31,15 +53,20 @@ export default function Equipamentos() {
           <p className="text-slate-400 text-sm">{equips.length} cadastrados</p>
         </header>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
-          <div className="glass-card flex items-center gap-2 px-3 py-2 flex-1 max-w-md">
-            <Search className="w-4 h-4 text-slate-500" />
-            <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} className="bg-transparent text-white text-sm w-full outline-none placeholder-slate-600" />
-          </div>
+        <div className="flex flex-col sm:flex-row gap-3 mb-4 items-start sm:items-center justify-between">
           <div className="flex gap-2">
+            <div className="glass-card flex items-center gap-2 px-3 py-2">
+              <Search className="w-4 h-4 text-slate-500" />
+              <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} className="bg-transparent text-white text-sm w-40 outline-none placeholder-slate-600" />
+            </div>
             {(['todos', 'normal', 'furto'] as const).map(fi => (
               <button key={fi} onClick={() => setFiltro(fi)} className={`px-3 py-2 rounded-lg text-xs font-bold ${filtro === fi ? 'bg-amber-400 text-slate-900' : 'glass-card text-slate-400'}`}>{fi === 'todos' ? 'TODOS' : fi === 'normal' ? 'ATIVOS' : 'FURTADOS'}</button>
             ))}
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleExportarCSV} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar CSV"><Download className="w-3 h-3" />CSV</button>
+            <button onClick={handleExportarPDF} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar PDF"><FileText className="w-3 h-3" />PDF</button>
+            <button onClick={handleExportarExcel} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar Excel"><Table className="w-3 h-3" />Excel</button>
           </div>
         </div>
 
