@@ -3,17 +3,20 @@ import { motion } from 'framer-motion';
 import {
   ArrowLeft, User, Mail, Phone, MapPin,
   Edit3, Save, LogOut, ChevronRight, Bike, CreditCard,
-  Users, HelpCircle, FileText
+  Users, HelpCircle, FileText, Bell, BellOff
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useAuth } from '../context/AuthContext';
 import { useBikes } from '../context/BikeContext';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 
 export default function MeuPerfil() {
   const navigate = useNavigate();
   const { user, updateUser, logout, becomeAdmin } = useAuth();
   const { bikes } = useBikes();
+  const { token } = useAuth();
+  const { status: pushStatus, subscribe, unsubscribe } = usePushNotifications(token);
   const [tornandoAdmin, setTornandoAdmin] = useState(false);
 
   const [editMode, setEditMode] = useState(false);
@@ -201,6 +204,44 @@ export default function MeuPerfil() {
             ))}
           </div>
         </motion.section>
+
+        {/* Notificacoes Push */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mb-4"
+        >
+          {pushStatus === 'subscribed' ? (
+            <button
+              onClick={unsubscribe}
+              className="w-full glass-card p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-white/[0.06] transition-colors"
+            >
+              <BellOff className="w-5 h-5 text-slate-400" />
+              <span className="text-slate-400 text-sm font-medium">Desativar notificacoes de alerta</span>
+            </button>
+          ) : pushStatus === 'supported' || pushStatus === 'denied' ? (
+            <button
+              onClick={subscribe}
+              className="w-full glass-card p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-amber-500/10 transition-colors"
+            >
+              <Bell className="w-5 h-5 text-amber-400" />
+              <span className="text-amber-400 text-sm font-semibold">
+                {pushStatus === 'denied' ? 'Permitir notificacoes no navegador' : 'Ativar notificacoes de alerta'}
+              </span>
+            </button>
+          ) : pushStatus === 'not-supported' ? (
+            <div className="w-full glass-card p-4 flex items-center justify-center gap-2 text-slate-500">
+              <BellOff className="w-5 h-5" />
+              <span className="text-sm">Notificacoes nao suportadas neste dispositivo</span>
+            </div>
+          ) : (
+            <div className="w-full glass-card p-4 flex items-center justify-center gap-2 text-slate-500">
+              <Bell className="w-5 h-5 animate-pulse" />
+              <span className="text-sm">Verificando suporte a notificacoes...</span>
+            </div>
+          )}
+        </motion.div>
 
         {/* Logout */}
         <motion.div
