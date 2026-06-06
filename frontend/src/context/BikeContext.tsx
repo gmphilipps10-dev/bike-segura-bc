@@ -28,6 +28,7 @@ interface BikeContextType {
   bikes: BikeData[];
   loading: boolean;
   addBike: (bike: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => Promise<any>;
+  updateBike: (id: string, data: Partial<BikeData>) => Promise<any>;
   removeBike: (id: string) => Promise<void>;
   toggleProtection: (id: string) => Promise<void>;
   refreshBikes: () => Promise<void>;
@@ -98,8 +99,20 @@ export function BikeProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateBike = async (id: string, data: Partial<BikeData>) => {
+    if (!token) return null;
+    try {
+      const updated = await apiPut(`/bikes/${id}`, data, token);
+      setBikes(prev => prev.map(b => b.id === id ? { ...b, ...updated } : b));
+      return updated;
+    } catch (err) {
+      console.error('Error updating bike:', err);
+      return null;
+    }
+  };
+
   return (
-    <BikeContext.Provider value={{ bikes, loading, addBike, removeBike, toggleProtection, refreshBikes }}>
+    <BikeContext.Provider value={{ bikes, loading, addBike, updateBike, removeBike, toggleProtection, refreshBikes }}>
       {children}
     </BikeContext.Provider>
   );
