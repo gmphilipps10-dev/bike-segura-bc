@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Search, Mail, Phone, Calendar } from '../components/Icons'
+import { Search, Mail, Phone, Calendar, Download, FileText, Table } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
+import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 
 const API_BASE = '/bike-segura-bc-backend/api'
 
@@ -21,6 +22,23 @@ export default function Clientes() {
     ? clientes.filter(c => c.name?.toLowerCase().includes(busca.toLowerCase()) || c.email?.includes(busca) || c.phone?.includes(busca))
     : clientes
 
+  const getExportData = () => {
+    const headers = ['Nome', 'Email', 'Telefone', 'Plano', 'Plano Ativo', 'Data Cadastro']
+    const rows = filtrados.map(c => [
+      c.name || '-',
+      c.email || '-',
+      c.phone || '-',
+      c.plano || 'free',
+      c.planoAtivo ? 'Sim' : 'Nao',
+      c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '-',
+    ])
+    return { headers, rows }
+  }
+
+  const handleExportarCSV = () => { const { headers, rows } = getExportData(); exportarCSV('clientes', headers, rows) }
+  const handleExportarPDF = () => { const { headers, rows } = getExportData(); exportarPDF('Relatorio de Clientes', `${filtrados.length} clientes`, headers, rows, [{ label: 'Total', value: String(filtrados.length) }]) }
+  const handleExportarExcel = () => { const { headers, rows } = getExportData(); exportarExcel('clientes', 'Clientes', headers, rows, [{ label: 'Total', value: String(filtrados.length) }]) }
+
   return (
     <div className="flex min-h-screen bg-slate-900">
       <Sidebar />
@@ -30,9 +48,16 @@ export default function Clientes() {
           <p className="text-slate-400 text-sm">{clientes.length} cadastrados</p>
         </header>
 
-        <div className="glass-card flex items-center gap-2 px-3 py-2 mb-4 max-w-md">
-          <Search className="w-4 h-4 text-slate-500" />
-          <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} className="bg-transparent text-white text-sm w-full outline-none placeholder-slate-600" />
+        <div className="flex flex-col sm:flex-row gap-3 mb-4 items-start sm:items-center justify-between">
+          <div className="glass-card flex items-center gap-2 px-3 py-2 flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-500" />
+            <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} className="bg-transparent text-white text-sm w-full outline-none placeholder-slate-600" />
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleExportarCSV} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar CSV"><Download className="w-3 h-3" />CSV</button>
+            <button onClick={handleExportarPDF} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar PDF"><FileText className="w-3 h-3" />PDF</button>
+            <button onClick={handleExportarExcel} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar Excel"><Table className="w-3 h-3" />Excel</button>
+          </div>
         </div>
 
         {loading ? <p className="text-slate-500">Carregando...</p> : (
