@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useTrial } from '../hooks/useTrial';
+import { useAuth } from '../context/AuthContext';
 
 interface TrialGuardProps {
   children: React.ReactNode;
@@ -14,16 +15,20 @@ function isPublicPath(path: string): boolean {
 }
 
 export default function TrialGuard({ children, isLoggedIn }: TrialGuardProps) {
-  const { status, isVisitor } = useTrial();
+  const { user } = useAuth();
+  const { status, isVisitor } = useTrial(user ?? undefined);
   const currentPath = window.location.hash.replace('#', '') || '/';
 
-  // Se está logado, acesso total
+  // Se tem plano ativo, acesso total (independente de trial)
+  if (user?.planoAtivo) return <>{children}</>;
+
+  // Se está logado mas sem plano ativo, verifica trial
   if (isLoggedIn) return <>{children}</>;
 
   // Se é rota pública, permite sem restrições
   if (isPublicPath(currentPath)) return <>{children}</>;
 
-  // Se o trial expirou, redireciona para planos (que vai pedir login)
+  // Se o trial expirou, redireciona para login
   if (status === 'expired') {
     return <Navigate to="/login" replace />;
   }
