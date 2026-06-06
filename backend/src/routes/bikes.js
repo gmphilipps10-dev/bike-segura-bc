@@ -2,6 +2,7 @@ const express = require('express');
 const Bike = require('../models/Bike');
 const authMiddleware = require('../middleware/auth');
 const { vincularProximoQR, generateHash } = require('../utils/qrManager');
+const { notificarFurto } = require('./push');
 const router = express.Router();
 
 // Consulta publica - SEM AUTH
@@ -216,6 +217,15 @@ router.post('/:id/furto', async (req, res) => {
       { new: true }
     );
     if (!bike) return res.status(404).json({ message: 'Bike nao encontrada.' });
+
+    // Envia notificacao push para a comunidade
+    try {
+      await notificarFurto(bike, req.userId);
+    } catch (pushErr) {
+      console.error('[Bike-Furto] Erro ao enviar push:', pushErr.message);
+      // Nao falha o request principal se o push falhar
+    }
+
     res.json(bike);
   } catch (error) {
     res.status(500).json({ message: 'Erro.' });
