@@ -79,11 +79,13 @@ app.get('/qr/:hash', async (req, res) => {
 });
 
 // ========== API ROUTES ==========
+const pushModule = require('./routes/push');
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
 app.use('/api/preprinted', require('./routes/preprinted'));
 app.use('/api/ocorrencias', require('./routes/ocorrencias'));
 app.use('/api/pagamentos', require('./routes/pagamentos'));
+app.use('/api/push', pushModule.router);
 
 // ========== STATIC FILES (depois das rotas!) ==========
 const publicPath = path.join(__dirname, '../public');
