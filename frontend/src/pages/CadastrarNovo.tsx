@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Camera, FileText, Tag, MapPin, Link as LinkIcon,
-  Upload, ClipboardList, NotebookPen, CheckCircle, Copy, QrCode
+  Upload, ClipboardList, NotebookPen, CheckCircle, Copy, QrCode,
+  Lock
 } from 'lucide-react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useBikes } from '../context/BikeContext';
+import { useAuth } from '../context/AuthContext';
 
 const categories = [
   'Bicicleta Mountain Bike', 'Bicicleta Mountain Bike Eletrica',
@@ -38,8 +40,68 @@ const photoSlots = [
   { key: 'acessorios', label: 'Acessorios' },
 ];
 
+// ===== Helpers de plano =====
+
+interface RastreioOpcao {
+  id: string;
+  label: string;
+  habilitado: boolean;
+  icon: React.ReactNode;
+}
+
+function getOpcoesRastreamento(plano?: string): RastreioOpcao[] {
+  const isHabilitado = (planoMinimo: string): boolean => {
+    if (!plano || plano === 'free') return true; // trial: mostra tudo (aviso depois)
+    const ordem = { bronze: 0, prata: 1, ouro: 2, diamante: 3 };
+    return (ordem as any)[plano] >= (ordem as any)[planoMinimo];
+  };
+
+  return [
+    {
+      id: '',
+      label: 'Sem rastreamento',
+      habilitado: true, // sempre disponivel
+      icon: null,
+    },
+    {
+      id: 'TAG',
+      label: 'TAG (iOS/Android)',
+      habilitado: isHabilitado('prata'),
+      icon: null,
+    },
+    {
+      id: 'Rastreador GPS',
+      label: 'Rastreador GPS',
+      habilitado: isHabilitado('ouro'),
+      icon: null,
+    },
+    {
+      id: 'TAG + GPS (Completo)',
+      label: 'TAG + GPS Completo',
+      habilitado: isHabilitado('diamante'),
+      icon: null,
+    },
+  ];
+}
+
+function getMensagemPlanoRastreamento(plano?: string): string | null {
+  switch (plano) {
+    case 'bronze':
+      return 'O plano Bronze nao inclui rastreamento. Para adicionar TAG, GPS ou ambos, faca upgrade do plano.';
+    case 'prata':
+      return 'No plano Prata, voce pode usar TAG. Para GPS, faca upgrade para Ouro ou Diamante.';
+    case 'ouro':
+      return 'No plano Ouro, voce pode usar Rastreador GPS. Para TAG tambem, faca upgrade para Diamante.';
+    case 'diamante':
+      return 'Plano Diamante: acesso completo a TAG e Rastreador GPS.';
+    default:
+      return 'No periodo de teste, voce pode explorar todas as opcoes. Para ativar o rastreamento, escolha um plano.';
+  }
+}
+
 export default function CadastrarNovo() {
   const { addBike } = useBikes();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({
@@ -52,6 +114,13 @@ export default function CadastrarNovo() {
   const [cadastrando, setCadastrando] = useState(false);
   const [bikeCadastrada, setBikeCadastrada] = useState<any>(null);
   const [showPlanPrompt, setShowPlanPrompt] = useState(false);
+
+  // Verifica o plano do usuario para controlar acesso ao rastreamento
+  const planoAtual = user?.planoAtivo ? user.plano : 'free';
+  const opcoesRastreamento = getOpcoesRastreamento(planoAtual);
+  const mensagemPlano = getMensagemPlanoRastreamento(planoAtual);
+  const rastreioSelecionado = opcoesRastreamento.find(o => o.id === form.tipoRastreamento);
+  const rastreioBloqueado = rastreioSelecionado && !rastreioSelecionado.habilitado;
 
   const handleChange = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
@@ -101,7 +170,7 @@ export default function CadastrarNovo() {
     setCadastrando(false);
   };
 
-  const isFormValid = form.marca && form.modelo && form.cor && form.numeroSerie && form.tipoRastreamento;
+  const isFormValid = form.marca && form.modelo && form.cor && form.numeroSerie && !rastreioBloqueado;
 
   const sectionHeader = (icon: React.ReactNode, title: string) => (
     <div className="flex items-center gap-2 mb-4">
@@ -171,16 +240,52 @@ export default function CadastrarNovo() {
           <textarea rows={3} placeholder="Acessorios, modificacoes..." value={form.caracteristicas} onChange={e => handleChange('caracteristicas', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm placeholder:text-slate-600 outline-none resize-none" />
         </motion.section>
 
-        {/* RASTREAMENTO */}
+        {/* RASTREAMENTO — opcoes controladas pelo plano */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-5 mb-4">
           {sectionHeader(<MapPin className="w-4 h-4" />, 'Rastreamento')}
-          <label className="text-slate-400 text-[11px] mb-2 block">Tipo <span className="text-amber-400">*</span></label>
+
+          {/* Opcoes de rastreamento */}
+          <label className="text-slate-400 text-[11px] mb-2 block">Tipo</label>
           <div className="flex flex-wrap gap-2 mb-4">
-            {['TAG', 'Rastreador GPS', 'TAG + GPS (Completo)'].map(opt => (
-              <button key={opt} onClick={() => handleChange('tipoRastreamento', opt)} className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${form.tipoRastreamento === opt ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] shadow-lg shadow-amber-500/20' : 'glass-card text-slate-300'}`}>{opt}</button>
+            {opcoesRastreamento.map(opt => (
+              <button
+                key={opt.id}
+                onClick={() => {
+                  if (opt.habilitado) {
+                    handleChange('tipoRastreamento', opt.id);
+                  }
+                }}
+                disabled={!opt.habilitado}
+                className={`relative px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                  form.tipoRastreamento === opt.id
+                    ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] shadow-lg shadow-amber-500/20'
+                    : opt.habilitado
+                      ? 'glass-card text-slate-300 hover:border-amber-400/30 cursor-pointer'
+                      : 'glass-card text-slate-600 border-white/5 cursor-not-allowed opacity-50'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  {!opt.habilitado && <Lock className="w-3 h-3" />}
+                  {opt.label}
+                </span>
+              </button>
             ))}
           </div>
-          {form.tipoRastreamento && form.tipoRastreamento !== 'Rastreador GPS' && (
+
+          {/* Aviso quando seleciona opcao bloqueada */}
+          {rastreioBloqueado && (
+            <div className="rounded-xl bg-red-500/5 border border-red-500/20 p-3 mb-3">
+              <p className="text-red-400 text-xs text-center">
+                Esta opcao nao esta disponivel no seu plano.{' '}
+                <RouterLink to="/planos" className="text-amber-400 underline font-semibold">
+                  Fazer upgrade
+                </RouterLink>
+              </p>
+            </div>
+          )}
+
+          {/* Plataforma (so para TAG) */}
+          {form.tipoRastreamento && form.tipoRastreamento !== 'Rastreador GPS' && rastreioSelecionado?.habilitado && (
             <>
               <label className="text-slate-400 text-[11px] mb-2 block">Plataforma</label>
               <div className="flex gap-2 mb-4">
@@ -190,11 +295,22 @@ export default function CadastrarNovo() {
               </div>
             </>
           )}
-          <label className="text-slate-400 text-[11px] mb-1.5 block">Link</label>
-          <div className="glass-card flex items-center gap-3 px-3 py-2.5">
-            <LinkIcon className="w-4 h-4 text-amber-400 shrink-0" />
-            <input type="text" placeholder="https://..." value={form.linkRastreamento} onChange={e => handleChange('linkRastreamento', e.target.value)} className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600" />
-          </div>
+
+          {/* Link de rastreamento */}
+          {form.tipoRastreamento && rastreioSelecionado?.habilitado && (
+            <>
+              <label className="text-slate-400 text-[11px] mb-1.5 block">Link do rastreador/TAG</label>
+              <div className="glass-card flex items-center gap-3 px-3 py-2.5">
+                <LinkIcon className="w-4 h-4 text-amber-400 shrink-0" />
+                <input type="text" placeholder="https://..." value={form.linkRastreamento} onChange={e => handleChange('linkRastreamento', e.target.value)} className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600" />
+              </div>
+            </>
+          )}
+
+          {/* Mensagem informativa do plano */}
+          {mensagemPlano && (
+            <p className="text-amber-400/60 text-[10px] mt-3 text-center leading-relaxed">{mensagemPlano}</p>
+          )}
         </motion.section>
 
         {/* FOTOS */}
