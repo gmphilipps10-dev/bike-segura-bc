@@ -94,6 +94,39 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Preencha marca, modelo, cor e numero de serie.' });
     }
 
+    // === VALIDACAO DE RASTREAMENTO POR PLANO ===
+    const user = req.user;
+    let rastreioFinal = rastreamento || '';
+    let plataformaFinal = plataformaTag || '';
+
+    if (rastreioFinal && user) {
+      const plano = user.plano;
+      // Bronze: sem rastreamento
+      if (plano === 'bronze') {
+        rastreioFinal = '';
+        plataformaFinal = '';
+      }
+      // Prata: apenas TAG
+      if (plano === 'prata' && rastreioFinal === 'Rastreador GPS') {
+        rastreioFinal = '';
+        plataformaFinal = '';
+      }
+      // Prata: apenas TAG
+      if (plano === 'prata' && rastreioFinal === 'TAG + GPS (Completo)') {
+        rastreioFinal = 'TAG';
+      }
+      // Ouro: apenas GPS
+      if (plano === 'ouro' && rastreioFinal === 'TAG') {
+        rastreioFinal = '';
+        plataformaFinal = '';
+      }
+      // Ouro: apenas GPS
+      if (plano === 'ouro' && rastreioFinal === 'TAG + GPS (Completo)') {
+        rastreioFinal = 'Rastreador GPS';
+        plataformaFinal = '';
+      }
+    }
+
     // 1. Cria a bike
     const bike = new Bike({
       userId: req.userId,
@@ -104,8 +137,8 @@ router.post('/', async (req, res) => {
       color,
       value: value || '',
       photo: photo || null,
-      rastreamento: rastreamento || '',
-      plataformaTag: plataformaTag || '',
+      rastreamento: rastreioFinal,
+      plataformaTag: plataformaFinal,
       caracteristicas: caracteristicas || '',
     });
     await bike.save();
@@ -145,6 +178,9 @@ router.post('/', async (req, res) => {
       caracteristicas: bike.caracteristicas,
       createdAt: bike.createdAt,
       updatedAt: bike.updatedAt,
+      plano: user?.plano || 'free',
+      planoAtivo: user?.planoAtivo || false,
+      rastreioAjustado: (rastreamento || '') !== bike.rastreamento, // true se o backend ajustou o rastreamento
     };
 
     console.log('[Bike-Criar] OK hash=' + finalHash + ' sticker=' + finalSticker);
