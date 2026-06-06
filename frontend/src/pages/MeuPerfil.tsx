@@ -16,8 +16,9 @@ export default function MeuPerfil() {
   const { user, updateUser, logout, becomeAdmin } = useAuth();
   const { bikes } = useBikes();
   const { token } = useAuth();
-  const { status: pushStatus, subscribe, unsubscribe } = usePushNotifications(token);
+  const { status: pushStatus, subscribe, unsubscribe, erroMsg: pushErro } = usePushNotifications(token);
   const [tornandoAdmin, setTornandoAdmin] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
 
   const [editMode, setEditMode] = useState(false);
   const [form, setForm] = useState({
@@ -210,36 +211,54 @@ export default function MeuPerfil() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
-          className="mb-4"
+          className="mb-4 space-y-2"
         >
           {pushStatus === 'subscribed' ? (
             <button
               onClick={unsubscribe}
               className="w-full glass-card p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-white/[0.06] transition-colors"
             >
-              <BellOff className="w-5 h-5 text-slate-400" />
-              <span className="text-slate-400 text-sm font-medium">Desativar notificacoes de alerta</span>
+              <BellOff className="w-5 h-5 text-emerald-400" />
+              <span className="text-emerald-400 text-sm font-medium">Notificacoes ativadas (clique para desativar)</span>
             </button>
-          ) : pushStatus === 'supported' || pushStatus === 'denied' ? (
+          ) : pushStatus === 'supported' ? (
             <button
-              onClick={subscribe}
-              className="w-full glass-card p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-amber-500/10 transition-colors"
+              onClick={async () => { setPushLoading(true); await subscribe(); setPushLoading(false); }}
+              disabled={pushLoading}
+              className={`w-full glass-card p-4 flex items-center justify-center gap-2 group cursor-pointer hover:bg-amber-500/10 transition-colors ${pushLoading ? 'opacity-50' : ''}`}
             >
-              <Bell className="w-5 h-5 text-amber-400" />
+              <Bell className={`w-5 h-5 text-amber-400 ${pushLoading ? 'animate-pulse' : ''}`} />
               <span className="text-amber-400 text-sm font-semibold">
-                {pushStatus === 'denied' ? 'Permitir notificacoes no navegador' : 'Ativar notificacoes de alerta'}
+                {pushLoading ? 'Ativando...' : 'Ativar notificacoes de alerta'}
               </span>
             </button>
+          ) : pushStatus === 'denied' ? (
+            <div className="w-full glass-card p-4 text-center">
+              <BellOff className="w-5 h-5 text-red-400 mx-auto mb-1" />
+              <span className="text-red-400 text-sm">Notificacoes bloqueadas no navegador</span>
+              <p className="text-slate-500 text-[10px] mt-1">Va em Configuracoes do navegador &gt; Site &gt; Notificacoes para permitir.</p>
+            </div>
           ) : pushStatus === 'not-supported' ? (
             <div className="w-full glass-card p-4 flex items-center justify-center gap-2 text-slate-500">
               <BellOff className="w-5 h-5" />
               <span className="text-sm">Notificacoes nao suportadas neste dispositivo</span>
+            </div>
+          ) : pushStatus === 'no-key' ? (
+            <div className="w-full glass-card p-4 text-center">
+              <BellOff className="w-5 h-5 text-amber-400/50 mx-auto mb-1" />
+              <span className="text-amber-400/50 text-sm">Notificacoes em manutencao</span>
+              <p className="text-slate-500 text-[10px] mt-1">{pushErro || 'Servidor nao configurado para push.'}</p>
             </div>
           ) : (
             <div className="w-full glass-card p-4 flex items-center justify-center gap-2 text-slate-500">
               <Bell className="w-5 h-5 animate-pulse" />
               <span className="text-sm">Verificando suporte a notificacoes...</span>
             </div>
+          )}
+
+          {/* Mensagem de erro */}
+          {pushErro && pushStatus !== 'no-key' && (
+            <p className="text-red-400/80 text-[11px] text-center px-4">{pushErro}</p>
           )}
         </motion.div>
 
