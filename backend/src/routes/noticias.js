@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // ===== SCRAPER DE NOTICIAS DO SITE DA PREFEITURA =====
-// Fonte: https://antigo.bc.sc.gov.br/imprensa.cfm (server-side rendered)
+// Fonte: https://antigo.bc.sc.gov.br/imprensa.cfm
 // Cache: 30 minutos
 
 const PREFEITURA_URL = 'https://antigo.bc.sc.gov.br/imprensa.cfm';
@@ -14,19 +14,16 @@ function decodeHtmlEntities(text) {
   const entities = {
     '&aacute;': 'á', '&eacute;': 'é', '&iacute;': 'í', '&oacute;': 'ó', '&uacute;': 'ú',
     '&Aacute;': 'Á', '&Eacute;': 'É', '&Iacute;': 'Í', '&Oacute;': 'Ó', '&Uacute;': 'Ú',
-    '&atilde;': 'ã', '&otilde;': 'õ', '&ntilde;': 'ñ', '&Atilde;': 'Ã', '&Otilde;': 'Õ',
-    '&acirc;': 'â', '&ecirc;': 'ê', '&icirc;': 'î', '&ocirc;': 'ô', '&ucirc;': 'û',
-    '&ccedil;': 'ç', '&Ccedil;': 'Ç', '&agrave;': 'à', '&Agrave;': 'À',
-    '&amp;': '&', '&quot;': '"', '&apos;': "'", '&lt;': '<', '&gt;': '>',
-    '&nbsp;': ' ', '&rsquo;': "'", '&lsquo;': "'", '&rdquo;': '"', '&ldquo;': '"',
-    '&mdash;': '—', '&ndash;': '-', '&hellip;': '...',
+    '&atilde;': 'ã', '&otilde;': 'õ', '&Atilde;': 'Ã', '&Otilde;': 'Õ',
+    '&acirc;': 'â', '&ecirc;': 'ê', '&ocirc;': 'ô',
+    '&ccedil;': 'ç', '&Ccedil;': 'Ç',
+    '&amp;': '&', '&quot;': '"', '&nbsp;': ' ',
+    '&#8211;': '–', '&#8212;': '—', '&#8220;': '"', '&#8221;': '"', '&#8230;': '...',
   };
   let decoded = text;
   for (const [entity, char] of Object.entries(entities)) {
     decoded = decoded.split(entity).join(char);
   }
-  decoded = decoded.replace(/&#(\d+);/g, (_, dec) => String.fromCharCode(parseInt(dec, 10)));
-  decoded = decoded.replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
   return decoded;
 }
 
@@ -46,69 +43,81 @@ async function scrapeNoticias() {
     const noticias = [];
     const vistos = new Set();
 
-    // Padrao 1: Links com ID na imprensa.cfm
-    // <a href="imprensa.cfm?id=XXXXX">TITULO</a>
-    const padrao1 = /<a[^>]*href="([^"]*imprensa\.cfm\?id=\d+)"[^>]*>([^<]+)<\/a>/gi;
-    let match;
-    while ((match = padrao1.exec(html)) !== null) {
-      const href = match[1];
-      const titulo = match[2].trim();
-      if (titulo.length < 10 || vistos.has(titulo)) continue;
-      vistos.add(titulo);
+    // Estratégia: separar por datas e extrair noticias
+    // O HTML tem formato: "15/05/26" seguido de links de noticias
+    // Cada noticia: "Categoria - Titulo da noticia"
 
-      let url = href;
-      if (!url.startsWith('http')) url = 'https://antigo.bc.sc.gov.br/' + (href.startsWith('/') ? href.slice(1) : href);
+    // Regex para linhas que tem formato "Categoria - Titulo"
+    // Ex: "BC Transito - Bairro Nova Esperanca tera alteracao viaria"
+    // Ex: "Cultura - Teatro Bruno Nitz recebe espetaculo"
+    const padrao = /([A-Za-zÀ-ÖØ-öø-ÿ\s]+)\s+-\s+([A-Za-zÀ-ÖØ-öø-ÿ0-9\s.,:;!?'"\-–—()]+[A-Za-zÀ-ÖØ-öø-ÿ])/g;
+
+    let match;
+    while ((match = padrao.exec(html)) !== null) {
+      const categoria = match[1].trim();
+      const titulo = match[2].trim();
+
+      // Validação: categoria deve ter 2-40 chars, titulo 15-200
+      if (categoria.length < 2 || categoria.length > 40) continue;
+      if (titulo.length < 15 || titulo.length > 200) continue;
+
+      // Evita duplicados e falsos positivos
+      const chave = titulo.toLowerCase();
+      if (vistos.has(chave)) continue;
+
+      // Filtra falsos positivos (palavras que não são categorias)
+      const falsos = ['href', 'class', 'style', 'script', 'div', 'span', 'table', 'input', 'select', 'option', 'button', 'img', 'meta', 'title', 'link', 'head', 'body'];
+      if (falsos.some(f => categoria.toLowerCase().includes(f))) continue;
+
+      vistos.add(chave);
 
       noticias.push({
         titulo: decodeHtmlEntities(titulo),
-        categoria: 'Notícias BC',
-        url,
-        fonte: 'Prefeitura de Balneário Camboriú / BC Digital',
+        categoria: decodeHtmlEntities(categoria),
+        url: 'https://antigo.bc.sc.gov.br/imprensa.cfm',
+        fonte: 'Prefeitura de Balneario Camboriu',
         data: new Date().toISOString(),
       });
+
+      if (noticias.length >= 10) break;
     }
 
-    // Padrao 2: Links com conteudo.cfm
-    // <a href="conteudo.cfm?caminho=...">TITULO</a>
+    // Se ainda nao achou, tenta extrair do texto plano (sem HTML)
     if (noticias.length === 0) {
-      const padrao2 = /<a[^>]*href="([^"]*conteudo\.cfm[^"]*)"[^>]*>([^<]+)<\/a>/gi;
-      while ((match = padrao2.exec(html)) !== null) {
-        const href = match[1];
-        const titulo = match[2].trim();
-        if (titulo.length < 10 || vistos.has(titulo)) continue;
-        vistos.add(titulo);
+      // Remove tags HTML
+      const texto = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
-        let url = href;
-        if (!url.startsWith('http')) url = 'https://antigo.bc.sc.gov.br/' + (href.startsWith('/') ? href.slice(1) : href);
+      // Procura por padrao de data seguido de texto
+      const dataPadrao = /\d{2}\/\d{2}\/\d{2,4}\s+([A-Z][A-Za-zÀ-ÖØ-öø-ÿ\s]+\s+-\s+[A-Z][A-Za-zÀ-ÖØ-öø-ÿ0-9\s.,:;!?'"()–—\-]{15,200})/g;
+
+      while ((match = dataPadrao.exec(texto)) !== null) {
+        const linha = match[1].trim();
+        const sepIdx = linha.indexOf(' - ');
+        if (sepIdx === -1) continue;
+
+        const categoria = linha.substring(0, sepIdx).trim();
+        const titulo = linha.substring(sepIdx + 3).trim();
+
+        if (categoria.length < 2 || categoria.length > 40) continue;
+        if (titulo.length < 15 || titulo.length > 200) continue;
+
+        const chave = titulo.toLowerCase();
+        if (vistos.has(chave)) continue;
+        vistos.add(chave);
 
         noticias.push({
           titulo: decodeHtmlEntities(titulo),
-          categoria: 'Notícias BC',
-          url,
-          fonte: 'Prefeitura de Balneário Camboriú / BC Digital',
-          data: new Date().toISOString(),
-        });
-      }
-    }
-
-    // Padrao 3: Qualquer link com texto de noticia
-    if (noticias.length === 0) {
-      const padrao3 = /<a[^>]*href="([^"]*\.(?:cfm|html)[^"]*)"[^>]*>([^<]{20,200})<\/a>/gi;
-      while ((match = padrao3.exec(html)) !== null) {
-        const titulo = match[2].trim();
-        if (titulo.length < 15 || titulo.length > 200 || vistos.has(titulo)) continue;
-        vistos.add(titulo);
-        noticias.push({
-          titulo: decodeHtmlEntities(titulo),
-          categoria: 'Notícias BC',
+          categoria: decodeHtmlEntities(categoria),
           url: 'https://antigo.bc.sc.gov.br/imprensa.cfm',
-          fonte: 'Prefeitura de Balneário Camboriú / BC Digital',
+          fonte: 'Prefeitura de Balneario Camboriu',
           data: new Date().toISOString(),
         });
+
+        if (noticias.length >= 10) break;
       }
     }
 
-    return noticias.slice(0, 10);
+    return noticias;
 
   } catch (error) {
     console.error('[Noticias] Erro ao fazer scraping:', error.message);
