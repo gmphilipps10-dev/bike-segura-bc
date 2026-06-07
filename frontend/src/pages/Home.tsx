@@ -102,14 +102,15 @@ function AnunciantesCarousel() {
   const a = anunciantes[current];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-3 shrink-0">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-2 shrink-0">
       {/* Header */}
-      <div className="flex items-center justify-between mb-2 px-1">
+      <div className="flex items-center justify-between mb-1.5 px-1">
         <span className="text-slate-500 text-[10px] font-bold tracking-wider uppercase">Parceiros</span>
         <span className="text-amber-400/60 text-[10px]">{current + 1}/{anunciantes.length}</span>
       </div>
 
-      <div className="relative overflow-hidden rounded-xl">
+      {/* Card com ALTURA FIXA */}
+      <div className="relative overflow-hidden rounded-xl" style={{ height: '118px' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -117,39 +118,39 @@ function AnunciantesCarousel() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.4 }}
-            className="glass-card p-4 relative overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+            className="glass-card p-3 h-full flex flex-col cursor-pointer active:scale-[0.98] transition-transform"
             onClick={() => window.open(a.url, '_blank')}
           >
             {/* Tag + badge */}
-            <div className="flex items-center justify-between mb-2">
-              <span className={`px-2.5 py-1 rounded-md bg-gradient-to-r ${a.cor} text-white text-[9px] font-bold tracking-wider`}>{a.tag}</span>
-              <span className="text-emerald-400/60 text-[9px]">Clique para visitar →</span>
+            <div className="flex items-center justify-between mb-1 shrink-0">
+              <span className={`px-2 py-0.5 rounded-md bg-gradient-to-r ${a.cor} text-white text-[9px] font-bold tracking-wider`}>{a.tag}</span>
+              <span className="text-emerald-400/60 text-[9px]">Visitar →</span>
             </div>
 
             {/* Nome */}
-            <h3 className="text-white font-bold text-base leading-snug mb-1">{a.nome}</h3>
+            <h3 className="text-white font-bold text-sm leading-tight mb-0.5 truncate shrink-0">{a.nome}</h3>
 
-            {/* Descricao */}
-            <p className="text-slate-300 text-xs leading-relaxed mb-2">{a.desc}</p>
+            {/* Descricao - truncada */}
+            <p className="text-slate-300 text-[11px] leading-snug mb-1 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{a.desc}</p>
 
-            {/* Endereco */}
-            <div className="flex items-center gap-1 text-slate-500 text-[10px]">
-              <MapPin className="w-3 h-3" />
+            {/* Endereco - sempre na parte inferior */}
+            <div className="mt-auto flex items-center gap-1 text-slate-500 text-[10px] truncate shrink-0">
+              <MapPin className="w-3 h-3 shrink-0" />
               {a.endereco}
             </div>
           </motion.div>
         </AnimatePresence>
+      </div>
 
-        {/* Indicadores */}
-        <div className="flex items-center justify-center gap-1.5 mt-2">
-          {anunciantes.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`}
-            />
-          ))}
-        </div>
+      {/* Indicadores */}
+      <div className="flex items-center justify-center gap-1.5 mt-1.5">
+        {anunciantes.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setCurrent(i)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`}
+          />
+        ))}
       </div>
     </motion.div>
   );
