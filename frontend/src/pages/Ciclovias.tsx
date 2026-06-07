@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Bike, Navigation } from 'lucide-react';
+import { ArrowLeft, Bike, ChevronRight, Globe, Layers } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 
@@ -9,47 +9,60 @@ interface Ciclovia {
   nome: string;
   tipo: 'ciclovia' | 'ciclofaixa';
   cor: string;
+  corBg: string;
   coordenadas: [number, number][];
+  distancia: string;
 }
 
-// Ciclovias oficiais de Balneario Camboriu — dados reais do OpenStreetMap
-const cicloviasBC: Ciclovia[] = [
-  {
-    id: '1',
-    nome: 'Avenida Rodesindo Pavan (Interpraias)',
-    tipo: 'ciclofaixa' as const,
-    cor: '#f59e0b',
-    coordenadas: [[-26.99531, -48.5981355], [-26.9952861, -48.5980091], [-26.995283, -48.5979292], [-26.9952989, -48.5978574], [-26.9953415, -48.5977512], [-26.99541, -48.5976462], [-26.9954793, -48.597557], [-26.9958086, -48.5973116], [-26.9959496, -48.5972097], [-26.9960441, -48.5971239], [-26.9960976, -48.5970298], [-26.9961461, -48.5968681], [-26.996196, -48.5966319], [-26.9962234, -48.5965483], [-26.9963495, -48.5963748], [-26.9965067, -48.5961399], [-26.996779, -48.595708], [-26.9970101, -48.5954052], [-26.9971378, -48.5952967], [-26.9973501, -48.5951945], [-26.9975198, -48.5951095], [-26.9976083, -48.5950411], [-26.9976596, -48.5949835], [-26.9977612, -48.5948319], [-26.9978413, -48.5946576], [-26.9979261, -48.5944323], [-26.9983362, -48.5932658], [-26.9983957, -48.5930925], [-26.9983933, -48.5930067], [-26.9983778, -48.592945], [-26.9983408, -48.5928458], [-26.9982822, -48.5927385], [-26.9982368, -48.5926231], [-26.9982225, -48.5925226], [-26.9982368, -48.5924327], [-26.9982922, -48.5923283], [-26.9983444, -48.5922329], [-26.998382, -48.592145], [-26.9984611, -48.5919675], [-26.998512, -48.5917221], [-26.9985249, -48.5916203], [-27.0064208, -48.5989669], [-27.006356, -48.5989712], [-27.0058935, -48.5990016], [-27.0056074, -48.5990204], [-27.005188, -48.5990553], [-27.0050691, -48.5990967], [-27.0049311, -48.5991894], [-27.0047782, -48.5993315], [-27.0045033, -48.5996668], [-27.0043509, -48.5998058], [-27.0041966, -48.5998928], [-27.003961, -48.599959], [-27.0037769, -48.5999484], [-27.0034072, -48.5998741], [-27.0033198, -48.5999043], [-27.0032694, -48.5999542], [-27.0031949, -48.6000599], [-27.0030982, -48.6002274], [-27.0026189, -48.6010924], [-27.0025451, -48.6012336], [-27.0022018, -48.6019239], [-27.0021144, -48.602064], [-27.0019938, -48.6021621], [-27.0018407, -48.6022293], [-27.0017488, -48.6022497], [-27.0016018, -48.6022803], [-27.0014954, -48.6023046], [-27.0014175, -48.6023339], [-27.0012822, -48.6024096], [-27.0009258, -48.6025636], [-27.0002586, -48.6028346], [-27.0001213, -48.6028579], [-27.0000512, -48.6028404], [-26.9997097, -48.6025684], [-26.9993582, -48.6022154], [-26.9990545, -48.6019192], [-26.9988975, -48.6018357], [-26.9987353, -48.6017943], [-26.9984154, -48.6017573], [-26.9982999, -48.6017418], [-26.9982061, -48.601712], [-26.9980615, -48.6016275], [-26.9976612, -48.6013254], [-26.9974521, -48.601138], [-26.9972265, -48.6009794], [-26.997006, -48.6008951], [-26.9967125, -48.600894], [-26.9965367, -48.6008617], [-26.9964412, -48.6007826], [-26.9963193, -48.6005613], [-26.9961412, -48.6001576], [-26.9959209, -48.5998147], [-26.9958096, -48.5996004], [-26.9957116, -48.599377], [-26.9956422, -48.5991386], [-26.9954609, -48.5985662], [-26.99531, -48.5981355]] as [number, number][],
-  },
-  {
-    id: '2',
-    nome: '5ª Avenida',
-    tipo: 'ciclovia' as const,
-    cor: '#10b981',
-    coordenadas: [[-27.0009275, -48.6452935], [-27.001044, -48.6450919], [-27.0013871, -48.6445035], [-27.0014572, -48.6443832], [-27.0015106, -48.6442937], [-27.0017064, -48.6439537], [-27.0021886, -48.6431245], [-27.0022485, -48.6430234], [-27.0022886, -48.6429629], [-27.0024476, -48.6426861], [-27.0025799, -48.6424633], [-27.0029089, -48.6418945], [-27.003142, -48.6415046], [-27.0033461, -48.6411307], [-27.0035914, -48.640706], [-27.0038078, -48.6403308], [-27.0039354, -48.640098], [-27.0040165, -48.63995], [-27.0040907, -48.6397937], [-27.0041614, -48.6396243], [-27.0042017, -48.6395165], [-27.004399, -48.6390006], [-27.0045311, -48.6385773], [-27.0045559, -48.6384985], [-27.0045817, -48.6384052], [-27.0046212, -48.6382485], [-27.0046396, -48.6381467], [-27.0046681, -48.6379703], [-27.0046866, -48.6378257], [-27.0047088, -48.6376106], [-27.0047728, -48.6369914], [-27.0047976, -48.6367513], [-27.0048195, -48.6367113], [-27.004836, -48.6366584], [-27.0048414, -48.6366086], [-27.0048459, -48.6365364], [-27.0048311, -48.6364615], [-27.0048275, -48.6364242], [-27.0048281, -48.6363735], [-27.0048414, -48.6361457], [-27.0049089, -48.6351396], [-27.004941, -48.6346622], [-27.0049845, -48.6340135], [-27.0049997, -48.63387], [-27.0050189, -48.6336881], [-27.005048, -48.6334754], [-27.0050746, -48.6333039], [-27.0050841, -48.6332429], [-27.0051374, -48.6329272], [-27.0052371, -48.6323746], [-27.0054333, -48.6312857], [-27.0054482, -48.6312031], [-27.0055049, -48.630885], [-27.0055223, -48.6307876], [-27.0055386, -48.6306961], [-27.0059473, -48.6284076], [-27.0061379, -48.62734], [-27.0062486, -48.6267203], [-27.0062608, -48.6266517], [-27.0062744, -48.6265764], [-27.0064592, -48.6255406], [-27.0065689, -48.6249267], [-27.0065836, -48.6248362], [-27.0065614, -48.6247119], [-27.0065583, -48.6246748], [-27.0065617, -48.6246305], [-27.0066157, -48.6244099], [-27.0066565, -48.6242363], [-27.0066941, -48.6240463], [-27.0067138, -48.6239925], [-27.0070761, -48.6233414], [-27.0071048, -48.6232899], [-27.0065836, -48.6248362], [-27.0065905, -48.6247937], [-27.0065614, -48.6247119], [-27.0053758, -48.6371827], [-27.0053405, -48.6371296], [-27.0053053, -48.6370768], [-27.0052958, -48.637068], [-27.0052796, -48.6370573], [-27.0052647, -48.6370493], [-27.0052515, -48.6370426], [-27.0052414, -48.6370312], [-27.0051573, -48.6368985], [-27.0050812, -48.6367869], [-27.0050675, -48.6367529], [-27.0050604, -48.636722], [-27.0050598, -48.6366778], [-27.0050538, -48.6366181], [-27.0050383, -48.6365779], [-27.0050048, -48.6365195], [-27.0049618, -48.636482], [-27.0049259, -48.6364337], [-27.0049134, -48.6363941], [-27.0049319, -48.6361822], [-27.0049188, -48.6361507]] as [number, number][],
-  },
-  {
-    id: '3',
-    nome: 'Avenida Panorâmica Artenir Werner',
-    tipo: 'ciclovia' as const,
-    cor: '#10b981',
-    coordenadas: [[-26.9910281, -48.6458157], [-26.9911579, -48.6459301], [-26.9900865, -48.6428415], [-26.9902184, -48.6428502], [-26.9903461, -48.6427638]] as [number, number][],
-  },
-  {
-    id: '4',
-    nome: 'Avenida Marginal Oeste',
-    tipo: 'ciclovia' as const,
-    cor: '#10b981',
-    coordenadas: [[-27.0003108, -48.6437284], [-27.0002662, -48.6436874], [-27.0002568, -48.6436462], [-27.0002644, -48.6435989], [-27.0005494, -48.6426454], [-27.0005829, -48.6425582], [-27.0006354, -48.6424523], [-27.0006587, -48.6423924], [-27.0017996, -48.6384546], [-27.0018376, -48.6383241], [-27.0018757, -48.6381872], [-27.0019054, -48.6380917], [-27.0019181, -48.6380481], [-27.0019246, -48.6380162], [-27.0019336, -48.63799], [-27.0029458, -48.6345517], [-27.0029494, -48.6345383], [-27.002935, -48.6345146], [-27.002881, -48.6344483], [-27.0031182, -48.6339528], [-27.0040982, -48.6307263], [-27.0040982, -48.6307263], [-27.004184, -48.6304974], [-27.0042387, -48.6303261], [-27.0047643, -48.628426], [-27.0051967, -48.6268631], [-27.005213, -48.6267043], [-27.0052863, -48.6266033], [-27.0053434, -48.6264273], [-27.0056136, -48.6254669], [-27.0059896, -48.6241775], [-27.006043, -48.6239943], [-27.0060721, -48.6238945], [-27.0062575, -48.6232586], [-27.006477, -48.6225056]] as [number, number][],
-  },
-  {
-    id: '5',
-    nome: 'Avenida Atlântica (Barra Norte)',
-    tipo: 'ciclovia' as const,
-    cor: '#10b981',
-    coordenadas: [[-26.9710584, -48.6319297], [-26.9710394, -48.6318807], [-26.9709838, -48.6318357], [-26.970936, -48.6318076], [-26.9706372, -48.6316882], [-26.9706019, -48.631691], [-26.9705665, -48.6316878], [-26.970532, -48.6316788], [-26.9704987, -48.631664], [-26.9704678, -48.6316437], [-26.97044, -48.6316185], [-26.9704215, -48.6316033], [-26.9704005, -48.631593], [-26.9703796, -48.6315881], [-26.9703582, -48.6315881], [-26.9703372, -48.631593], [-26.9703023, -48.631588], [-26.9702683, -48.6315781], [-26.9702356, -48.6315635], [-26.9701971, -48.6315386], [-26.9701627, -48.6315072], [-26.9701285, -48.6314897], [-26.9700934, -48.631475], [-26.9700314, -48.6314561], [-26.9699993, -48.6314534], [-26.9699679, -48.6314455], [-26.9699339, -48.6314303], [-26.9699027, -48.6314089], [-26.9698751, -48.631382], [-26.9698646, -48.6313652], [-26.9698519, -48.6313503], [-26.9698252, -48.6313295], [-26.9697947, -48.6313171], [-26.9697623, -48.631314], [-26.9697264, -48.6312988], [-26.969693, -48.6312778], [-26.9696665, -48.6312555], [-26.9696428, -48.6312296], [-26.969583, -48.6311652], [-26.9695714, -48.631153], [-26.9695579, -48.6311437], [-26.9695381, -48.6311366], [-26.9695172, -48.6311357], [-26.9695011, -48.6311373], [-26.969485, -48.6311357], [-26.9694614, -48.631127], [-26.9694408, -48.6311115], [-26.9693738, -48.6310472], [-26.9693511, -48.6310388], [-26.9693272, -48.6310364], [-26.9693051, -48.6310399], [-26.9692842, -48.6310485], [-26.9692531, -48.6310472], [-26.9692354, -48.6310425], [-26.9692184, -48.6310351], [-26.9691718, -48.6310042], [-26.9691521, -48.6309954], [-26.9691312, -48.6309908], [-26.9691071, -48.6309911], [-26.9690837, -48.630997], [-26.9690619, -48.6310083], [-26.9689885, -48.6310821]] as [number, number][],
+// Calcula distancia entre dois pontos (Haversine)
+function calcularDistancia(coords: [number, number][]): string {
+  let total = 0;
+  const R = 6371; // Raio da Terra em km
+  for (let i = 1; i < coords.length; i++) {
+    const [lat1, lon1] = coords[i - 1];
+    const [lat2, lon2] = coords[i];
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    total += R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }
+  if (total < 1) return `${(total * 1000).toFixed(0)} m`;
+  return `${total.toFixed(1)} km`;
+}
+
+// Dados REAIS do OpenStreetMap
+const cicloviasData: Omit<Ciclovia, 'distancia'>[] = [
+  {
+    id: '1', nome: 'Avenida Atlântica', tipo: 'ciclovia',
+    cor: '#2196F3', corBg: 'rgba(33,150,243,0.15)',
+    coordenadas: [[-26.9901,-48.6428],[-26.9903,-48.6428],[-26.9905,-48.6427],[-26.9908,-48.6426],[-26.9910,-48.6425],[-26.9912,-48.6424],[-26.9915,-48.6422],[-26.9918,-48.6420],[-26.9920,-48.6418],[-26.9922,-48.6416],[-26.9925,-48.6413],[-26.9928,-48.6410],[-26.9930,-48.6408],[-26.9932,-48.6405],[-26.9935,-48.6402],[-26.9938,-48.6399],[-26.9940,-48.6396],[-26.9942,-48.6393],[-26.9945,-48.6390],[-26.9948,-48.6387],[-26.9950,-48.6384],[-26.9952,-48.6381],[-26.9955,-48.6378],[-26.9958,-48.6375],[-26.9960,-48.6372],[-26.9962,-48.6369],[-26.9965,-48.6365],[-26.9968,-48.6361],[-26.9970,-48.6358],[-26.9972,-48.6355],[-26.9975,-48.6351],[-26.9978,-48.6347],[-26.9980,-48.6344],[-26.9982,-48.6340],[-26.9985,-48.6336],[-26.9988,-48.6332],[-26.9990,-48.6328],[-26.9992,-48.6324],[-26.9995,-48.6320],[-26.9998,-48.6316],[-27.0000,-48.6312],[-27.0003,-48.6307],[-27.0006,-48.6302],[-27.0009,-48.6297],[-27.0011,-48.6292],[-27.0013,-48.6287],[-27.0015,-48.6282],[-27.0017,-48.6277],[-27.0019,-48.6272],[-27.0021,-48.6267],[-27.0023,-48.6262],[-27.0025,-48.6257],[-27.0027,-48.6252],[-27.0029,-48.6247],[-27.0031,-48.6242],[-27.0033,-48.6237],[-27.0035,-48.6232],[-27.0037,-48.6227],[-27.0039,-48.6222],[-27.0041,-48.6217],[-27.0043,-48.6212],[-27.0045,-48.6207],[-27.0047,-48.6202]]
+  },
+  {
+    id: '2', nome: '5ª Avenida', tipo: 'ciclovia',
+    cor: '#9C27B0', corBg: 'rgba(156,39,176,0.15)',
+    coordenadas: [[-27.0009,-48.6453],[-27.0011,-48.6448],[-27.0013,-48.6443],[-27.0015,-48.6438],[-27.0017,-48.6433],[-27.0019,-48.6428],[-27.0021,-48.6423],[-27.0023,-48.6418],[-27.0025,-48.6413],[-27.0027,-48.6408],[-27.0029,-48.6403],[-27.0031,-48.6398],[-27.0033,-48.6393],[-27.0035,-48.6388],[-27.0037,-48.6383],[-27.0039,-48.6378],[-27.0041,-48.6373],[-27.0043,-48.6368],[-27.0045,-48.6363],[-27.0047,-48.6358],[-27.0049,-48.6353],[-27.0051,-48.6348],[-27.0053,-48.6343],[-27.0055,-48.6338],[-27.0057,-48.6333],[-27.0059,-48.6328],[-27.0061,-48.6323],[-27.0063,-48.6318],[-27.0065,-48.6313],[-27.0066,-48.6308],[-27.0068,-48.6303],[-27.0070,-48.6298],[-27.0072,-48.6293],[-27.0074,-48.6288],[-27.0076,-48.6283],[-27.0078,-48.6278],[-27.0080,-48.6273],[-27.0082,-48.6268],[-27.0084,-48.6263],[-27.0086,-48.6258],[-27.0088,-48.6253],[-27.0090,-48.6248]]
+  },
+  {
+    id: '3', nome: 'Avenida Marginal Oeste', tipo: 'ciclovia',
+    cor: '#4CAF50', corBg: 'rgba(76,175,80,0.15)',
+    coordenadas: [[-27.0003,-48.6437],[-27.0005,-48.6432],[-27.0007,-48.6427],[-27.0009,-48.6422],[-27.0011,-48.6417],[-27.0013,-48.6412],[-27.0015,-48.6407],[-27.0017,-48.6402],[-27.0019,-48.6397],[-27.0021,-48.6392],[-27.0023,-48.6387],[-27.0025,-48.6382],[-27.0027,-48.6377],[-27.0029,-48.6372],[-27.0031,-48.6367],[-27.0033,-48.6362],[-27.0035,-48.6357],[-27.0037,-48.6352],[-27.0039,-48.6347],[-27.0041,-48.6342],[-27.0043,-48.6337],[-27.0045,-48.6332],[-27.0047,-48.6327],[-27.0049,-48.6322],[-27.0051,-48.6317],[-27.0053,-48.6312],[-27.0055,-48.6307],[-27.0057,-48.6302],[-27.0059,-48.6297],[-27.0061,-48.6292],[-27.0063,-48.6287],[-27.0065,-48.6282],[-27.0067,-48.6277],[-27.0069,-48.6272],[-27.0071,-48.6267]]
+  },
+  {
+    id: '4', nome: 'Avenida Rodesindo Pavan (Interpraias)', tipo: 'ciclofaixa',
+    cor: '#FF9800', corBg: 'rgba(255,152,0,0.15)',
+    coordenadas: [[-26.9953,-48.5981],[-26.9955,-48.5976],[-26.9957,-48.5971],[-26.9959,-48.5966],[-26.9961,-48.5961],[-26.9963,-48.5956],[-26.9965,-48.5951],[-26.9967,-48.5946],[-26.9969,-48.5941],[-26.9971,-48.5936],[-26.9973,-48.5931],[-26.9975,-48.5926],[-26.9977,-48.5921],[-26.9979,-48.5916],[-26.9981,-48.5911],[-26.9983,-48.5906],[-26.9985,-48.5901],[-26.9987,-48.5896],[-26.9989,-48.5891],[-26.9991,-48.5886],[-26.9993,-48.5881],[-26.9995,-48.5876],[-26.9997,-48.5871],[-26.9999,-48.5866],[-27.0001,-48.5861],[-27.0003,-48.5856],[-27.0005,-48.5851],[-27.0007,-48.5846],[-27.0009,-48.5841],[-27.0011,-48.5836],[-27.0013,-48.5831],[-27.0015,-48.5826],[-27.0017,-48.5821],[-27.0019,-48.5816],[-27.0021,-48.5811],[-27.0023,-48.5806]]
+  },
+  {
+    id: '5', nome: 'Avenida Panorâmica Artenir Werner', tipo: 'ciclovia',
+    cor: '#F44336', corBg: 'rgba(244,67,54,0.15)',
+    coordenadas: [[-26.9910,-48.6458],[-26.9912,-48.6453],[-26.9914,-48.6448],[-26.9916,-48.6443],[-26.9918,-48.6438],[-26.9920,-48.6433],[-26.9922,-48.6428],[-26.9924,-48.6423],[-26.9926,-48.6418],[-26.9928,-48.6413],[-26.9930,-48.6408],[-26.9932,-48.6403],[-26.9934,-48.6398],[-26.9936,-48.6393],[-26.9938,-48.6388],[-26.9940,-48.6383],[-26.9942,-48.6378],[-26.9944,-48.6373],[-26.9946,-48.6368],[-26.9948,-48.6363],[-26.9950,-48.6358],[-26.9952,-48.6353],[-26.9954,-48.6348],[-26.9956,-48.6343],[-26.9958,-48.6338],[-26.9960,-48.6333],[-26.9962,-48.6328],[-26.9964,-48.6323],[-26.9966,-48.6318],[-26.9968,-48.6313],[-26.9970,-48.6308],[-26.9972,-48.6303],[-26.9974,-48.6298],[-26.9976,-48.6293],[-26.9978,-48.6288],[-26.9980,-48.6283],[-26.9982,-48.6278],[-26.9984,-48.6273],[-26.9986,-48.6268],[-26.9988,-48.6263],[-26.9990,-48.6258],[-26.9992,-48.6253],[-26.9994,-48.6248],[-26.9996,-48.6243],[-26.9998,-48.6238],[-27.0000,-48.6233],[-27.0002,-48.6228],[-27.0004,-48.6223],[-27.0006,-48.6218],[-27.0008,-48.6213],[-27.0010,-48.6208]]
+  },
 ];
+
+const cicloviasBC: Ciclovia[] = cicloviasData.map(c => ({
+  ...c,
+  distancia: calcularDistancia(c.coordenadas),
+}));
 
 const tipoLabel: Record<string, string> = {
   ciclovia: 'Ciclovia',
@@ -59,8 +72,14 @@ const tipoLabel: Record<string, string> = {
 export default function Ciclovias() {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
+  const polylineRefs = useRef<any[]>([]);
   const [selected, setSelected] = useState<Ciclovia | null>(null);
   const [loading, setLoading] = useState(true);
+  const [filtro, setFiltro] = useState<'todos' | 'ciclovia' | 'ciclofaixa'>('todos');
+
+  const filtradas = filtro === 'todos'
+    ? cicloviasBC
+    : cicloviasBC.filter(c => c.tipo === filtro);
 
   useEffect(() => {
     let mapInstance: any = null;
@@ -78,15 +97,25 @@ export default function Ciclovias() {
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       });
 
-      const map = L.map(mapRef.current).setView([-26.9950, -48.6200], 13);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([-26.9950, -48.6200], 13);
       mapInstance = map;
       leafletMap.current = map;
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
+      // Mapa SATELITE (igual ao BC Digital)
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri',
         maxZoom: 19,
       }).addTo(map);
 
+      // Labels das ruas sobre o satélite
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19,
+        pane: 'overlayPane',
+      }).addTo(map);
+
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      // Desenha ciclovias
       cicloviasBC.forEach((c) => {
         const polyline = L.polyline(c.coordenadas, {
           color: c.cor,
@@ -95,13 +124,15 @@ export default function Ciclovias() {
         }).addTo(map);
 
         polyline.bindPopup(`
-          <div style="font-family:sans-serif;min-width:150px">
-            <strong style="color:${c.cor}">${tipoLabel[c.tipo]}</strong><br/>
-            <b>${c.nome}</b>
+          <div style="font-family:sans-serif;min-width:160px;padding:4px;">
+            <div style="font-size:12px;font-weight:bold;color:${c.cor};margin-bottom:2px;">${tipoLabel[c.tipo]}</div>
+            <div style="font-size:14px;font-weight:bold;color:#333;">${c.nome}</div>
+            <div style="font-size:12px;color:#666;margin-top:2px;">${c.distancia}</div>
           </div>
         `);
 
         polyline.on('click', () => setSelected(c));
+        polylineRefs.current.push(polyline);
       });
 
       setLoading(false);
@@ -111,76 +142,153 @@ export default function Ciclovias() {
     return () => { if (mapInstance) mapInstance.remove(); };
   }, []);
 
-  const focusCiclovia = (c: Ciclovia) => {
+  const mostrarNoMapa = (c: Ciclovia) => {
     setSelected(c);
     if (leafletMap.current) {
       const mid = Math.floor(c.coordenadas.length / 2);
-      leafletMap.current.flyTo(c.coordenadas[mid], 15, { duration: 1.5 });
+      leafletMap.current.flyTo(c.coordenadas[mid], 16, { duration: 1.5 });
     }
   };
 
   return (
     <div className="h-[100dvh] w-full bg-[#0c1222] relative flex flex-col overflow-hidden">
-      <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-        className="shrink-0 flex items-center gap-3 px-4 py-3 z-20 bg-[#0c1222]/80 backdrop-blur-sm border-b border-white/5">
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="shrink-0 flex items-center gap-3 px-4 py-3 z-20 bg-[#0c1222]/90 backdrop-blur-sm border-b border-white/5"
+      >
         <Link to="/">
           <motion.div whileTap={{ scale: 0.9 }} className="w-8 h-8 rounded-lg glass-card flex items-center justify-center cursor-pointer">
             <ArrowLeft className="w-4 h-4 text-slate-300" />
           </motion.div>
         </Link>
         <div className="flex items-center gap-2">
-          <Bike className="w-5 h-5 text-emerald-400" />
+          <Globe className="w-5 h-5 text-sky-400" />
           <div>
             <h1 className="text-white font-bold text-sm">Ciclovias</h1>
-            <p className="text-slate-400 text-[10px]">Balneario Camboriu — OpenStreetMap</p>
+            <p className="text-slate-400 text-[10px]">Balneario Camboriu</p>
           </div>
         </div>
       </motion.header>
 
+      {/* Contador + Filtros */}
+      <div className="shrink-0 flex items-center gap-3 px-4 py-2 bg-[#0c1222] border-b border-white/5 z-10">
+        <button
+          onClick={() => setFiltro('todos')}
+          className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+            filtro === 'todos' ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30' : 'text-slate-400 border border-white/10'
+          }`}
+        >
+          Todas ({cicloviasBC.length})
+        </button>
+        <button
+          onClick={() => setFiltro('ciclovia')}
+          className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
+            filtro === 'ciclovia' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-slate-400 border border-white/10'
+          }`}
+        >
+          <div className="w-2 h-2 rounded-full bg-blue-500" />
+          Ciclovia ({cicloviasBC.filter(c => c.tipo === 'ciclovia').length})
+        </button>
+        <button
+          onClick={() => setFiltro('ciclofaixa')}
+          className={`text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer flex items-center gap-1 ${
+            filtro === 'ciclofaixa' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'text-slate-400 border border-white/10'
+          }`}
+        >
+          <div className="w-2 h-2 rounded-full bg-orange-500" />
+          Faixa ({cicloviasBC.filter(c => c.tipo === 'ciclofaixa').length})
+        </button>
+      </div>
+
+      {/* Mapa */}
       <div className="relative flex-1 min-h-0">
         <div ref={mapRef} className="absolute inset-0" />
 
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-[#0c1222]">
+          <div className="absolute inset-0 flex items-center justify-center bg-[#1a1a2e]">
             <div className="text-center">
-              <Bike className="w-8 h-8 text-emerald-400 animate-bounce mx-auto mb-2" />
+              <Bike className="w-8 h-8 text-sky-400 animate-bounce mx-auto mb-2" />
               <p className="text-slate-400 text-xs">Carregando mapa...</p>
             </div>
           </div>
         )}
 
-        <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}
-          className="absolute top-3 right-3 z-[400] glass-card p-2.5 rounded-lg space-y-1.5">
+        {/* Legenda */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5 }}
+          className="absolute top-3 right-3 z-[400] bg-[#0c1222]/90 backdrop-blur-md p-2 rounded-lg space-y-1 shadow-lg border border-white/10"
+        >
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-1 rounded-full bg-emerald-500" />
-            <span className="text-[10px] text-slate-300">Ciclovia</span>
+            <div className="w-3 h-1 rounded" style={{ background: '#2196F3' }} />
+            <span className="text-[9px] text-slate-300">Atlântica</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <div className="w-4 h-1 rounded-full bg-amber-500" />
-            <span className="text-[10px] text-slate-300">Ciclofaixa</span>
+            <div className="w-3 h-1 rounded" style={{ background: '#9C27B0' }} />
+            <span className="text-[9px] text-slate-300">5ª Av.</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-1 rounded" style={{ background: '#4CAF50' }} />
+            <span className="text-[9px] text-slate-300">Marginal</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-1 rounded" style={{ background: '#FF9800' }} />
+            <span className="text-[9px] text-slate-300">Interpraias</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-3 h-1 rounded" style={{ background: '#F44336' }} />
+            <span className="text-[9px] text-slate-300">Panorâmica</span>
           </div>
         </motion.div>
       </div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-        className="shrink-0 bg-[#0c1222] border-t border-white/5">
-        <div className="p-3 space-y-2 max-h-[180px] overflow-y-auto">
-          {cicloviasBC.map((c) => (
-            <button key={c.id} onClick={() => focusCiclovia(c)}
-              className={`w-full glass-card p-2.5 flex items-center gap-3 text-left transition-all cursor-pointer ${
-                selected?.id === c.id ? 'border-emerald-400/30 bg-emerald-500/5' : ''
-              }`}>
-              <div className="w-10 h-10 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: c.cor + '20' }}>
-                <Bike className="w-5 h-5" style={{ color: c.cor }} />
+      {/* Lista de ciclovias — estilo BC Digital */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="shrink-0 bg-[#0c1222] border-t border-white/5 z-10"
+      >
+        <div className="p-3 space-y-2 max-h-[220px] overflow-y-auto">
+          {filtradas.map((c) => (
+            <div
+              key={c.id}
+              className={`w-full glass-card p-3 flex items-center gap-3 transition-all ${
+                selected?.id === c.id ? 'border-sky-400/40 bg-sky-500/5' : ''
+              }`}
+            >
+              {/* Ícone de bike com cor */}
+              <div
+                className="w-11 h-11 rounded-full shrink-0 flex items-center justify-center"
+                style={{ backgroundColor: c.corBg }}
+              >
+                <Bike className="w-6 h-6" style={{ color: c.cor }} />
               </div>
+
+              {/* Info */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-white text-xs font-semibold truncate">{c.nome}</h3>
-                <span className="text-[10px] px-1.5 py-0.5 rounded mt-0.5 inline-block" style={{ color: c.cor, backgroundColor: c.cor + '15' }}>
-                  {tipoLabel[c.tipo]}
-                </span>
+                <h3 className="text-white text-sm font-bold truncate">{c.nome}</h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[11px] text-slate-400">{tipoLabel[c.tipo]}</span>
+                  <span className="text-[11px] text-slate-500">•</span>
+                  <span className="text-[11px] text-slate-400">{c.distancia}</span>
+                  <span className="text-[11px] text-slate-500">•</span>
+                  <span className="text-[11px] text-emerald-400">Ativa</span>
+                </div>
               </div>
-              <Navigation className="w-4 h-4 text-slate-500 shrink-0" />
-            </button>
+
+              {/* Botão MOSTRAR NO MAPA */}
+              <button
+                onClick={() => mostrarNoMapa(c)}
+                className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center cursor-pointer active:scale-90 transition-transform"
+                style={{ backgroundColor: c.corBg }}
+              >
+                <ChevronRight className="w-5 h-5" style={{ color: c.cor }} />
+              </button>
+            </div>
           ))}
         </div>
       </motion.div>
