@@ -67,7 +67,7 @@ const menuItems = [
   { icon: CreditCard, label: 'Planos', color: 'from-rose-400 to-pink-500', path: '/planos' },
   { icon: Users, label: 'Minhas\nIndicações', color: 'from-cyan-400 to-teal-500', path: '/indicacoes' },
   { icon: Map, label: 'Mapa da\nSeguranca', color: 'from-lime-400 to-green-500', path: '/mapa' },
-  { icon: Route, label: 'Rota de\nCiclovias', color: 'from-emerald-400 to-teal-500', path: '/ciclovias' },
+
   { icon: Store, label: 'Lojas\nParceiras', color: 'from-orange-400 to-amber-500', path: '/lojas' },
   { icon: Tag, label: 'Anuncie\nAqui', color: 'from-sky-400 to-blue-500', path: '/anuncie' },
 ];
