@@ -13,7 +13,7 @@ import Mapa from './pages/Mapa';
 import MeuPerfil from './pages/MeuPerfil';
 import Planos from './pages/Planos';
 import PagamentoPlano from './pages/PagamentoPlano';
-import Ciclovias from './pages/Ciclovias';
+
 import Indicacoes from './pages/Indicacoes';
 import IndicarLanding from './pages/IndicarLanding';
 import ConsultaPublica from './pages/ConsultaPublica';
@@ -60,7 +60,6 @@ function AppRoutes() {
         <Route path="/qr/:hash" element={<ConsultaPublica />} />
         <Route path="/consulta/:hash" element={<ConsultaPublica />} />
         <Route path="/s/:stickerNumber" element={<ConsultaPublica />} />
-        <Route path="/ciclovias" element={<Ciclovias />} />
         <Route path="/lojas" element={<TrialGuard isLoggedIn={isLoggedIn}><LojasParceiras /></TrialGuard>} />
         <Route path="/anuncie" element={<TrialGuard isLoggedIn={isLoggedIn}><AnuncieAqui /></TrialGuard>} />
         <Route path="/ajuda" element={<TrialGuard isLoggedIn={isLoggedIn}><AjudaSuporte /></TrialGuard>} />
