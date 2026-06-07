@@ -176,22 +176,17 @@ function WhatsAppModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
 function CicloviasLayer() {
   const map = useMap();
   useEffect(() => {
-    // Delay para garantir que L está disponível
-    const timer = setTimeout(() => {
-      const L = require('leaflet');
-      if (!L) return;
-      const layers: any[] = [];
-      CICLOVIAS.forEach((c) => {
-        const poly = L.polyline(c.coordenadas, {
-          color: c.cor,
-          weight: 5,
-          opacity: 0.85,
-        }).addTo(map);
-        poly.bindPopup(`<div style="font-family:sans-serif;min-width:160px;padding:4px"><div style="font-size:12px;font-weight:bold;color:${c.cor}">${tipoLabel[c.tipo]}</div><div style="font-size:14px;font-weight:bold;color:#333">${c.nome}</div><div style="font-size:12px;color:#666;margin-top:2px">${c.distancia}</div></div>`);
-        layers.push(poly);
-      });
-    }, 100);
-    return () => { clearTimeout(timer); };
+    const layers: L.Polyline[] = [];
+    CICLOVIAS.forEach((c) => {
+      const poly = L.polyline(c.coordenadas, {
+        color: c.cor,
+        weight: 5,
+        opacity: 0.85,
+      }).addTo(map);
+      poly.bindPopup(`<div style="font-family:sans-serif;min-width:160px;padding:4px"><div style="font-size:12px;font-weight:bold;color:${c.cor}">${tipoLabel[c.tipo]}</div><div style="font-size:14px;font-weight:bold;color:#333">${c.nome}</div><div style="font-size:12px;color:#666;margin-top:2px">${c.distancia}</div></div>`);
+      layers.push(poly);
+    });
+    return () => { layers.forEach(p => map.removeLayer(p)); };
   }, [map]);
   return null;
 }
