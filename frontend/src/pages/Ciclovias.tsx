@@ -97,7 +97,7 @@ export default function Ciclovias() {
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
       });
 
-      const map = L.map(mapRef.current, { zoomControl: false }).setView([-26.9950, -48.6200], 13);
+      const map = L.map(mapRef.current, { zoomControl: false }).setView([-26.9950, -48.6200], 14);
       mapInstance = map;
       leafletMap.current = map;
 
@@ -252,7 +252,7 @@ export default function Ciclovias() {
         transition={{ delay: 0.3 }}
         className="shrink-0 bg-[#0c1222] border-t border-white/5 z-10"
       >
-        <div className="p-3 space-y-2 max-h-[220px] overflow-y-auto">
+        <div className="p-3 pb-20 space-y-2 max-h-[220px] overflow-y-auto">
           {filtradas.map((c) => (
             <div
               key={c.id}
