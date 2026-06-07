@@ -11,19 +11,53 @@ import AlertaFurtoModal from '../components/AlertaFurtoModal';
 import BottomNav from '../components/BottomNav';
 
 /* ===== Data ===== */
-const fallbackNews = [
-  { id: 1, tag: 'BRASIL', title: 'Furtos de bicicleta explodem no Rio, impulsionados por bike elétrica', desc: 'Casos mais que dobraram: subiu de 331 para 724 registros — aumento de 119%', source: 'CBN Globo', date: 'Abr 2025' },
-  { id: 2, tag: 'SEGURANÇA', title: 'Nova tecnologia de rastreamento reduz roubos de bikes em 45%', desc: 'Dispositivos GPS inteligentes e alertas em tempo real transformam a recuperação', source: 'TechCycling', date: 'Mai 2025' },
-  { id: 3, tag: 'DICA', title: '5 formas de proteger sua bike enquanto pedala pela cidade', desc: 'Especialistas recomendam combinação de tecnologia e hábitos preventivos', source: 'BikeMag', date: 'Mai 2025' }
+const anunciantes = [
+  {
+    id: 1,
+    nome: 'Pedal Bike',
+    tag: 'BIKE',
+    desc: 'A maior e mais completa loja de bicicletas de Balneario Camboriu. Bikes, pecas, acessorios e oficina especializada.',
+    url: 'https://www.pedalbikebc.com.br',
+    endereco: '4a Avenida, 1445, Centro - BC',
+    cor: 'from-emerald-500 to-teal-600',
+  },
+  {
+    id: 2,
+    nome: 'Motochefe Sul',
+    tag: 'ELETRICA',
+    desc: 'Scooters e bicicletas eletricas em Balneario Camboriu. Mobilidade urbana sustentavel com veiculos de ultima geracao.',
+    url: 'https://motochefesul.com.br',
+    endereco: 'Av. Brasil, 451, Centro - BC',
+    cor: 'from-amber-500 to-orange-600',
+  },
+  {
+    id: 3,
+    nome: 'Joy Scooters',
+    tag: 'PATINETE',
+    desc: 'Scooters, triciclos e patinetes eletricos em Itapema. Alta qualidade e tecnologia para sua mobilidade.',
+    url: 'https://www.joyscooters.com.br',
+    endereco: 'Rua 462, 434, Jardim Praia Mar - Itapema',
+    cor: 'from-sky-500 to-blue-600',
+  },
+  {
+    id: 4,
+    nome: 'Bike Avenida',
+    tag: 'SCOOTER',
+    desc: 'Bicicletas, Scooter Eletrico, e-Bike, pecas, acessorios e vestuario em Itapema.',
+    url: 'https://lnk.bio/bikeavenida',
+    endereco: 'Meia Praia, Itapema',
+    cor: 'from-violet-500 to-purple-600',
+  },
+  {
+    id: 5,
+    nome: 'Mega Brava',
+    tag: 'MOTO ELETRICA',
+    desc: 'Veiculos eletricos homologados e legalizados. Motos e scooters eletricas ja emplacadas na Praia Brava.',
+    url: 'https://megaeletronbrava.com.br',
+    endereco: 'R. Delfim Mario de Padua Peixoto, 1128, Praia Brava - Itajai',
+    cor: 'from-rose-500 to-pink-600',
+  },
 ];
-
-interface NoticiaReal {
-  titulo: string;
-  categoria: string;
-  url: string;
-  fonte: string;
-  data: string;
-}
 
 const menuItems = [
   { icon: Bike, label: 'Meus\nEquipamentos', color: 'from-amber-400 to-yellow-500', path: '/equipamentos' },
@@ -57,65 +91,25 @@ function StatusBadge({ count }: { count: number }) {
   );
 }
 
-function NewsCarousel() {
+function AnunciantesCarousel() {
   const [current, setCurrent] = useState(0);
-  const [noticias, setNoticias] = useState<NoticiaReal[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  // Busca noticias reais da prefeitura
   useEffect(() => {
-    fetch('/bike-segura-bc-backend/api/noticias')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (data?.noticias && data.noticias.length > 0) {
-          setNoticias(data.noticias.slice(0, 5)); // Max 5 noticias
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    const t = setInterval(() => setCurrent(p => (p + 1) % anunciantes.length), 5000);
+    return () => clearInterval(t);
   }, []);
 
-  // Dados a exibir: noticias reais ou fallback
-  const items = noticias.length > 0
-    ? noticias.map((n, i) => ({
-        id: i,
-        tag: n.categoria?.toUpperCase() || 'BC',
-        title: n.titulo,
-        desc: `Fonte: ${n.fonte}`,
-        url: n.url,
-      }))
-    : fallbackNews;
-
-  // Auto-rotacao
-  useEffect(() => {
-    if (items.length <= 1) return;
-    const t = setInterval(() => setCurrent(p => (p + 1) % items.length), 5000);
-    return () => clearInterval(t);
-  }, [items.length]);
-
-  if (loading) {
-    return (
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-3 shrink-0">
-        <div className="glass-card p-4 animate-pulse">
-          <div className="h-4 w-16 bg-amber-500/20 rounded mb-2" />
-          <div className="h-4 w-3/4 bg-white/10 rounded mb-1.5" />
-          <div className="h-3 w-1/2 bg-slate-600/30 rounded" />
-        </div>
-      </motion.div>
-    );
-  }
-
-  const item = items[current];
-  const isReal = noticias.length > 0;
+  const a = anunciantes[current];
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-3 shrink-0">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-2 px-1">
+        <span className="text-slate-500 text-[10px] font-bold tracking-wider uppercase">Parceiros</span>
+        <span className="text-amber-400/60 text-[10px]">{current + 1}/{anunciantes.length}</span>
+      </div>
+
       <div className="relative overflow-hidden rounded-xl">
-        {isReal && (
-          <div className="absolute top-2 right-2 z-10">
-            <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[8px] font-bold">PREFEITURA BC</span>
-          </div>
-        )}
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -123,18 +117,37 @@ function NewsCarousel() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.4 }}
-            className="glass-card p-4 relative overflow-hidden cursor-pointer"
-            onClick={() => isReal && item.url ? window.open(item.url, '_blank') : null}
+            className="glass-card p-4 relative overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+            onClick={() => window.open(a.url, '_blank')}
           >
-            <span className="px-2.5 py-1 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold tracking-wider">{item.tag}</span>
-            <h3 className={`text-white font-semibold text-sm leading-snug mt-2 mb-1.5 ${isReal ? 'hover:text-amber-300 transition-colors' : ''}`}>{item.title}</h3>
-            <p className="text-slate-400 text-xs leading-relaxed">{item.desc}</p>
-            {isReal && <p className="text-emerald-400/60 text-[10px] mt-1.5">Clique para ler mais →</p>}
+            {/* Tag + badge */}
+            <div className="flex items-center justify-between mb-2">
+              <span className={`px-2.5 py-1 rounded-md bg-gradient-to-r ${a.cor} text-white text-[9px] font-bold tracking-wider`}>{a.tag}</span>
+              <span className="text-emerald-400/60 text-[9px]">Clique para visitar →</span>
+            </div>
+
+            {/* Nome */}
+            <h3 className="text-white font-bold text-base leading-snug mb-1">{a.nome}</h3>
+
+            {/* Descricao */}
+            <p className="text-slate-300 text-xs leading-relaxed mb-2">{a.desc}</p>
+
+            {/* Endereco */}
+            <div className="flex items-center gap-1 text-slate-500 text-[10px]">
+              <MapPin className="w-3 h-3" />
+              {a.endereco}
+            </div>
           </motion.div>
         </AnimatePresence>
+
+        {/* Indicadores */}
         <div className="flex items-center justify-center gap-1.5 mt-2">
-          {items.map((_, i) => (
-            <button key={i} onClick={() => setCurrent(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`} />
+          {anunciantes.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${i === current ? 'w-6 bg-amber-400' : 'w-2 bg-slate-600'}`}
+            />
           ))}
         </div>
       </div>
@@ -250,8 +263,8 @@ export default function Home() {
           {/* Status */}
           <StatusBadge count={bikes.length} />
 
-          {/* Carrossel */}
-          <NewsCarousel />
+          {/* Carrossel de Anunciantes */}
+          <AnunciantesCarousel />
 
           {/* Menu */}
           <MenuGrid />
