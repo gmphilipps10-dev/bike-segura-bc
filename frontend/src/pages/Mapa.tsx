@@ -82,6 +82,7 @@ function calcDist(coords: [number, number][]): string {
 // Fonte: ACBC + OSRM (Interpraias)
 // Total: 27 vias cicloviarias
 // Cores: unicas e distintas para cada via
+// UPDATED: 2025-06-08 v4 - Interpraias inicio na BARRA
 // ============================================
 
 const CICLOVIA_CICLOVIA_AV_MARTIN_LUTHER: [number, number][] = [
