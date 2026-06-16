@@ -206,7 +206,6 @@ export default function AnuncieAqui() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-end"
-              onClick={() => { setShowForm(false); setSelectedBikeId(null); }}
             >
               <motion.div
                 initial={{ y: '100%' }}
@@ -214,7 +213,6 @@ export default function AnuncieAqui() {
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                 className="w-full bg-[#111827] rounded-t-3xl max-h-[90vh] overflow-y-auto"
-                onClick={e => e.stopPropagation()}
               >
                 {/* Handle */}
                 <div className="flex justify-center pt-3 pb-1">
@@ -241,7 +239,7 @@ export default function AnuncieAqui() {
                         {bikes.map(bike => (
                           <button
                             key={bike.id}
-                            onClick={(e) => { e.stopPropagation(); setSelectedBikeId(bike.id); }}
+                            onClick={() => setSelectedBikeId(bike.id)}
                             className="w-full glass-card p-3 flex items-center gap-3 text-left cursor-pointer hover:border-amber-400/30 transition-colors"
                           >
                             {bike.photo ? (
