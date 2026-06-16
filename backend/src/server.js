@@ -87,7 +87,6 @@ app.use('/api/ocorrencias', require('./routes/ocorrencias'));
 app.use('/api/pagamentos', require('./routes/pagamentos'));
 app.use('/api/push', pushModule.router);
 app.use('/api/noticias', require('./routes/noticias'));
-app.use('/api/webhook', require('./routes/webhook'));
 
 // ========== STATIC FILES (depois das rotas!) ==========
 const publicPath = path.join(__dirname, '../public');
