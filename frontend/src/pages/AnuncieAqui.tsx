@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Tag, Plus, X, Bike, ChevronRight, Search,
@@ -27,18 +27,42 @@ const condicoes = ['Novo', 'Seminovo', 'Usado - Excelente', 'Usado - Bom', 'Usad
 export default function AnuncieAqui() {
   const { bikes } = useBikes();
   const [showForm, setShowForm] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1);
   const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [form, setForm] = useState({ preco: '', condicao: '', descricao: '' });
   const [busca, setBusca] = useState('');
   const [meusAnuncios, setMeusAnuncios] = useState<Anuncio[]>([]);
 
-  const selectedBike = bikes.find(b => b.id === selectedBikeId);
+  const selectedBike = useMemo(() => bikes.find(b => b.id === selectedBikeId), [bikes, selectedBikeId]);
 
   const anunciosFiltrados = meusAnuncios.filter(a =>
     a.nome.toLowerCase().includes(busca.toLowerCase()) ||
     a.tipo.toLowerCase().includes(busca.toLowerCase()) ||
     a.marca.toLowerCase().includes(busca.toLowerCase())
   );
+
+  const handleOpenModal = () => {
+    setStep(1);
+    setSelectedBikeId(null);
+    setForm({ preco: '', condicao: '', descricao: '' });
+    setShowForm(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowForm(false);
+    setStep(1);
+    setSelectedBikeId(null);
+  };
+
+  const handleSelectBike = (bikeId: string) => {
+    setSelectedBikeId(bikeId);
+    setStep(2);
+  };
+
+  const handleVoltar = () => {
+    setStep(1);
+    setSelectedBikeId(null);
+  };
 
   const handleCreateAnuncio = () => {
     if (!selectedBike || !form.preco || !form.condicao) return;
@@ -59,9 +83,7 @@ export default function AnuncieAqui() {
     };
 
     setMeusAnuncios(prev => [novoAnuncio, ...prev]);
-    setShowForm(false);
-    setSelectedBikeId(null);
-    setForm({ preco: '', condicao: '', descricao: '' });
+    handleCloseModal();
   };
 
   return (
@@ -112,7 +134,7 @@ export default function AnuncieAqui() {
           className="mb-5"
         >
           <button
-            onClick={() => setShowForm(true)}
+            onClick={handleOpenModal}
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-400 to-blue-500 flex items-center justify-center gap-2 shadow-lg shadow-sky-500/20 cursor-pointer"
           >
             <Plus className="w-5 h-5 text-white" />
@@ -222,135 +244,160 @@ export default function AnuncieAqui() {
                 <div className="px-5 pb-8 pt-2">
                   {/* Header */}
                   <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-white font-bold text-lg">Criar Anúncio</h2>
+                    <div className="flex items-center gap-3">
+                      {step === 2 && (
+                        <button
+                          onClick={handleVoltar}
+                          className="w-8 h-8 rounded-full glass-card flex items-center justify-center cursor-pointer"
+                        >
+                          <ArrowLeft className="w-4 h-4 text-slate-400" />
+                        </button>
+                      )}
+                      <h2 className="text-white font-bold text-lg">
+                        {step === 1 ? 'Criar Anúncio' : 'Detalhes do Anúncio'}
+                      </h2>
+                    </div>
                     <button
-                      onClick={() => { setShowForm(false); setSelectedBikeId(null); }}
+                      onClick={handleCloseModal}
                       className="w-8 h-8 rounded-full glass-card flex items-center justify-center cursor-pointer"
                     >
                       <X className="w-4 h-4 text-slate-400" />
                     </button>
                   </div>
 
-                  {!selectedBikeId || !selectedBike ? (
-                    /* Step 1: Select Bike */
-                    <div>
-                      <p className="text-slate-400 text-xs mb-3">Selecione um equipamento cadastrado para anunciar:</p>
-                      <div className="space-y-2">
-                        {bikes.map(bike => (
-                          <button
-                            key={bike.id}
-                            onClick={() => setSelectedBikeId(bike.id)}
-                            className="w-full glass-card p-3 flex items-center gap-3 text-left cursor-pointer hover:border-amber-400/30 transition-colors"
-                          >
-                            {bike.photo ? (
-                              <img src={bike.photo} alt={bike.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-sky-400/20 to-blue-500/20 flex items-center justify-center shrink-0">
-                                <Bike className="w-5 h-5 text-sky-400" />
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <p className="text-white text-sm font-medium">{bike.name}</p>
-                              <p className="text-slate-500 text-xs">{bike.type} • {bike.serie}</p>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-slate-600" />
-                          </button>
-                        ))}
-                      </div>
-
-                      {bikes.length === 0 && (
-                        <div className="text-center py-8">
-                          <Bike className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                          <p className="text-slate-400 text-sm">Nenhum equipamento cadastrado</p>
-                          <Link to="/cadastrar" className="text-sky-400 text-xs mt-2 inline-block">Cadastrar primeiro</Link>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    /* Step 2: Anuncio Details */
-                    <div className="space-y-4">
-                      {/* Selected Bike Preview */}
-                      <div className="glass-card p-3 flex items-center gap-3">
-                        {selectedBike?.photo ? (
-                          <img src={selectedBike.photo} alt={selectedBike.name} className="w-14 h-14 rounded-lg object-cover shrink-0" />
-                        ) : (
-                          <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-sky-400/20 to-blue-500/20 flex items-center justify-center shrink-0">
-                            <Bike className="w-6 h-6 text-sky-400" />
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <p className="text-white font-semibold text-sm">{selectedBike?.name}</p>
-                          <p className="text-slate-500 text-xs">{selectedBike?.type} • {selectedBike?.serie}</p>
-                        </div>
-                        <button
-                          onClick={() => setSelectedBikeId(null)}
-                          className="text-slate-500 text-xs hover:text-amber-400 transition-colors cursor-pointer"
-                        >
-                          Trocar
-                        </button>
-                      </div>
-
-                      {/* Preco */}
-                      <div>
-                        <label className="text-slate-400 text-xs mb-1.5 block">Preço (R$)</label>
-                        <div className="glass-card flex items-center gap-3 px-4 py-3">
-                          <DollarSign className="w-5 h-5 text-sky-400 shrink-0" />
-                          <input
-                            type="text"
-                            placeholder="0,00"
-                            value={form.preco}
-                            onChange={e => setForm(prev => ({ ...prev, preco: e.target.value }))}
-                            className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Condicao */}
-                      <div>
-                        <label className="text-slate-400 text-xs mb-1.5 block">Condição</label>
-                        <div className="flex flex-wrap gap-2">
-                          {condicoes.map(c => (
+                  <AnimatePresence mode="wait">
+                    {step === 1 ? (
+                      <motion.div
+                        key="step1"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <p className="text-slate-400 text-xs mb-3">Selecione um equipamento cadastrado para anunciar:</p>
+                        <div className="space-y-2">
+                          {bikes.map(bike => (
                             <button
-                              key={c}
-                              onClick={() => setForm(prev => ({ ...prev, condicao: c }))}
-                              className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                                form.condicao === c
-                                  ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-white'
-                                  : 'glass-card text-slate-400 hover:text-white'
-                              }`}
+                              key={bike.id}
+                              onClick={() => handleSelectBike(bike.id)}
+                              className="w-full glass-card p-3 flex items-center gap-3 text-left cursor-pointer hover:border-amber-400/30 transition-colors"
                             >
-                              {c}
+                              {bike.photo ? (
+                                <img src={bike.photo} alt={bike.name} className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-sky-400/20 to-blue-500/20 flex items-center justify-center shrink-0">
+                                  <Bike className="w-5 h-5 text-sky-400" />
+                                </div>
+                              )}
+                              <div className="flex-1">
+                                <p className="text-white text-sm font-medium">{bike.name}</p>
+                                <p className="text-slate-500 text-xs">{bike.type} • {bike.serie}</p>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-600" />
                             </button>
                           ))}
                         </div>
-                      </div>
 
-                      {/* Descricao */}
-                      <div>
-                        <label className="text-slate-400 text-xs mb-1.5 block">Descrição</label>
-                        <textarea
-                          rows={3}
-                          placeholder="Detalhes sobre o equipamento, motivo da venda, etc."
-                          value={form.descricao}
-                          onChange={e => setForm(prev => ({ ...prev, descricao: e.target.value }))}
-                          className="w-full glass-card px-4 py-3 text-white text-sm placeholder:text-slate-600 outline-none resize-none"
-                        />
-                      </div>
-
-                      <motion.button
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleCreateAnuncio}
-                        disabled={!form.preco || !form.condicao}
-                        className={`w-full py-4 rounded-2xl font-bold text-sm tracking-wide cursor-pointer transition-all ${
-                          form.preco && form.condicao
-                            ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-white shadow-lg shadow-sky-500/20'
-                            : 'bg-white/5 text-slate-500 cursor-not-allowed'
-                        }`}
+                        {bikes.length === 0 && (
+                          <div className="text-center py-8">
+                            <Bike className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                            <p className="text-slate-400 text-sm">Nenhum equipamento cadastrado</p>
+                            <Link to="/cadastrar" className="text-sky-400 text-xs mt-2 inline-block">Cadastrar primeiro</Link>
+                          </div>
+                        )}
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="step2"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: 20 }}
+                        transition={{ duration: 0.2 }}
+                        className="space-y-4"
                       >
-                        PUBLICAR ANÚNCIO
-                      </motion.button>
-                    </div>
-                  )}
+                        {/* Selected Bike Preview */}
+                        <div className="glass-card p-3 flex items-center gap-3">
+                          {selectedBike?.photo ? (
+                            <img src={selectedBike.photo} alt={selectedBike.name} className="w-14 h-14 rounded-lg object-cover shrink-0" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg bg-gradient-to-br from-sky-400/20 to-blue-500/20 flex items-center justify-center shrink-0">
+                              <Bike className="w-6 h-6 text-sky-400" />
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <p className="text-white font-semibold text-sm">{selectedBike?.name}</p>
+                            <p className="text-slate-500 text-xs">{selectedBike?.type} • {selectedBike?.serie}</p>
+                          </div>
+                          <button
+                            onClick={handleVoltar}
+                            className="text-slate-500 text-xs hover:text-amber-400 transition-colors cursor-pointer"
+                          >
+                            Trocar
+                          </button>
+                        </div>
+
+                        {/* Preco */}
+                        <div>
+                          <label className="text-slate-400 text-xs mb-1.5 block">Preço (R$)</label>
+                          <div className="glass-card flex items-center gap-3 px-4 py-3">
+                            <DollarSign className="w-5 h-5 text-sky-400 shrink-0" />
+                            <input
+                              type="text"
+                              placeholder="0,00"
+                              value={form.preco}
+                              onChange={e => setForm(prev => ({ ...prev, preco: e.target.value }))}
+                              className="bg-transparent text-white text-sm w-full outline-none placeholder:text-slate-600"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Condicao */}
+                        <div>
+                          <label className="text-slate-400 text-xs mb-1.5 block">Condição</label>
+                          <div className="flex flex-wrap gap-2">
+                            {condicoes.map(c => (
+                              <button
+                                key={c}
+                                onClick={() => setForm(prev => ({ ...prev, condicao: c }))}
+                                className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
+                                  form.condicao === c
+                                    ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-white'
+                                    : 'glass-card text-slate-400 hover:text-white'
+                                }`}
+                              >
+                                {c}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Descricao */}
+                        <div>
+                          <label className="text-slate-400 text-xs mb-1.5 block">Descrição</label>
+                          <textarea
+                            rows={3}
+                            placeholder="Detalhes sobre o equipamento, motivo da venda, etc."
+                            value={form.descricao}
+                            onChange={e => setForm(prev => ({ ...prev, descricao: e.target.value }))}
+                            className="w-full glass-card px-4 py-3 text-white text-sm placeholder:text-slate-600 outline-none resize-none"
+                          />
+                        </div>
+
+                        <motion.button
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleCreateAnuncio}
+                          disabled={!form.preco || !form.condicao}
+                          className={`w-full py-4 rounded-2xl font-bold text-sm tracking-wide cursor-pointer transition-all ${
+                            form.preco && form.condicao
+                              ? 'bg-gradient-to-r from-sky-400 to-blue-500 text-white shadow-lg shadow-sky-500/20'
+                              : 'bg-white/5 text-slate-500 cursor-not-allowed'
+                          }`}
+                        >
+                          PUBLICAR ANÚNCIO
+                        </motion.button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </motion.div>
             </motion.div>
