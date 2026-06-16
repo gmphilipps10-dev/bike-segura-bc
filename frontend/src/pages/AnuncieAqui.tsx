@@ -233,7 +233,7 @@ export default function AnuncieAqui() {
                     </button>
                   </div>
 
-                  {!selectedBikeId ? (
+                  {!selectedBikeId || !selectedBike ? (
                     /* Step 1: Select Bike */
                     <div>
                       <p className="text-slate-400 text-xs mb-3">Selecione um equipamento cadastrado para anunciar:</p>
@@ -241,7 +241,7 @@ export default function AnuncieAqui() {
                         {bikes.map(bike => (
                           <button
                             key={bike.id}
-                            onClick={() => setSelectedBikeId(bike.id)}
+                            onClick={(e) => { e.stopPropagation(); setSelectedBikeId(bike.id); }}
                             className="w-full glass-card p-3 flex items-center gap-3 text-left cursor-pointer hover:border-amber-400/30 transition-colors"
                           >
                             {bike.photo ? (
