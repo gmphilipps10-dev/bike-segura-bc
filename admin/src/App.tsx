@@ -8,6 +8,7 @@ import Adesivos from './pages/Adesivos'
 import Planos from './pages/Planos'
 import Pagamentos from './pages/Pagamentos'
 import Relatorios from './pages/Relatorios'
+import Sinistros from './pages/Sinistros'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth()
@@ -25,6 +26,7 @@ function AppRoutes() {
       <Route path="/planos" element={<PrivateRoute><Planos /></PrivateRoute>} />
       <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
       <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
+      <Route path="/sinistros" element={<PrivateRoute><Sinistros /></PrivateRoute>} />
     </Routes>
   )
 }
