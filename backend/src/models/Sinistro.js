@@ -60,4 +60,8 @@ sinistroSchema.pre('save', function(next) {
     const diff = Math.floor((Date.now() - this.dataOcorrencia.getTime()) / (1000 * 60 * 60 * 24));
     this.diasEmAndamento = diff;
   }
-  this
+  this.dataAtualizacao = Date.now();
+  next();
+});
+
+module.exports = mongoose.model('Sinistro', sinistroSchema);
