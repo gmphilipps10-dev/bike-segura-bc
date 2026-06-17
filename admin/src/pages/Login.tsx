@@ -25,12 +25,12 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
           <div>
-            <label className="block text-slate-400 text-xs mb-1.5">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="admin@bikesegurabc.com" required />
+            <label className="block text-slate-400 text-xs mb-1.5">Email (opcional)</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="Use se possuir um usuario administrador" />
           </div>
           <div>
-            <label className="block text-slate-400 text-xs mb-1.5">Senha</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="Sua senha" required />
+            <label className="block text-slate-400 text-xs mb-1.5">Senha do painel</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="Digite a senha do painel" required />
           </div>
           <button type="submit" disabled={loading} className="w-full btn-primary py-3 disabled:opacity-50">
             {loading ? 'Entrando...' : 'ENTRAR'}

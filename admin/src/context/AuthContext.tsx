@@ -53,8 +53,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         // Nao e admin
         alert('Acesso negado. Esta area e exclusiva para administradores.')
-        return false
       }
+
+      const painelRes = await fetch(`${API_BASE}/auth/painel-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ senha: password }),
+      })
+      const painelData = await painelRes.json()
+
+      if (painelRes.ok && painelData.token) {
+        const painelUser = { id: 'painel-admin', isAdmin: true, name: 'Painel Admin' }
+        localStorage.setItem('admin_token', painelData.token)
+        localStorage.setItem('admin_user', JSON.stringify(painelUser))
+        setIsLoggedIn(true)
+        setIsAdmin(true)
+        return true
+      }
+
       return false
     } catch {
       return false

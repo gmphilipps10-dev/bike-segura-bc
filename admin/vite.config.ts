@@ -9,7 +9,7 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-  base: '/admin/',
+  base: '/paineladmin/',
   build: {
     outDir: 'dist',
     emptyOutDir: true,
