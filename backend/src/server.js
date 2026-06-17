@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 require('dotenv').config();
 
+const sinistrosRouter = require('./routes/sinistros');
 const app = express();
 
 // Middleware
@@ -84,6 +85,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
 app.use('/api/preprinted', require('./routes/preprinted'));
 app.use('/api/ocorrencias', require('./routes/ocorrencias'));
+app.use('/api/sinistros', sinistrosRouter);
 app.use('/api/pagamentos', require('./routes/pagamentos'));
 app.use('/api/push', pushModule.router);
 app.use('/api/noticias', require('./routes/noticias'));
