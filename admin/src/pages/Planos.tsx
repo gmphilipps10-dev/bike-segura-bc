@@ -1,27 +1,40 @@
 import { useState, useEffect } from 'react'
-import { Star, Shield, Gem } from '../components/Icons'
+import { Star, Shield, Gem, CheckCircle } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 const PLANOS = [
-  { nome: 'Bronze', preco: 50, cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Star, desc: 'Protecao basica com QR Code' },
-  { nome: 'Prata', preco: 150, cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', icon: Shield, desc: 'Protecao intermediaria' },
-  { nome: 'Ouro', preco: 300, cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: Gem, desc: 'Protecao avancada' },
-  { nome: 'Diamante', preco: 450, cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', icon: Gem, desc: 'Protecao premium completa' },
+  { id: 'bronze', nome: 'Bronze', cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Star, desc: 'Protecao basica com QR Code' },
+  { id: 'prata', nome: 'Prata', cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', icon: Shield, desc: 'Protecao intermediaria' },
+  { id: 'ouro', nome: 'Ouro', cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: Gem, desc: 'Protecao avancada' },
+  { id: 'diamante', nome: 'Diamante', cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', icon: Gem, desc: 'Protecao premium completa' },
 ]
+
+type PlanoId = 'bronze' | 'prata' | 'ouro' | 'diamante'
+type Precos = Record<PlanoId, number>
+
+const PRECOS_PADRAO: Precos = { bronze: 50, prata: 150, ouro: 300, diamante: 450 }
 
 export default function Planos() {
   const [stats, setStats] = useState({
     totalBronze: 0, totalPrata: 0, totalOuro: 0, totalDiamante: 0, totalGeral: 0
   })
+  const [precos, setPrecos] = useState<Precos>(PRECOS_PADRAO)
   const [loading, setLoading] = useState(true)
+  const [salvando, setSalvando] = useState(false)
+  const [mensagem, setMensagem] = useState('')
+  const [erro, setErro] = useState('')
   const token = localStorage.getItem('admin_token') || ''
 
   useEffect(() => {
-    fetch(`${API_BASE}/auth/users`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : [])
-      .then((users: any[]) => {
+    Promise.all([
+      fetch(`${API_BASE}/auth/users`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API_BASE}/pagamentos/planos`),
+    ])
+      .then(async ([usersRes, precosRes]) => {
+        const users = usersRes.ok ? await usersRes.json() : []
+        const config = precosRes.ok ? await precosRes.json() : null
         const u = Array.isArray(users) ? users : []
         setStats({
           totalBronze: u.filter((x: any) => x.plano === 'bronze').length,
@@ -30,10 +43,41 @@ export default function Planos() {
           totalDiamante: u.filter((x: any) => x.plano === 'diamante').length,
           totalGeral: u.length,
         })
+        if (config?.precos) setPrecos({ ...PRECOS_PADRAO, ...config.precos })
         setLoading(false)
       })
       .catch(() => setLoading(false))
   }, [token])
+
+  const alterarPreco = (id: PlanoId, valor: string) => {
+    setPrecos(atual => ({ ...atual, [id]: Number(valor) }))
+    setMensagem('')
+    setErro('')
+  }
+
+  const salvar = async () => {
+    setSalvando(true)
+    setMensagem('')
+    setErro('')
+    try {
+      const res = await fetch(`${API_BASE}/pagamentos/planos`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ precos }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Nao foi possivel salvar.')
+      setPrecos({ ...PRECOS_PADRAO, ...data.precos })
+      setMensagem('Precos atualizados com sucesso.')
+    } catch (error: any) {
+      setErro(error.message || 'Nao foi possivel salvar os precos.')
+    } finally {
+      setSalvando(false)
+    }
+  }
 
   const planoStats = [
     { label: 'Bronze', value: stats.totalBronze, icon: Star, color: 'text-amber-600', bg: 'bg-amber-500/10' },
@@ -80,13 +124,41 @@ export default function Planos() {
                         <p className="text-slate-500 text-xs">{plano.desc}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-white font-bold text-lg">R${plano.preco}</p>
-                      <p className="text-slate-500 text-xs">/ano</p>
+                    <div className="w-32">
+                      <label htmlFor={`preco-${plano.id}`} className="block text-slate-500 text-xs mb-1">Valor anual</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-400 text-sm">R$</span>
+                        <input
+                          id={`preco-${plano.id}`}
+                          type="number"
+                          min="0.01"
+                          max="100000"
+                          step="0.01"
+                          value={precos[plano.id as PlanoId]}
+                          onChange={event => alterarPreco(plano.id as PlanoId, event.target.value)}
+                          className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-right text-white outline-none focus:border-amber-400"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                {mensagem && <p className="text-emerald-400 text-sm">{mensagem}</p>}
+                {erro && <p className="text-red-400 text-sm">{erro}</p>}
+              </div>
+              <button
+                type="button"
+                onClick={salvar}
+                disabled={salvando}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-amber-400 px-5 py-3 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <CheckCircle className="w-4 h-4" />
+                {salvando ? 'Salvando...' : 'Salvar precos'}
+              </button>
             </div>
 
             <div className="mt-8 glass-card p-6">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Hash, CheckCircle, AlertTriangle, Printer, Plus } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function Adesivos() {
   const [items, setItems] = useState<any[]>([])
@@ -34,7 +34,13 @@ export default function Adesivos() {
   useEffect(() => { fetchData() }, [filtro, token])
 
   const gerarLote = () => {
+    const confirmou = window.confirm(
+      'Gerar 100 novos adesivos QR Code? Esta operacao nao deve ser repetida por engano.'
+    )
+    if (!confirmou) return
+
     setGerando(true)
+    setMsg('')
     fetch(`${API_BASE}/preprinted/gerar-lote`, {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ quantidade: 100 })
@@ -48,13 +54,17 @@ export default function Adesivos() {
         return r.json()
       })
       .then(d => {
-        if (d && d.quantidade) {
-          setMsg(`${d.quantidade} adesivos gerados: ${d.de} ate ${d.ate}`)
-          fetchData()
-        } else if (d) {
-          setMsg('Lote gerado com sucesso!')
-          fetchData()
-        }
+        if (!d) return
+
+        const quantidade = d.quantidade ?? d.count ?? d.total
+        const primeiro = d.de ?? d.inicio ?? d.start
+        const ultimo = d.ate ?? d.fim ?? d.end
+        const intervalo = primeiro && ultimo ? `: ${primeiro} ate ${ultimo}` : ''
+
+        setMsg(quantidade
+          ? `${quantidade} adesivos gerados${intervalo}`
+          : d.message || 'Lote gerado com sucesso!')
+        fetchData()
       })
       .catch(err => { console.error('[GerarLote] Erro:', err); setMsg('Erro ao gerar lote.') })
       .finally(() => setGerando(false))

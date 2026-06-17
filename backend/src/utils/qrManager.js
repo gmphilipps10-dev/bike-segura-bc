@@ -2,7 +2,11 @@ const crypto = require('crypto');
 const PrePrintedQR = require('../models/PrePrintedQR');
 const Bike = require('../models/Bike');
 
-const SALT = process.env.QR_SALT || 'bikesegura-bc-2025-salt';
+if (!process.env.QR_SALT) {
+  throw new Error('QR_SALT nao configurada');
+}
+
+const SALT = process.env.QR_SALT;
 
 function generateStickerNumber(prefixo, sequencia) {
   return `${prefixo}-${String(sequencia).padStart(4, '0')}`;

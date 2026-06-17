@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 interface AuthContextType {
   isLoggedIn: boolean

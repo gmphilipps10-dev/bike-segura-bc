@@ -3,7 +3,7 @@ import { Search, Mail, Phone, Calendar, Download, FileText, Table } from '../com
 import Sidebar from '../components/Sidebar'
 import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function Clientes() {
   const [clientes, setClientes] = useState<any[]>([])

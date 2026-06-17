@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Users, Bike, QrCode, ShieldAlert, TrendingUp, Activity } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -15,7 +15,7 @@ export default function Dashboard() {
   const token = localStorage.getItem('admin_token') || ''
 
   useEffect(() => {
-    const fetch = async () => {
+    const loadStats = async () => {
       try {
         const [usersRes, bikesRes, qrRes] = await Promise.all([
           fetch(`${API_BASE}/auth/users`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -34,7 +34,7 @@ export default function Dashboard() {
       } catch {}
       setLoading(false)
     }
-    fetch()
+    loadStats()
   }, [token])
 
   const cards = [

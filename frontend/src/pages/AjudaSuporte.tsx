@@ -5,8 +5,9 @@ import {
   Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
 
-const faqs = [
+const FAQS = [
   {
     pergunta: 'Como cadastrar minha bicicleta?',
     resposta: 'Acesse o menu "Cadastrar Novo" na tela inicial. Preencha os dados do equipamento (marca, modelo, cor, número de série), adicione fotos e informe o tipo de rastreamento desejado.',
@@ -21,7 +22,7 @@ const faqs = [
   },
   {
     pergunta: 'Quais são os planos disponíveis?',
-    resposta: 'Temos três planos: Prata (R$ 150/ano) com TAG, Ouro (R$ 300/ano) com Rastreador GPS 4G, e Diamante (R$ 450/ano) com TAG + GPS. Todos incluem acesso ao app e acionamento via ACT.',
+    resposta: 'Consulte os valores atualizados dos planos.',
   },
   {
     pergunta: 'Posso cancelar minha assinatura?',
@@ -43,7 +44,12 @@ const faqs = [
 
 export default function AjudaSuporte() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const { prices } = usePlanPrices();
   const whatsappNumber = '5547992458380';
+  const faqs = FAQS.map((faq, index) => index === 3 ? {
+    ...faq,
+    resposta: `Temos quatro planos: Bronze (${formatPlanPrice(prices.bronze)}/ano), Prata (${formatPlanPrice(prices.prata)}/ano), Ouro (${formatPlanPrice(prices.ouro)}/ano) e Diamante (${formatPlanPrice(prices.diamante)}/ano).`,
+  } : faq);
 
   return (
     <div className="min-h-screen bg-[#0c1222] relative overflow-x-hidden">

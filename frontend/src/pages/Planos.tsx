@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
+import { formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
 
 const plans = [
   {
@@ -14,7 +15,6 @@ const plans = [
     name: 'Bronze',
     subtitle: 'Cadastro + Alerta de Furto',
     icon: Award,
-    price: 'R$ 50,00',
     period: '/ano',
     color: 'from-amber-600 to-amber-700',
     borderColor: 'border-amber-600/30',
@@ -33,7 +33,6 @@ const plans = [
     name: 'Prata',
     subtitle: 'TAG (iOS ou Android)',
     icon: Medal,
-    price: 'R$ 150,00',
     period: '/ano',
     color: 'from-slate-400 to-slate-500',
     borderColor: 'border-slate-400/30',
@@ -53,7 +52,6 @@ const plans = [
     name: 'Ouro',
     subtitle: 'Rastreador GPS 4G',
     icon: Crown,
-    price: 'R$ 300,00',
     period: '/ano',
     color: 'from-amber-400 to-yellow-500',
     borderColor: 'border-amber-400/50',
@@ -73,7 +71,6 @@ const plans = [
     name: 'Diamante',
     subtitle: 'TAG + Rastreador GPS 4G',
     icon: Gem,
-    price: 'R$ 450,00',
     period: '/ano',
     color: 'from-blue-400 to-cyan-400',
     borderColor: 'border-blue-400/30',
@@ -92,6 +89,7 @@ const plans = [
 
 export default function Planos() {
   const navigate = useNavigate();
+  const { prices } = usePlanPrices();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [showFaq, setShowFaq] = useState(false);
 
@@ -177,7 +175,7 @@ export default function Planos() {
 
                   {/* Price */}
                   <div className="mb-1">
-                    <span className={`text-3xl font-bold ${plan.popular ? 'text-gradient-gold' : 'text-white'}`}>{plan.price}</span>
+                    <span className={`text-3xl font-bold ${plan.popular ? 'text-gradient-gold' : 'text-white'}`}>{formatPlanPrice(prices[plan.id as keyof typeof prices])}</span>
                     <span className="text-slate-500 text-sm ml-1">{plan.period}</span>
                   </div>
                   <p className="text-slate-600 text-[10px] mb-4">Equipamentos de rastreamento vendidos à parte</p>

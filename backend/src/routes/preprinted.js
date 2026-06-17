@@ -2,11 +2,12 @@ const express = require('express');
 const PrePrintedQR = require('../models/PrePrintedQR');
 const Bike = require('../models/Bike');
 const authMiddleware = require('../middleware/auth');
+const adminMiddleware = require('../middleware/admin');
 const { gerarLote } = require('../utils/qrManager');
 const router = express.Router();
 
 // Listar QR codes (admin)
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', adminMiddleware, async (req, res) => {
   try {
     const { status, page = 1, limit = 50 } = req.query;
     const query = {};
@@ -27,7 +28,7 @@ router.get('/', authMiddleware, async (req, res) => {
 });
 
 // Gerar lote manual (admin)
-router.post('/gerar-lote', authMiddleware, async (req, res) => {
+router.post('/gerar-lote', adminMiddleware, async (req, res) => {
   try {
     const { quantidade = 100, prefixo = 'BSBC' } = req.body;
     const qtd = Math.min(parseInt(quantidade), 1000);
@@ -46,7 +47,7 @@ router.post('/gerar-lote', authMiddleware, async (req, res) => {
 });
 
 // Proximos disponiveis (admin)
-router.get('/proximos-disponiveis', authMiddleware, async (req, res) => {
+router.get('/proximos-disponiveis', adminMiddleware, async (req, res) => {
   try {
     const { limit = 20 } = req.query;
     const disponiveis = await PrePrintedQR
@@ -65,7 +66,7 @@ router.get('/proximos-disponiveis', authMiddleware, async (req, res) => {
 });
 
 // Buscar por stickerNumber (admin)
-router.get('/buscar/:stickerNumber', authMiddleware, async (req, res) => {
+router.get('/buscar/:stickerNumber', adminMiddleware, async (req, res) => {
   try {
     const qr = await PrePrintedQR.findOne({ stickerNumber: req.params.stickerNumber.toUpperCase() });
     if (!qr) return res.status(404).json({ message: 'QR nao encontrado.' });

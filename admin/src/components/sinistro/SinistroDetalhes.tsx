@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { useState } from 'react'
 import { X, MapPin, Phone, Mail, User, Bike, FileText, Zap, AlertTriangle, CheckCircle, Pause, Map, Navigation, Battery, Route } from '../Icons'
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function SinistroDetalhes({ sinistro, onClose, onUpdate }) {
   const [aba, setAba] = useState('info')

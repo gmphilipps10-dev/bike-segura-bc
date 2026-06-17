@@ -44,7 +44,7 @@ router.get('/stats', auth, admin, async (req, res) => {
 router.post('/', auth, async (req, res) => {
   try {
     const { bikeId, tipo, dataOcorrencia, localOcorrencia, descricao, boletimOcorrencia, coordenadasOcorrencia } = req.body;
-    const bike = await Bike.findById(bikeId).populate('userId');
+    const bike = await Bike.findOne({ _id: bikeId, userId: req.userId }).populate('userId');
     if (!bike) return res.status(404).json({ error: 'Bicicleta não encontrada' });
     const user = bike.userId;
     const veiculoSnapshot = {
@@ -123,6 +123,9 @@ router.post('/:id/rastreamento', auth, async (req, res) => {
     const { lat, lng, velocidade, bateria } = req.body;
     const sinistro = await Sinistro.findById(req.params.id);
     if (!sinistro) return res.status(404).json({ error: 'Sinistro não encontrado' });
+    const isOwner = String(sinistro.userId) === String(req.userId);
+    const isAdmin = req.isPainelAdmin || req.user?.isAdmin;
+    if (!isOwner && !isAdmin) return res.status(403).json({ error: 'Acesso negado' });
     const novaCoordenada = { lat, lng, timestamp: new Date(), velocidade: velocidade || 0, bateria: bateria || 100 };
     sinistro.historicoRastreamento.push(novaCoordenada);
     sinistro.coordenadasAtual = { lat, lng };

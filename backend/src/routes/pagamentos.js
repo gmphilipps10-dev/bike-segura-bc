@@ -2,6 +2,13 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const Pagamento = require('../models/Pagamento');
 const User = require('../models/User');
+const adminMiddleware = require('../middleware/admin');
+const {
+  centavosParaReais,
+  getPlanoValorCentavos,
+  getPrecosCentavos,
+  salvarPrecos,
+} = require('../utils/planoConfig');
 const router = express.Router();
 
 // ===== MIDDLEWARE =====
@@ -44,24 +51,44 @@ async function asaasRequest(endpoint, method = 'GET', body = null) {
 // O token tambem pode ser enviado via header 'asaas-access-token'
 
 // ===== STATUS / DIAGNOSTICO (publico) =====
-router.get('/status', async (req, res) => {
+router.get('/status', adminMiddleware, async (req, res) => {
   try {
     const asaasKey = process.env.ASAAS_API_KEY || '';
     const asaasEnv = process.env.ASAAS_ENV === 'production' ? 'producao' : 'sandbox';
     res.json({
       asaas_configurado: !!asaasKey,
       asaas_env: asaasEnv,
-      asaas_key_primeiros_4: asaasKey ? asaasKey.slice(0, 4) + '****' : 'NAO_CONFIGURADO',
       mensagem: asaasKey ? 'ASAAS_API_KEY configurada corretamente' : 'ASAAS_API_KEY NAO encontrada. Verifique as variaveis de ambiente.',
-      variaveis_disponiveis: Object.keys(process.env).filter(k => k.includes('ASAAS') || k.includes('API_KEY')).map(k => k.replace(/./g, (c, i) => i < 2 ? c : '*')),
     });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao verificar status: ' + error.message });
   }
 });
 
+// ===== PRECOS DOS PLANOS =====
+router.get('/planos', async (req, res) => {
+  try {
+    const precosCentavos = await getPrecosCentavos();
+    res.json({ precos: centavosParaReais(precosCentavos) });
+  } catch {
+    res.status(500).json({ message: 'Erro ao carregar os precos dos planos.' });
+  }
+});
+
+router.put('/planos', adminMiddleware, async (req, res) => {
+  try {
+    const precos = await salvarPrecos(req.body?.precos);
+    res.json({ success: true, precos });
+  } catch (error) {
+    const erroDeValidacao = error.message?.startsWith('O valor') || error.message?.startsWith('Informe');
+    res.status(erroDeValidacao ? 400 : 500).json({
+      message: erroDeValidacao ? error.message : 'Erro ao salvar os precos dos planos.',
+    });
+  }
+});
+
 // ===== LISTAR PAGAMENTOS (admin) =====
-router.get('/', adminAuth, async (req, res) => {
+router.get('/', adminMiddleware, async (req, res) => {
   try {
     const pagamentos = await Pagamento.find().sort({ createdAt: -1 });
     res.json(pagamentos);
@@ -69,7 +96,7 @@ router.get('/', adminAuth, async (req, res) => {
 });
 
 // ===== ESTATÍSTICAS (admin) =====
-router.get('/stats', adminAuth, async (req, res) => {
+router.get('/stats', adminMiddleware, async (req, res) => {
   try {
     const todos = await Pagamento.find();
     const faturamentoTotal = todos.filter(p => p.status === 'pago').reduce((a, p) => a + p.valor, 0);
@@ -89,9 +116,12 @@ router.get('/stats', adminAuth, async (req, res) => {
 });
 
 // ===== CRIAR COBRANÇA NO ASAAS =====
-router.post('/criar', adminAuth, async (req, res) => {
+router.post('/criar', adminMiddleware, async (req, res) => {
   try {
-    const { userId, plano, valor, dataVencimento, metodoPagamento } = req.body;
+    const { userId, plano, dataVencimento, metodoPagamento } = req.body;
+    const valorCentavos = await getPlanoValorCentavos(plano);
+    if (!valorCentavos) return res.status(400).json({ message: 'Plano invalido.' });
+
     const user = await User.findById(userId);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
     if (!ASAAS_API_KEY) return res.status(500).json({ message: 'ASAAS_API_KEY não configurada. Configure a variável de ambiente.' });
@@ -115,7 +145,7 @@ router.post('/criar', adminAuth, async (req, res) => {
     const cobranca = await asaasRequest('/payments', 'POST', {
       customer: customerId,
       billingType: metodoPagamento === 'pix' ? 'PIX' : metodoPagamento === 'boleto' ? 'BOLETO' : 'CREDIT_CARD',
-      value: valor,
+      value: valorCentavos / 100,
       dueDate: dataVencimento,
       description: `Bike Segura BC - Plano ${plano.toUpperCase()}`,
     });
@@ -137,7 +167,7 @@ router.post('/criar', adminAuth, async (req, res) => {
       userEmail: user.email,
       userCpf: user.cpf,
       plano,
-      valor: valor * 100, // centavos
+      valor: valorCentavos,
       asaasId: cobranca.id,
       status: cobranca.status === 'CONFIRMED' ? 'pago' : 'pendente',
       metodoPagamento,
@@ -158,7 +188,7 @@ router.post('/criar', adminAuth, async (req, res) => {
 });
 
 // ===== CANCELAR COBRANÇA =====
-router.post('/:id/cancelar', adminAuth, async (req, res) => {
+router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
   try {
     const pag = await Pagamento.findById(req.params.id);
     if (!pag) return res.status(404).json({ message: 'Pagamento não encontrado.' });
@@ -178,7 +208,11 @@ router.post('/webhook', async (req, res) => {
     // Valida token de autenticacao do webhook
     const webhookToken = req.query.token || req.headers['asaas-access-token'];
     const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
-    if (expectedToken && webhookToken !== expectedToken) {
+    if (!expectedToken) {
+      console.error('[Webhook] ASAAS_WEBHOOK_TOKEN nao configurado');
+      return res.status(503).json({ message: 'Webhook nao configurado' });
+    }
+    if (webhookToken !== expectedToken) {
       console.warn('[Webhook] Token invalido recebido');
       return res.status(401).json({ message: 'Token invalido' });
     }
@@ -214,7 +248,10 @@ router.post('/webhook', async (req, res) => {
 // ===== CRIAR COBRANCA PELO USUARIO (autenticado) =====
 router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
   try {
-    const { plano, valor, metodoPagamento } = req.body;
+    const { plano, metodoPagamento } = req.body;
+    const valorCentavos = await getPlanoValorCentavos(plano);
+    if (!valorCentavos) return res.status(400).json({ message: 'Plano invalido.' });
+
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
     if (!ASAAS_API_KEY) return res.status(500).json({ message: 'ASAAS_API_KEY não configurada.' });
@@ -243,7 +280,7 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
     const cobranca = await asaasRequest('/payments', 'POST', {
       customer: customerId,
       billingType: metodoPagamento === 'pix' ? 'PIX' : metodoPagamento === 'boleto' ? 'BOLETO' : 'CREDIT_CARD',
-      value: valor,
+      value: valorCentavos / 100,
       dueDate: dueDate,
       description: `Bike Segura BC - Plano ${plano.toUpperCase()}`,
     });
@@ -265,7 +302,7 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
       userEmail: user.email,
       userCpf: user.cpf,
       plano,
-      valor: valor * 100,
+      valor: valorCentavos,
       asaasId: cobranca.id,
       status: 'pendente',
       metodoPagamento,
@@ -287,7 +324,7 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
       pagamento: {
         id: pagamento._id,
         plano,
-        valor: valor * 100,
+        valor: valorCentavos,
         status: 'pendente',
         linkPagamento: cobranca.invoiceUrl,
         pixQrCode,

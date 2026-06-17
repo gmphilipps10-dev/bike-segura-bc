@@ -1,7 +1,21 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const adminMiddleware = require('../middleware/admin');
 const router = express.Router();
+
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} nao configurada`);
+  return value;
+}
+
+function pickAllowed(source, allowedFields) {
+  return allowedFields.reduce((acc, field) => {
+    if (Object.prototype.hasOwnProperty.call(source, field)) acc[field] = source[field];
+    return acc;
+  }, {});
+}
 
 // Register
 router.post('/register', async (req, res) => {
@@ -140,8 +154,16 @@ router.put('/profile', async (req, res) => {
     if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const updates = req.body;
-    delete updates.password; // Don't allow password update here
+    const updates = pickAllowed(req.body, [
+      'name',
+      'email',
+      'phone',
+      'cpf',
+      'rg',
+      'nascimento',
+      'endereco',
+      'contatoEmergencia',
+    ]);
 
     const user = await User.findByIdAndUpdate(decoded.id, updates, { new: true }).select('-password');
     
@@ -170,8 +192,12 @@ router.put('/profile', async (req, res) => {
 // Virar administrador (com PIN de seguranca)
 router.post('/become-admin', async (req, res) => {
   try {
+    if (process.env.ENABLE_ADMIN_PROMOTION !== 'true') {
+      return res.status(404).json({ message: 'Rota nao disponivel.' });
+    }
+
     const { pin } = req.body;
-    const pinCorreto = process.env.ADMIN_PIN || 'BSBC2025';
+    const pinCorreto = requireEnv('ADMIN_PIN');
     
     if (pin !== pinCorreto) {
       return res.status(403).json({ message: 'PIN incorreto.' });
@@ -215,7 +241,7 @@ router.post('/become-admin', async (req, res) => {
 router.post('/painel-login', async (req, res) => {
   try {
     const { senha } = req.body;
-    const senhaCorreta = process.env.PAINEL_SENHA || 'bike2025';
+    const senhaCorreta = requireEnv('PAINEL_SENHA');
 
     if (senha !== senhaCorreta) {
       return res.status(403).json({ message: 'Senha incorreta.' });
@@ -235,15 +261,8 @@ router.post('/painel-login', async (req, res) => {
 });
 
 // Listar todos os usuarios (admin)
-router.get('/users', async (req, res) => {
+router.get('/users', adminMiddleware, async (req, res) => {
   try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) return res.status(401).json({ message: 'Token nao fornecido.' });
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    // Aceita tanto token de usuario admin quanto token do painel
-    if (!decoded.isAdmin) return res.status(403).json({ message: 'Acesso negado.' });
-
     const users = await User.find().select('-password').sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {

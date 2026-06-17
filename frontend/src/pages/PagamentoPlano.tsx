@@ -7,18 +7,20 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { apiPost } from '../config/api';
+import { formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
 
 const planosConfig = {
-  bronze: { name: 'Bronze', price: 50, icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10', desc: 'Protecao basica' },
-  prata: { name: 'Prata', price: 150, icon: Medal, color: 'text-slate-300', bg: 'bg-slate-400/10', desc: 'TAG iOS ou Android' },
-  ouro: { name: 'Ouro', price: 300, icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10', desc: 'Rastreador GPS 4G' },
-  diamante: { name: 'Diamante', price: 450, icon: Gem, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'TAG + Rastreador GPS 4G' },
+  bronze: { name: 'Bronze', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10', desc: 'Protecao basica' },
+  prata: { name: 'Prata', icon: Medal, color: 'text-slate-300', bg: 'bg-slate-400/10', desc: 'TAG iOS ou Android' },
+  ouro: { name: 'Ouro', icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10', desc: 'Rastreador GPS 4G' },
+  diamante: { name: 'Diamante', icon: Gem, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'TAG + Rastreador GPS 4G' },
 };
 
 export default function PagamentoPlano() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { token, isLoggedIn } = useAuth();
+  const { prices, loading: pricesLoading, error: pricesError } = usePlanPrices();
 
   const planoId = searchParams.get('plano') || 'bronze';
   const plano = planosConfig[planoId as keyof typeof planosConfig] || planosConfig.bronze;
@@ -39,7 +41,6 @@ export default function PagamentoPlano() {
     try {
       const res = await apiPost('/pagamentos/criar-minha-cobranca', {
         plano: planoId,
-        valor: plano.price,
         metodoPagamento: metodo,
       }, token);
       setResultado(res.pagamento);
@@ -88,7 +89,7 @@ export default function PagamentoPlano() {
               <p className="text-slate-400 text-xs">{plano.desc}</p>
             </div>
             <div className="text-right">
-              <p className="text-white text-2xl font-bold">R${plano.price}</p>
+              <p className="text-white text-2xl font-bold">{formatPlanPrice(prices[planoId as keyof typeof prices])}</p>
               <p className="text-slate-500 text-xs">/ano</p>
             </div>
           </div>
@@ -120,9 +121,9 @@ export default function PagamentoPlano() {
         )}
 
         {/* Error */}
-        {error && (
+        {(error || pricesError) && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card border-red-500/20 p-4 mb-4">
-            <p className="text-red-400 text-sm">{error}</p>
+            <p className="text-red-400 text-sm">{error || pricesError}</p>
             {!isLoggedIn && (
               <button onClick={() => navigate('/login')} className="mt-2 text-amber-400 text-xs font-bold hover:underline cursor-pointer">
                 Fazer login
@@ -216,10 +217,12 @@ export default function PagamentoPlano() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
             <button
               onClick={handleCriarCobranca}
-              disabled={loading}
+              disabled={loading || pricesLoading || !!pricesError}
               className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-[#0c1222] font-bold text-sm tracking-wide cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Criando cobranca...</> : `PAGAR R$${plano.price},00`}
+              {loading || pricesLoading
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Carregando...</>
+                : `PAGAR ${formatPlanPrice(prices[planoId as keyof typeof prices])}`}
             </button>
             <p className="text-center text-slate-600 text-[10px] mt-3">
               Pagamento processado de forma segura pelo Asaas

@@ -8,6 +8,13 @@ async function adminMiddleware(req, res, next) {
     if (!token) return res.status(401).json({ message: 'Acesso negado. Token nao fornecido.' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded.id === 'painel-admin' && decoded.isAdmin) {
+      req.userId = 'painel-admin';
+      req.isPainelAdmin = true;
+      return next();
+    }
+
     const user = await User.findById(decoded.id);
 
     if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });

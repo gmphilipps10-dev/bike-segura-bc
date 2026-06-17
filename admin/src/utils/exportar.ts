@@ -1,6 +1,5 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import * as XLSX from 'xlsx'
 
 // ===== CSV (já existente, melhorado com BOM para Excel) =====
 export function exportarCSV(nome: string, headers: string[], rows: (string | number)[][]) {
@@ -80,7 +79,16 @@ export function exportarPDF(
   doc.save(`${titulo.toLowerCase().replace(/\s+/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`)
 }
 
-// ===== Excel (XLSX) =====
+function escapeXml(value: string | number) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+// ===== Excel compativel, sem dependencia externa =====
 export function exportarExcel(
   nome: string,
   aba: string,
@@ -88,22 +96,22 @@ export function exportarExcel(
   rows: (string | number)[][],
   totais?: { label: string; value: string }[]
 ) {
-  // Prepara dados
   const data = [headers, ...rows]
   if (totais && totais.length > 0) {
     data.push([], ['RESUMO'], ...totais.map(t => [t.label, t.value]))
   }
 
-  const ws = XLSX.utils.aoa_to_sheet(data)
+  const tableRows = data.map((row, rowIndex) => {
+    const tag = rowIndex === 0 ? 'th' : 'td'
+    return `<tr>${row.map(cell => `<${tag}>${escapeXml(cell ?? '')}</${tag}>`).join('')}</tr>`
+  }).join('')
 
-  // Largura das colunas
-  const colWidths = headers.map((_, i) => {
-    const maxLen = Math.max(...data.map(r => String(r[i] || '').length))
-    return { wch: Math.min(Math.max(maxLen + 2, 10), 50) }
-  })
-  ws['!cols'] = colWidths
-
-  const wb = XLSX.utils.book_new()
-  XLSX.utils.book_append_sheet(wb, ws, aba)
-  XLSX.writeFile(wb, `${nome}-${new Date().toISOString().split('T')[0]}.xlsx`)
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table><caption>${escapeXml(aba)}</caption>${tableRows}</table></body></html>`
+  const blob = new Blob(['\uFEFF', html], { type: 'application/vnd.ms-excel;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${nome}-${new Date().toISOString().split('T')[0]}.xls`
+  link.click()
+  URL.revokeObjectURL(url)
 }

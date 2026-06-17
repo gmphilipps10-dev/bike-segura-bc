@@ -1,9 +1,17 @@
 const express = require('express');
 const Bike = require('../models/Bike');
 const authMiddleware = require('../middleware/auth');
+const adminMiddleware = require('../middleware/admin');
 const { vincularProximoQR, generateHash } = require('../utils/qrManager');
 const { notificarFurto } = require('./push');
 const router = express.Router();
+
+function pickAllowed(source, allowedFields) {
+  return allowedFields.reduce((acc, field) => {
+    if (Object.prototype.hasOwnProperty.call(source, field)) acc[field] = source[field];
+    return acc;
+  }, {});
+}
 
 // Consulta publica - SEM AUTH
 router.get('/public/:hash', async (req, res) => {
@@ -76,7 +84,7 @@ router.get('/', async (req, res) => {
 });
 
 // Listar TODAS as bikes (admin ou painel)
-router.get('/all', async (req, res) => {
+router.get('/all', adminMiddleware, async (req, res) => {
   try {
     const bikes = await Bike.find().sort({ createdAt: -1 });
     res.json(bikes);
@@ -196,9 +204,27 @@ router.post('/', async (req, res) => {
 // Atualizar
 router.put('/:id', async (req, res) => {
   try {
+    const updates = pickAllowed(req.body, [
+      'name',
+      'type',
+      'brand',
+      'serie',
+      'color',
+      'value',
+      'photo',
+      'protected',
+      'location',
+      'lastSeen',
+      'rastreamento',
+      'plataformaTag',
+      'caracteristicas',
+      'status',
+      'boNumber',
+    ]);
+
     const bike = await Bike.findOneAndUpdate(
       { _id: req.params.id, userId: req.userId },
-      req.body,
+      updates,
       { new: true }
     );
     if (!bike) return res.status(404).json({ message: 'Bike nao encontrada.' });

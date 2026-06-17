@@ -72,7 +72,6 @@ export default function Indicacoes() {
       title: 'Bike Segura BC - Indicação',
       text: `Use meu código ${codigoIndicacao} e ganhe 10% de desconto na primeira assinatura do Bike Segura BC! Proteja sua bike com quem entende.`,
       url: linkIndicacao,
-      url: linkIndicacao,
     };
 
     // Tenta navigator.share (iOS Safari suporta, mas pode falhar com URL inválida)

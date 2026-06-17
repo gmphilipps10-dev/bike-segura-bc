@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-const API_BASE = '/bike-segura-bc-backend/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api';
 
 interface QRItem {
   _id: string;

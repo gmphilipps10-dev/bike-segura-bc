@@ -40,7 +40,7 @@ const bikeIcon = new L.DivIcon({
   iconSize: [28, 28], iconAnchor: [14, 14], popupAnchor: [0, -16]
 });
 
-const API_BASE = '/bike-segura-bc-backend/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api';
 
 const BAIRROS: Record<string, [number, number]> = {
   'Centro': [-26.9980, -48.6340],

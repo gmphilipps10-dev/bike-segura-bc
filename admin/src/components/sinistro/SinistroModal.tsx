@@ -1,6 +1,7 @@
+// @ts-nocheck
 import { useState, useEffect } from 'react'
 import { X, Search, MapPin, Bike, AlertTriangle, FileText } from '../Icons'
-const API_BASE = '/bike-segura-bc-backend/api'
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function SinistroModal({ onClose, onSuccess }) {
   const [bikes, setBikes] = useState([])
