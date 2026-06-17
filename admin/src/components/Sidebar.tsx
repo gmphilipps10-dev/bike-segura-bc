@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Users, Bike, QrCode, Activity, CreditCard, ClipboardList, LogOut } from './Icons'
+import { LayoutDashboard, Users, Bike, QrCode, Activity, CreditCard, ClipboardList, AlertTriangle, LogOut } from './Icons'
 import { useAuth } from '../context/AuthContext'
 
 const menu = [
@@ -10,6 +10,7 @@ const menu = [
   { path: '/planos', label: 'Planos', icon: ClipboardList },
   { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
   { path: '/relatorios', label: 'Relatorios', icon: Activity },
+  { path: '/sinistros', label: 'Sinistros', icon: AlertTriangle },
 ]
 
 export default function Sidebar() {
