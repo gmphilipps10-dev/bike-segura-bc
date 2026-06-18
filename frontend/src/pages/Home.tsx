@@ -47,7 +47,7 @@ const anunciantes = [
   },
   {
     id: 4,
-    nome: "Bicicletaria Aquariu's",
+    nome: 'Bicicletaria Aquários',
     tag: 'BIKE',
     desc: 'Bicicletas, pecas, acessorios e oficina especializada em Balneario Camboriu.',
     url: 'https://www.bicicletariaaquarios.com.br',
