@@ -75,13 +75,19 @@ export function BikeProvider({ children }: { children: ReactNode }) {
   };
 
   const removeBike = async (id: string) => {
-    if (!token) return;
+    if (!token) {
+      alert('Você precisa estar logado para excluir equipamentos.');
+      return;
+    }
     try {
+      console.log('Tentando excluir bike:', id, 'com token:', token.substring(0, 20) + '...');
       await apiDelete(`/bikes/${id}`, token);
       setBikes(prev => prev.filter(b => b.id !== id));
+      console.log('Bike excluída com sucesso:', id);
     } catch (err: any) {
       console.error('Error removing bike:', err);
-      alert('Erro ao excluir equipamento: ' + (err.message || 'Tente novamente'));
+      const errorMsg = err.message || 'Erro desconhecido';
+      alert('Erro ao excluir equipamento: ' + errorMsg + '\n\nVerifique se você está logado e tente novamente.');
       throw err;
     }
   };
