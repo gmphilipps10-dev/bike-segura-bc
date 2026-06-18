@@ -284,18 +284,42 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Equipamento nao encontrado.' });
     }
 
+    const inativadoAt = new Date();
+    const adesivosVinculados = await PrePrintedQR
+      .find({ bikeId: bike._id })
+      .select('_id vinculadoAt');
+
     // O adesivo fisico nao pode voltar para a fila e ser entregue a outra pessoa.
-    await PrePrintedQR.updateMany(
-      { bikeId: bike._id },
-      {
-        $set: {
-          status: 'inativo',
-          bikeId: null,
-          userId: null,
-          vinculadoAt: null,
-        },
-      }
-    );
+    // Antes de remover os vinculos ativos, preserva um retrato para auditoria.
+    if (adesivosVinculados.length > 0) {
+      await PrePrintedQR.bulkWrite(
+        adesivosVinculados.map(adesivo => ({
+          updateOne: {
+            filter: { _id: adesivo._id, bikeId: bike._id },
+            update: {
+              $set: {
+                status: 'inativo',
+                ultimoVinculo: {
+                  bikeId: bike._id,
+                  userId: req.userId,
+                  equipamentoNome: bike.name,
+                  equipamentoMarca: bike.brand,
+                  equipamentoTipo: bike.type,
+                  equipamentoSerie: bike.serie,
+                  equipamentoCor: bike.color,
+                  proprietarioNome: req.user?.name || '',
+                  vinculadoAt: adesivo.vinculadoAt,
+                  inativadoAt,
+                  motivo: 'Equipamento excluido pelo proprietario',
+                },
+                bikeId: null,
+                userId: null,
+              },
+            },
+          },
+        }))
+      );
+    }
 
     await bike.deleteOne();
     res.json({ message: 'Equipamento excluido.', id: bike._id.toString() });

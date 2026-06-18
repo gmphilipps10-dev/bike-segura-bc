@@ -14,14 +14,28 @@ router.get('/', adminMiddleware, async (req, res) => {
     if (status) query.status = status;
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
-    const [items, total, disponiveis, vinculados] = await Promise.all([
-      PrePrintedQR.find(query).sort({ stickerNumber: 1 }).skip(skip).limit(parseInt(limit)),
+    const [items, total, disponiveis, vinculados, inativos] = await Promise.all([
+      PrePrintedQR.find(query)
+        .sort({ stickerNumber: 1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('bikeId', 'name brand type serie color')
+        .populate('userId', 'name email'),
       PrePrintedQR.countDocuments(query),
       PrePrintedQR.countDocuments({ status: 'disponivel' }),
       PrePrintedQR.countDocuments({ status: 'vinculado' }),
+      PrePrintedQR.countDocuments({ status: 'inativo' }),
     ]);
 
-    res.json({ items, total, disponiveis, vinculados, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+    res.json({
+      items,
+      total,
+      disponiveis,
+      vinculados,
+      inativos,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / parseInt(limit)),
+    });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao listar.' });
   }
@@ -68,7 +82,10 @@ router.get('/proximos-disponiveis', adminMiddleware, async (req, res) => {
 // Buscar por stickerNumber (admin)
 router.get('/buscar/:stickerNumber', adminMiddleware, async (req, res) => {
   try {
-    const qr = await PrePrintedQR.findOne({ stickerNumber: req.params.stickerNumber.toUpperCase() });
+    const qr = await PrePrintedQR
+      .findOne({ stickerNumber: req.params.stickerNumber.toUpperCase() })
+      .populate('bikeId', 'name brand type serie color')
+      .populate('userId', 'name email');
     if (!qr) return res.status(404).json({ message: 'QR nao encontrado.' });
     res.json(qr);
   } catch (error) {

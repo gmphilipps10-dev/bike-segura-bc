@@ -15,6 +15,22 @@ const prePrintedQRSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   vinculadoAt: { type: Date, default: null },
 
+  // Historico permanente do ultimo equipamento antes da inativacao.
+  // O adesivo fisico nunca volta ao estoque, mas o painel preserva a auditoria.
+  ultimoVinculo: {
+    bikeId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    userId: { type: mongoose.Schema.Types.ObjectId, default: null },
+    equipamentoNome: { type: String, default: '' },
+    equipamentoMarca: { type: String, default: '' },
+    equipamentoTipo: { type: String, default: '' },
+    equipamentoSerie: { type: String, default: '' },
+    equipamentoCor: { type: String, default: '' },
+    proprietarioNome: { type: String, default: '' },
+    vinculadoAt: { type: Date, default: null },
+    inativadoAt: { type: Date, default: null },
+    motivo: { type: String, default: '' },
+  },
+
   // Controle de lote para impressao
   lote: { type: String, default: 'default' },
 

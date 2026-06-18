@@ -8,7 +8,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/a
 export default function Relatorios() {
   const [stats, setStats] = useState({
     totalClientes: 0, totalEquip: 0, protegidos: 0,
-    adesivosDisp: 0, adesivosUsados: 0, furtos: 0,
+    adesivosDisp: 0, adesivosUsados: 0, adesivosInativos: 0, furtos: 0,
   })
   const [loading, setLoading] = useState(true)
   const token = localStorage.getItem('admin_token') || ''
@@ -29,6 +29,7 @@ export default function Relatorios() {
           furtos: b.filter((x: any) => x.status === 'furto').length,
           adesivosDisp: qr.disponiveis || 0,
           adesivosUsados: qr.vinculados || 0,
+          adesivosInativos: qr.inativos || 0,
         })
         setLoading(false)
       })
@@ -47,7 +48,8 @@ export default function Relatorios() {
     { title: 'Adesivos QR', icon: QrCode, color: 'text-purple-400', items: [
       { label: 'Disponiveis', value: stats.adesivosDisp },
       { label: 'Em uso', value: stats.adesivosUsados },
-      { label: 'Total', value: stats.adesivosDisp + stats.adesivosUsados },
+      { label: 'Inativos', value: stats.adesivosInativos },
+      { label: 'Total', value: stats.adesivosDisp + stats.adesivosUsados + stats.adesivosInativos },
     ]},
   ]
 
@@ -67,7 +69,7 @@ export default function Relatorios() {
                   <sec.icon className={`w-5 h-5 ${sec.color}`} />
                   <h2 className="text-white font-bold">{sec.title}</h2>
                 </div>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {sec.items.map(item => (
                     <div key={item.label} className="glass-card p-3 text-center">
                       <p className="text-2xl font-bold text-white">{item.value}</p>
