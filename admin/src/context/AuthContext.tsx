@@ -5,14 +5,14 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/a
 interface AuthContextType {
   isLoggedIn: boolean
   isAdmin: boolean
-  login: (email: string, password: string) => Promise<boolean>
+  login: (password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
   isAdmin: false,
-  login: async () => false,
+  login: async () => ({ success: false }),
   logout: () => {},
 })
 
@@ -29,32 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string) => {
+  const login = async (password: string) => {
     try {
-      const res = await fetch(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-      const data = await res.json()
-      if (data.token && data.user) {
-        // Verifica se e admin
-        const meRes = await fetch(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${data.token}` },
-        })
-        const meData = await meRes.json()
-        
-        if (meData.isAdmin) {
-          localStorage.setItem('admin_token', data.token)
-          localStorage.setItem('admin_user', JSON.stringify(meData))
-          setIsLoggedIn(true)
-          setIsAdmin(true)
-          return true
-        }
-        // Nao e admin
-        alert('Acesso negado. Esta area e exclusiva para administradores.')
-      }
-
       const painelRes = await fetch(`${API_BASE}/auth/painel-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,12 +44,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('admin_user', JSON.stringify(painelUser))
         setIsLoggedIn(true)
         setIsAdmin(true)
-        return true
+        return { success: true }
       }
 
-      return false
+      return {
+        success: false,
+        message: painelData.message || 'Senha do painel incorreta.',
+      }
     } catch {
-      return false
+      return {
+        success: false,
+        message: 'Nao foi possivel conectar ao servidor. Tente novamente.',
+      }
     }
   }
 
