@@ -21,6 +21,7 @@ const anunciantes = [
     endereco: '4a Avenida, 1445, Centro - BC',
     cor: 'from-emerald-500 to-teal-600',
     logo: '/partners/pedal-bike.png',
+    fundo: '#28313f',
   },
   {
     id: 2,
@@ -31,6 +32,7 @@ const anunciantes = [
     endereco: 'Av. Brasil, 451, Centro - BC',
     cor: 'from-amber-500 to-orange-600',
     logo: '/partners/motochefe-sul.webp',
+    fundo: '#171717',
   },
   {
     id: 3,
@@ -41,6 +43,7 @@ const anunciantes = [
     endereco: 'Rua 462, 434, Jardim Praia Mar - Itapema',
     cor: 'from-sky-500 to-blue-600',
     logo: '/partners/joy-scooters.png',
+    fundo: '#d9c900',
   },
   {
     id: 4,
@@ -51,6 +54,7 @@ const anunciantes = [
     endereco: '5a Avenida, 547, Vila Real - Balneario Camboriu',
     cor: 'from-violet-500 to-purple-600',
     logo: '/partners/bicicletaria-aquarius.png',
+    fundo: '#080808',
   },
   {
     id: 5,
@@ -61,6 +65,7 @@ const anunciantes = [
     endereco: 'R. Delfim Mario de Padua Peixoto, 1128, Praia Brava - Itajai',
     cor: 'from-rose-500 to-pink-600',
     logo: '/partners/mega-brava.webp',
+    fundo: '#f4f4f4',
   },
 ];
 
@@ -124,34 +129,47 @@ function AnunciantesCarousel() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.4 }}
-            className="glass-card p-3 h-full flex flex-col cursor-pointer active:scale-[0.98] transition-transform"
+            className="relative h-full overflow-hidden border border-white/10 bg-slate-900 cursor-pointer active:scale-[0.98] transition-transform"
             onClick={() => window.open(a.url, '_blank')}
           >
-            {/* Tag + badge */}
-            <div className="flex items-center justify-between mb-1 shrink-0">
-              <span className={`px-2 py-0.5 rounded-md bg-gradient-to-r ${a.cor} text-white text-[9px] font-bold tracking-wider`}>{a.tag}</span>
-              <span className="text-emerald-400/60 text-[9px]">Visitar →</span>
-            </div>
+            <div className="absolute inset-0" style={{ backgroundColor: a.fundo }} />
+            <img
+              src={a.logo}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-70"
+            />
+            <img
+              src={a.logo}
+              alt={`Logomarca ${a.nome}`}
+              className="absolute inset-0 w-full h-full object-contain object-right opacity-95 drop-shadow-2xl"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/95 via-black/75 to-black/10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/25" />
 
-            <div className="flex flex-1 min-h-0 gap-2">
-              <div className="flex flex-1 min-w-0 flex-col">
-                {/* Nome */}
-                <h3 className="text-white font-bold text-sm leading-tight mb-0.5 truncate shrink-0">{a.nome}</h3>
-
-                {/* Descricao - truncada */}
-                <p className="text-slate-300 text-[11px] leading-snug mb-1 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{a.desc}</p>
-
-                {/* Endereco - sempre na parte inferior */}
-                <div className="mt-auto flex items-center gap-1 text-slate-500 text-[10px] truncate shrink-0">
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  {a.endereco}
-                </div>
+            <div className="relative z-10 p-3 h-full flex flex-col max-w-[78%]">
+              <div className="flex items-center justify-between mb-1 shrink-0">
+                <span className={`px-2 py-0.5 rounded-md bg-gradient-to-r ${a.cor} text-white text-[9px] font-bold tracking-wider shadow-lg shadow-black/30`}>{a.tag}</span>
               </div>
 
-              <div className="w-[88px] h-[66px] shrink-0 self-center rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-lg shadow-black/20">
-                <img src={a.logo} alt={`Logomarca ${a.nome}`} className="w-full h-full object-contain" />
+              <h3 className="text-white font-bold text-sm leading-tight mb-0.5 truncate shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">{a.nome}</h3>
+
+              <p
+                className="text-white/90 text-[11px] leading-snug mb-1 overflow-hidden drop-shadow-[0_1px_2px_rgba(0,0,0,1)]"
+                style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}
+              >
+                {a.desc}
+              </p>
+
+              <div className="mt-auto flex items-center gap-1 text-white/75 text-[10px] truncate shrink-0 drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">
+                <MapPin className="w-3 h-3 shrink-0" />
+                {a.endereco}
               </div>
             </div>
+
+            <span className="absolute z-20 top-3 right-3 px-2 py-1 rounded-full bg-black/55 border border-white/15 backdrop-blur-sm text-white text-[9px] font-medium shadow-lg shadow-black/30">
+              Visitar →
+            </span>
           </motion.div>
         </AnimatePresence>
       </div>
