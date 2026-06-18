@@ -20,6 +20,7 @@ const anunciantes = [
     url: 'https://www.pedalbikebc.com.br',
     endereco: '4a Avenida, 1445, Centro - BC',
     cor: 'from-emerald-500 to-teal-600',
+    logo: '/partners/pedal-bike.png',
   },
   {
     id: 2,
@@ -29,6 +30,7 @@ const anunciantes = [
     url: 'https://motochefesul.com.br',
     endereco: 'Av. Brasil, 451, Centro - BC',
     cor: 'from-amber-500 to-orange-600',
+    logo: '/partners/motochefe-sul.webp',
   },
   {
     id: 3,
@@ -38,15 +40,17 @@ const anunciantes = [
     url: 'https://www.joyscooters.com.br',
     endereco: 'Rua 462, 434, Jardim Praia Mar - Itapema',
     cor: 'from-sky-500 to-blue-600',
+    logo: '/partners/joy-scooters.png',
   },
   {
     id: 4,
-    nome: 'Bike Avenida',
-    tag: 'SCOOTER',
-    desc: 'Bicicletas, Scooter Eletrico, e-Bike, pecas, acessorios e vestuario em Itapema.',
-    url: 'https://lnk.bio/bikeavenida',
-    endereco: 'Meia Praia, Itapema',
+    nome: "Bicicletaria Aquariu's",
+    tag: 'BIKE',
+    desc: 'Bicicletas, pecas, acessorios e oficina especializada em Balneario Camboriu.',
+    url: 'https://www.bicicletariaaquarios.com.br',
+    endereco: '5a Avenida, 547, Vila Real - Balneario Camboriu',
     cor: 'from-violet-500 to-purple-600',
+    logo: '/partners/bicicletaria-aquarius.png',
   },
   {
     id: 5,
@@ -56,6 +60,7 @@ const anunciantes = [
     url: 'https://megaeletronbrava.com.br',
     endereco: 'R. Delfim Mario de Padua Peixoto, 1128, Praia Brava - Itajai',
     cor: 'from-rose-500 to-pink-600',
+    logo: '/partners/mega-brava.webp',
   },
 ];
 
@@ -128,16 +133,24 @@ function AnunciantesCarousel() {
               <span className="text-emerald-400/60 text-[9px]">Visitar →</span>
             </div>
 
-            {/* Nome */}
-            <h3 className="text-white font-bold text-sm leading-tight mb-0.5 truncate shrink-0">{a.nome}</h3>
+            <div className="flex flex-1 min-h-0 gap-2">
+              <div className="flex flex-1 min-w-0 flex-col">
+                {/* Nome */}
+                <h3 className="text-white font-bold text-sm leading-tight mb-0.5 truncate shrink-0">{a.nome}</h3>
 
-            {/* Descricao - truncada */}
-            <p className="text-slate-300 text-[11px] leading-snug mb-1 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{a.desc}</p>
+                {/* Descricao - truncada */}
+                <p className="text-slate-300 text-[11px] leading-snug mb-1 overflow-hidden" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{a.desc}</p>
 
-            {/* Endereco - sempre na parte inferior */}
-            <div className="mt-auto flex items-center gap-1 text-slate-500 text-[10px] truncate shrink-0">
-              <MapPin className="w-3 h-3 shrink-0" />
-              {a.endereco}
+                {/* Endereco - sempre na parte inferior */}
+                <div className="mt-auto flex items-center gap-1 text-slate-500 text-[10px] truncate shrink-0">
+                  <MapPin className="w-3 h-3 shrink-0" />
+                  {a.endereco}
+                </div>
+              </div>
+
+              <div className="w-[88px] h-[66px] shrink-0 self-center rounded-lg bg-white overflow-hidden flex items-center justify-center shadow-lg shadow-black/20">
+                <img src={a.logo} alt={`Logomarca ${a.nome}`} className="w-full h-full object-contain" />
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
