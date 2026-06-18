@@ -9,6 +9,17 @@ import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useBikes } from '../context/BikeContext';
 
+function getOperationError(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) return fallback;
+
+  try {
+    const response = JSON.parse(error.message);
+    return response.message || response.error || fallback;
+  } catch {
+    return error.message || fallback;
+  }
+}
+
 function QRModal({ bike, onClose }: { bike: any; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -136,9 +147,26 @@ function QRModal({ bike, onClose }: { bike: any; onClose: () => void }) {
   );
 }
 
-function DeleteConfirmModal({ bike, onConfirm, onClose }: { bike: any; onConfirm: () => void; onClose: () => void }) {
+function DeleteConfirmModal({ bike, onConfirm, onClose }: { bike: any; onConfirm: () => Promise<void>; onClose: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleConfirm = async () => {
+    setDeleting(true);
+    setError('');
+
+    try {
+      await onConfirm();
+      onClose();
+    } catch (operationError) {
+      setError(getOperationError(operationError, 'Nao foi possivel excluir o equipamento. Tente novamente.'));
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => !deleting && onClose()}>
       <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="w-full max-w-sm glass-card border border-red-500/20 rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="p-5 text-center">
           <div className="w-14 h-14 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-3">
@@ -149,9 +177,16 @@ function DeleteConfirmModal({ bike, onConfirm, onClose }: { bike: any; onConfirm
             Tem certeza que deseja excluir <strong className="text-white">{bike.name}</strong>?<br />
             Esta acao nao pode ser desfeita.
           </p>
+          {error && (
+            <p role="alert" className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-300">
+              {error}
+            </p>
+          )}
           <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-3 rounded-xl glass-card text-white text-sm font-semibold cursor-pointer">Cancelar</button>
-            <button onClick={onConfirm} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-bold cursor-pointer">Excluir</button>
+            <button onClick={onClose} disabled={deleting} className="flex-1 py-3 rounded-xl glass-card text-white text-sm font-semibold cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">Cancelar</button>
+            <button onClick={handleConfirm} disabled={deleting} className="flex-1 py-3 rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-bold cursor-pointer disabled:cursor-not-allowed disabled:opacity-60">
+              {deleting ? 'Excluindo...' : 'Excluir'}
+            </button>
           </div>
         </div>
       </motion.div>
@@ -171,24 +206,32 @@ function EditBikeModal({ bike, onSave, onClose }: { bike: any; onSave: (id: stri
     plataformaTag: bike.plataformaTag || '',
   });
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (field: string, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 
   const handleSave = async () => {
     if (!form.brand || !form.name || !form.color || !form.serie) return;
     setSaving(true);
-    await onSave(bike.id, {
-      brand: form.brand,
-      name: form.name,
-      color: form.color,
-      serie: form.serie,
-      type: form.type,
-      caracteristicas: form.caracteristicas,
-      rastreamento: form.rastreamento,
-      plataformaTag: form.plataformaTag,
-    });
-    setSaving(false);
-    onClose();
+    setError('');
+
+    try {
+      await onSave(bike.id, {
+        brand: form.brand,
+        name: form.name,
+        color: form.color,
+        serie: form.serie,
+        type: form.type,
+        caracteristicas: form.caracteristicas,
+        rastreamento: form.rastreamento,
+        plataformaTag: form.plataformaTag,
+      });
+      onClose();
+    } catch (operationError) {
+      setError(getOperationError(operationError, 'Nao foi possivel salvar as alteracoes. Tente novamente.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -250,6 +293,11 @@ function EditBikeModal({ bike, onSave, onClose }: { bike: any; onSave: (id: stri
 
         {/* Footer */}
         <div className="p-4 border-t border-white/5 shrink-0">
+          {error && (
+            <p role="alert" className="mb-3 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-center text-xs text-red-300">
+              {error}
+            </p>
+          )}
           <button onClick={handleSave} disabled={saving || !form.brand || !form.name || !form.color || !form.serie} className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 cursor-pointer ${saving ? 'bg-white/5 text-slate-500' : 'bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222]'}`}>
             <Save className="w-4 h-4" /> {saving ? 'SALVANDO...' : 'SALVAR ALTERACOES'}
           </button>
@@ -439,10 +487,7 @@ export default function MeusEquipamentos() {
         {bikeToDelete && (
           <DeleteConfirmModal
             bike={bikeToDelete}
-            onConfirm={async () => {
-              await removeBike(bikeToDelete.id);
-              setBikeToDelete(null);
-            }}
+            onConfirm={() => removeBike(bikeToDelete.id)}
             onClose={() => setBikeToDelete(null)}
           />
         )}

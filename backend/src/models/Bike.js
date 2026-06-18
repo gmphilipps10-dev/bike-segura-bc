@@ -23,4 +23,12 @@ const bikeSchema = new mongoose.Schema({
   lastScanAt: { type: Date, default: null },
 }, { timestamps: true });
 
+bikeSchema.set('toJSON', {
+  virtuals: true,
+  transform: (_document, returnedObject) => {
+    returnedObject.id = returnedObject._id.toString();
+    return returnedObject;
+  },
+});
+
 module.exports = mongoose.model('Bike', bikeSchema);

@@ -24,11 +24,29 @@ export interface BikeData {
   scanCount?: number;
 }
 
+type BikeApiData = Partial<BikeData> & {
+  id?: string;
+  _id?: string;
+};
+
+function normalizeBike(rawBike: BikeApiData): BikeData {
+  const id = rawBike.id || rawBike._id;
+
+  if (!id) {
+    throw new Error('Equipamento recebido sem identificador.');
+  }
+
+  return {
+    ...rawBike,
+    id: String(id),
+  } as BikeData;
+}
+
 interface BikeContextType {
   bikes: BikeData[];
   loading: boolean;
   addBike: (bike: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => Promise<any>;
-  updateBike: (id: string, data: Partial<BikeData>) => Promise<any>;
+  updateBike: (id: string, data: Partial<BikeData>) => Promise<BikeData>;
   removeBike: (id: string) => Promise<void>;
   toggleProtection: (id: string) => Promise<void>;
   refreshBikes: () => Promise<void>;
@@ -49,7 +67,7 @@ export function BikeProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       const data = await apiGet('/bikes', token);
-      setBikes(data);
+      setBikes(Array.isArray(data) ? data.map(normalizeBike) : []);
     } catch (err) {
       console.error('Error fetching bikes:', err);
       setBikes([]);
@@ -65,7 +83,7 @@ export function BikeProvider({ children }: { children: ReactNode }) {
   const addBike = async (bikeData: Omit<BikeData, 'id' | 'protected' | 'location' | 'lastSeen'>) => {
     if (!token) return null;
     try {
-      const newBike = await apiPost('/bikes', bikeData, token);
+      const newBike = normalizeBike(await apiPost('/bikes', bikeData, token));
       setBikes(prev => [...prev, newBike]);
       return newBike;
     } catch (err) {
@@ -75,19 +93,14 @@ export function BikeProvider({ children }: { children: ReactNode }) {
   };
 
   const removeBike = async (id: string) => {
-    if (!token) {
-      alert('Você precisa estar logado para excluir equipamentos.');
-      return;
-    }
+    if (!token) throw new Error('Sua sessao expirou. Entre novamente para excluir o equipamento.');
+    if (!id) throw new Error('Nao foi possivel identificar o equipamento.');
+
     try {
-      console.log('Tentando excluir bike:', id, 'com token:', token.substring(0, 20) + '...');
       await apiDelete(`/bikes/${id}`, token);
       setBikes(prev => prev.filter(b => b.id !== id));
-      console.log('Bike excluída com sucesso:', id);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error removing bike:', err);
-      const errorMsg = err.message || 'Erro desconhecido';
-      alert('Erro ao excluir equipamento: ' + errorMsg + '\n\nVerifique se você está logado e tente novamente.');
       throw err;
     }
   };
@@ -97,10 +110,10 @@ export function BikeProvider({ children }: { children: ReactNode }) {
     const bike = bikes.find(b => b.id === id);
     if (!bike) return;
     try {
-      const updated = await apiPut(`/bikes/${id}`, {
+      const updated = normalizeBike(await apiPut(`/bikes/${id}`, {
         protected: !bike.protected,
         lastSeen: bike.protected ? 'Desativado' : 'Agora'
-      }, token);
+      }, token));
       setBikes(prev => prev.map(b => b.id === id ? updated : b));
     } catch (err) {
       console.error('Error toggling protection:', err);
@@ -108,14 +121,16 @@ export function BikeProvider({ children }: { children: ReactNode }) {
   };
 
   const updateBike = async (id: string, data: Partial<BikeData>) => {
-    if (!token) return null;
+    if (!token) throw new Error('Sua sessao expirou. Entre novamente para editar o equipamento.');
+    if (!id) throw new Error('Nao foi possivel identificar o equipamento.');
+
     try {
-      const updated = await apiPut(`/bikes/${id}`, data, token);
+      const updated = normalizeBike(await apiPut(`/bikes/${id}`, data, token));
       setBikes(prev => prev.map(b => b.id === id ? { ...b, ...updated } : b));
       return updated;
     } catch (err) {
       console.error('Error updating bike:', err);
-      return null;
+      throw err;
     }
   };
 

@@ -1,5 +1,7 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const Bike = require('../models/Bike');
+const PrePrintedQR = require('../models/PrePrintedQR');
 const authMiddleware = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 const { vincularProximoQR, generateHash } = require('../utils/qrManager');
@@ -204,6 +206,10 @@ router.post('/', async (req, res) => {
 // Atualizar
 router.put('/:id', async (req, res) => {
   try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Identificador de equipamento invalido.' });
+    }
+
     const updates = pickAllowed(req.body, [
       'name',
       'type',
@@ -222,14 +228,22 @@ router.put('/:id', async (req, res) => {
       'boNumber',
     ]);
 
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ message: 'Nenhuma alteracao valida foi enviada.' });
+    }
+
     const bike = await Bike.findOneAndUpdate(
       { _id: req.params.id, userId: req.userId },
       updates,
-      { new: true }
+      { new: true, runValidators: true }
     );
     if (!bike) return res.status(404).json({ message: 'Bike nao encontrada.' });
     res.json(bike);
   } catch (error) {
+    console.error('[Bike-Atualizar] Erro:', error.message);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Confira os dados informados.' });
+    }
     res.status(500).json({ message: 'Erro ao atualizar.' });
   }
 });
@@ -261,10 +275,33 @@ router.post('/:id/furto', async (req, res) => {
 // Deletar
 router.delete('/:id', async (req, res) => {
   try {
-    await Bike.findOneAndDelete({ _id: req.params.id, userId: req.userId });
-    res.json({ message: 'Removida.' });
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Identificador de equipamento invalido.' });
+    }
+
+    const bike = await Bike.findOne({ _id: req.params.id, userId: req.userId });
+    if (!bike) {
+      return res.status(404).json({ message: 'Equipamento nao encontrado.' });
+    }
+
+    // O adesivo fisico nao pode voltar para a fila e ser entregue a outra pessoa.
+    await PrePrintedQR.updateMany(
+      { bikeId: bike._id },
+      {
+        $set: {
+          status: 'inativo',
+          bikeId: null,
+          userId: null,
+          vinculadoAt: null,
+        },
+      }
+    );
+
+    await bike.deleteOne();
+    res.json({ message: 'Equipamento excluido.', id: bike._id.toString() });
   } catch (error) {
-    res.status(500).json({ message: 'Erro.' });
+    console.error('[Bike-Excluir] Erro:', error.message);
+    res.status(500).json({ message: 'Erro ao excluir o equipamento.' });
   }
 });
 
