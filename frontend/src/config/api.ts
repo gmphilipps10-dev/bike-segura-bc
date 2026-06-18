@@ -36,7 +36,17 @@ export async function apiDelete(endpoint: string, token?: string) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE', headers });
-  if (!res.ok) throw new Error(await res.text());
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      const json = JSON.parse(text);
+      if (json.message) message = json.message;
+    } catch (e) {
+      // não é JSON, usa o texto direto
+    }
+    throw new Error(message);
+  }
   // Alguns DELETE retornam 204 (sem corpo), então não fazemos res.json() automaticamente
   const text = await res.text();
   return text ? JSON.parse(text) : { success: true };
