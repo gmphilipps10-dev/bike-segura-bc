@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 export default function Login() {
   const { login } = useAuth()
+  const navigate = useNavigate()
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -12,7 +14,11 @@ export default function Login() {
     setLoading(true)
     setError('')
     const result = await login(password)
-    if (!result.success) setError(result.message || 'Nao foi possivel entrar.')
+    if (result.success) {
+      navigate('/', { replace: true })
+    } else {
+      setError(result.message || 'Nao foi possivel entrar.')
+    }
     setLoading(false)
   }
 
