@@ -79,8 +79,10 @@ export function BikeProvider({ children }: { children: ReactNode }) {
     try {
       await apiDelete(`/bikes/${id}`, token);
       setBikes(prev => prev.filter(b => b.id !== id));
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error removing bike:', err);
+      alert('Erro ao excluir equipamento: ' + (err.message || 'Tente novamente'));
+      throw err;
     }
   };
 
