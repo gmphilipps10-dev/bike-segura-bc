@@ -37,5 +37,7 @@ export async function apiDelete(endpoint: string, token?: string) {
   if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'DELETE', headers });
   if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  // Alguns DELETE retornam 204 (sem corpo), então não fazemos res.json() automaticamente
+  const text = await res.text();
+  return text ? JSON.parse(text) : { success: true };
 }
