@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Hash, CheckCircle, AlertTriangle, Printer, Plus } from '../components/Icons'
+import QRCode from 'qrcode'
+import { CheckCircle, AlertTriangle, Printer, Plus } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
@@ -11,11 +12,24 @@ interface Adesivo {
   status: 'disponivel' | 'vinculado' | 'inativo'
 }
 
+const escapeHtml = (value: string) => value
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;')
+
+const dividirEmPaginas = <T,>(items: T[], tamanho: number) =>
+  Array.from({ length: Math.ceil(items.length / tamanho) }, (_, indice) =>
+    items.slice(indice * tamanho, (indice + 1) * tamanho)
+  )
+
 export default function Adesivos() {
   const [items, setItems] = useState<Adesivo[]>([])
   const [stats, setStats] = useState({ total: 0, disponiveis: 0, vinculados: 0 })
   const [loading, setLoading] = useState(true)
   const [gerando, setGerando] = useState(false)
+  const [imprimindo, setImprimindo] = useState(false)
   const [msg, setMsg] = useState('')
   const [filtro, setFiltro] = useState<'disponivel' | 'vinculado' | 'todos'>('disponivel')
   const token = localStorage.getItem('admin_token') || ''
@@ -79,9 +93,154 @@ export default function Adesivos() {
 
   const adesivosParaImpressao = items.filter(item => item.status === 'disponivel')
 
+  const imprimirAdesivos = async () => {
+    if (adesivosParaImpressao.length === 0 || imprimindo) return
+
+    const janela = window.open('', 'bike-segura-etiquetas', 'width=1100,height=850')
+    if (!janela) {
+      window.alert('O navegador bloqueou a janela de impressao. Autorize pop-ups para este site e tente novamente.')
+      return
+    }
+
+    janela.document.write('<!doctype html><title>Preparando etiquetas...</title><p style="font-family:Arial;padding:24px">Preparando QR Codes...</p>')
+    janela.document.close()
+    setImprimindo(true)
+
+    try {
+      const etiquetas = await Promise.all(adesivosParaImpressao.map(async item => {
+        const destino = `${window.location.origin}/s/${item.stickerNumber}`
+        const qrDataUrl = await QRCode.toDataURL(destino, {
+          width: 320,
+          margin: 0,
+          errorCorrectionLevel: 'M',
+          color: { dark: '#000000', light: '#ffffff' },
+        })
+
+        return {
+          ...item,
+          qrDataUrl,
+          identificadorCurto: item.hash.slice(0, 8).toUpperCase(),
+        }
+      }))
+
+      const paginas = dividirEmPaginas(etiquetas, 36)
+      const conteudo = paginas.map((pagina, indicePagina) => `
+        <section class="pagina${indicePagina === paginas.length - 1 ? ' ultima' : ''}">
+          ${pagina.map(item => `
+            <article class="etiqueta">
+              <img src="${item.qrDataUrl}" alt="QR Code ${escapeHtml(item.stickerNumber)}">
+              <div class="dados">
+                <div class="marca">BIKE SEGURA BC</div>
+                <div class="serie">${escapeHtml(item.stickerNumber)}</div>
+                <div class="id">${escapeHtml(item.identificadorCurto)}</div>
+              </div>
+            </article>
+          `).join('')}
+        </section>
+      `).join('')
+
+      janela.document.open()
+      janela.document.write(`<!doctype html>
+        <html lang="pt-BR">
+          <head>
+            <meta charset="utf-8">
+            <title>Etiquetas Bike Segura BC</title>
+            <style>
+              @page { size: A4 portrait; margin: 8mm; }
+              * { box-sizing: border-box; }
+              html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+              body {
+                font-family: Arial, Helvetica, sans-serif;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .pagina {
+                display: grid;
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                grid-auto-rows: 27mm;
+                gap: 3mm;
+                width: 100%;
+                break-after: page;
+                page-break-after: always;
+              }
+              .pagina.ultima {
+                break-after: auto;
+                page-break-after: auto;
+              }
+              .etiqueta {
+                display: grid;
+                grid-template-columns: 19mm minmax(0, 1fr);
+                align-items: center;
+                gap: 2mm;
+                min-width: 0;
+                padding: 2mm;
+                overflow: hidden;
+                border: 0.35mm solid #222;
+                border-radius: 2mm;
+                break-inside: avoid;
+                page-break-inside: avoid;
+              }
+              .etiqueta img {
+                display: block;
+                width: 19mm;
+                height: 19mm;
+              }
+              .dados {
+                min-width: 0;
+                font-family: Consolas, "Courier New", monospace;
+                line-height: 1.05;
+              }
+              .marca {
+                margin-bottom: 1.2mm;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 4.6pt;
+                font-weight: 800;
+                letter-spacing: 0.08mm;
+                white-space: nowrap;
+              }
+              .serie {
+                font-size: 7.5pt;
+                font-weight: 900;
+                white-space: nowrap;
+              }
+              .id {
+                margin-top: 1.2mm;
+                font-size: 6.5pt;
+                font-weight: 700;
+                letter-spacing: 0.15mm;
+                white-space: nowrap;
+              }
+              @media screen {
+                body { padding: 8mm; background: #e5e7eb; }
+                .pagina { max-width: 194mm; margin: 0 auto 8mm; padding: 0; background: #fff; }
+              }
+            </style>
+          </head>
+          <body>
+            ${conteudo}
+            <script>
+              window.addEventListener('load', async () => {
+                await Promise.all(Array.from(document.images).map(img =>
+                  img.decode ? img.decode().catch(() => {}) : Promise.resolve()
+                ));
+                setTimeout(() => { window.focus(); window.print(); }, 250);
+              });
+              window.addEventListener('afterprint', () => window.close());
+            </script>
+          </body>
+        </html>`)
+      janela.document.close()
+    } catch (error) {
+      console.error('[Adesivos] Erro ao preparar impressao:', error)
+      janela.close()
+      window.alert('Nao foi possivel preparar as etiquetas. Tente novamente.')
+    } finally {
+      setImprimindo(false)
+    }
+  }
+
   return (
-    <>
-      <div className="screen-only flex min-h-screen bg-slate-900">
+      <div className="flex min-h-screen bg-slate-900">
         <Sidebar />
         <div className="flex-1 p-6 lg:p-8">
           <header className="mb-6">
@@ -100,8 +259,12 @@ export default function Adesivos() {
             <button onClick={gerarLote} disabled={gerando} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               <Plus className="w-4 h-4" />{gerando ? 'Gerando...' : 'Gerar Lote (+100)'}
             </button>
-            <button onClick={() => window.print()} className="btn-secondary flex items-center gap-2">
-              <Printer className="w-4 h-4" />Imprimir
+            <button
+              onClick={imprimirAdesivos}
+              disabled={loading || imprimindo || adesivosParaImpressao.length === 0}
+              className="btn-secondary flex items-center gap-2 disabled:opacity-50"
+            >
+              <Printer className="w-4 h-4" />{imprimindo ? 'Preparando...' : 'Imprimir'}
             </button>
           </div>
 
@@ -126,30 +289,5 @@ export default function Adesivos() {
           )}
         </div>
       </div>
-
-      <main className="print-only print-sticker-sheet" aria-label="Folha de adesivos para impressao">
-        {adesivosParaImpressao.map(item => {
-          const destino = `${window.location.origin}/s/${item.stickerNumber}`
-          const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=0&data=${encodeURIComponent(destino)}`
-          const identificadorCurto = item.hash.slice(0, 8).toUpperCase()
-
-          return (
-            <article key={item._id} className="print-sticker">
-              <img
-                src={qrUrl}
-                alt={`QR Code do adesivo ${item.stickerNumber}`}
-                className="print-sticker-qr"
-                loading="eager"
-              />
-              <div className="print-sticker-info">
-                <p className="print-sticker-brand">BIKE SEGURA BC</p>
-                <p className="print-sticker-number">{item.stickerNumber}</p>
-                <p className="print-sticker-hash">{identificadorCurto}</p>
-              </div>
-            </article>
-          )
-        })}
-      </main>
-    </>
   )
 }
