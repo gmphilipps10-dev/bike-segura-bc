@@ -4,13 +4,15 @@ import {
   ArrowLeft, Radio, ClipboardPaste, X,
   AlertTriangle, MapPin, Calendar, Send, Loader2,
   CheckCircle, ChevronDown, ChevronUp, TrendingUp,
-  Navigation, Eye, Bike as BikeIcon, Bike, ShieldCheck, CircleDot
+  Navigation, Eye, Bike as BikeIcon, Bike, ShieldCheck, CircleDot,
+  Search, Layers3, Database, Route as RouteIcon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { MapContainer, TileLayer, Circle, Marker, Popup, useMap, Polyline } from 'react-leaflet';
 import L from 'leaflet';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
+import cyclingSnapshot from '../data/cicloviasBC.json';
 import 'leaflet/dist/leaflet.css';
 
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -571,6 +573,131 @@ function CicloviasLayer() {
   return null;
 }
 
+type CyclingRouteType = 'protegida' | 'ciclofaixa';
+type CyclingFilter = 'todos' | CyclingRouteType;
+
+interface CyclingSegment {
+  osmId: number;
+  distanceM: number;
+  coordinates: [number, number][];
+}
+
+interface CyclingRoute {
+  id: string;
+  name: string;
+  type: CyclingRouteType;
+  distanceM: number;
+  segmentCount: number;
+  surfaces: { name: string; count: number }[];
+  litSegments: number;
+  segments: CyclingSegment[];
+}
+
+interface CyclingSnapshot {
+  metadata: {
+    source: string;
+    sourceUrl: string;
+    updatedAt: string;
+    routeCount: number;
+    segmentCount: number;
+    totalDistanceM: number;
+    note: string;
+  };
+  routes: CyclingRoute[];
+}
+
+const CYCLING_DATA = cyclingSnapshot as CyclingSnapshot;
+const CYCLING_COLORS: Record<CyclingRouteType, string> = {
+  protegida: '#22c55e',
+  ciclofaixa: '#f59e0b',
+};
+const CYCLING_LABELS: Record<CyclingRouteType, string> = {
+  protegida: 'Ciclovia protegida',
+  ciclofaixa: 'Ciclofaixa',
+};
+const CYCLING_COUNTS = {
+  protegida: CYCLING_DATA.routes.filter((route) => route.type === 'protegida').length,
+  ciclofaixa: CYCLING_DATA.routes.filter((route) => route.type === 'ciclofaixa').length,
+};
+
+function formatCyclingDistance(distanceM: number) {
+  return distanceM < 1000
+    ? `${Math.round(distanceM)} m`
+    : `${(distanceM / 1000).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km`;
+}
+
+function cyclingBounds(routes: CyclingRoute[]) {
+  const coordinates = routes.flatMap((route) =>
+    route.segments.flatMap((segment) => segment.coordinates)
+  );
+  return coordinates.length ? L.latLngBounds(coordinates) : null;
+}
+
+function CyclingViewport({ routes, selectedRoute }: {
+  routes: CyclingRoute[];
+  selectedRoute: CyclingRoute | null;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    const bounds = cyclingBounds(selectedRoute ? [selectedRoute] : routes);
+    if (bounds?.isValid()) {
+      map.fitBounds(bounds, {
+        paddingTopLeft: [28, 105],
+        paddingBottomRight: [28, selectedRoute ? 155 : 100],
+        maxZoom: selectedRoute ? 17 : 14,
+        animate: true,
+      });
+    }
+  }, [map, routes, selectedRoute]);
+
+  return null;
+}
+
+function CurrentCyclingLayer({ routes, selectedRouteId, onSelect }: {
+  routes: CyclingRoute[];
+  selectedRouteId: string | null;
+  onSelect: (route: CyclingRoute) => void;
+}) {
+  return (
+    <>
+      {routes.flatMap((route) =>
+        route.segments.flatMap((segment) => {
+          const selected = route.id === selectedRouteId;
+          const color = CYCLING_COLORS[route.type];
+          return [
+            <Polyline
+              key={`${route.id}-${segment.osmId}-outline`}
+              positions={segment.coordinates}
+              pathOptions={{
+                color: '#07101d',
+                weight: selected ? 10 : 8,
+                opacity: selected ? 0.9 : 0.62,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+              eventHandlers={{ click: () => onSelect(route) }}
+            />,
+            <Polyline
+              key={`${route.id}-${segment.osmId}`}
+              positions={segment.coordinates}
+              pathOptions={{
+                color,
+                weight: selected ? 7 : 5,
+                opacity: selectedRouteId && !selected ? 0.32 : 0.95,
+                dashArray: route.type === 'ciclofaixa' ? '9 7' : undefined,
+                lineCap: 'round',
+                lineJoin: 'round',
+              }}
+              eventHandlers={{ click: () => onSelect(route) }}
+            />,
+          ];
+        })
+      )}
+    </>
+  );
+}
+
 interface Ocorrencia {
   _id: string; tipo: 'manual' | 'monitorado';
   endereco: string; bairro: string; lat: number; lng: number;
@@ -708,8 +835,36 @@ export default function Mapa() {
   const [statsOpen, setStatsOpen] = useState(false);
   const [stats, setStats] = useState<any>(null);
   const [showList, setShowList] = useState(false);
+  const [cyclingFilter, setCyclingFilter] = useState<CyclingFilter>('todos');
+  const [cyclingSearch, setCyclingSearch] = useState('');
+  const [cyclingPanelOpen, setCyclingPanelOpen] = useState(false);
+  const [selectedCyclingRouteId, setSelectedCyclingRouteId] = useState<string | null>(null);
 
   const center: [number, number] = [-26.9958, -48.6356];
+
+  const cyclingRoutes = useMemo(() => {
+    const normalizedSearch = cyclingSearch.trim().toLocaleLowerCase('pt-BR');
+    return CYCLING_DATA.routes.filter((route) => {
+      const matchesType = cyclingFilter === 'todos' || route.type === cyclingFilter;
+      const matchesSearch = !normalizedSearch || route.name.toLocaleLowerCase('pt-BR').includes(normalizedSearch);
+      return matchesType && matchesSearch;
+    });
+  }, [cyclingFilter, cyclingSearch]);
+
+  const selectedCyclingRoute = useMemo(
+    () => CYCLING_DATA.routes.find((route) => route.id === selectedCyclingRouteId) || null,
+    [selectedCyclingRouteId]
+  );
+
+  const visibleCyclingDistance = useMemo(
+    () => cyclingRoutes.reduce((total, route) => total + route.distanceM, 0),
+    [cyclingRoutes]
+  );
+
+  const cyclingUpdatedAt = useMemo(
+    () => new Date(CYCLING_DATA.metadata.updatedAt).toLocaleDateString('pt-BR'),
+    []
+  );
 
   const fetchOcorrencias = useCallback(async () => {
     setLoading(true);
@@ -722,6 +877,12 @@ export default function Mapa() {
   }, []);
 
   useEffect(() => { fetchOcorrencias(); fetchStats(); }, [fetchOcorrencias, fetchStats]);
+
+  useEffect(() => {
+    if (selectedCyclingRouteId && !cyclingRoutes.some((route) => route.id === selectedCyclingRouteId)) {
+      setSelectedCyclingRouteId(null);
+    }
+  }, [cyclingRoutes, selectedCyclingRouteId]);
 
   const porBairro = useMemo(() => contarPorBairro(ocorrencias), [ocorrencias]);
 
@@ -746,7 +907,11 @@ export default function Mapa() {
             <div className="flex-1 min-w-0">
               <h1 className="text-base font-bold text-white">Mapa da Seguranca</h1>
               <p className="text-[10px] text-slate-400 truncate">
-                {activeTab === 'Rastreamento' ? `${bikes.length} equipamento(s)` : activeTab === 'AreaSegura' ? `${ocorrencias.length} ocorrencia(s) real(is)` : `${CICLOVIAS.length} vias cicloviarias`}
+                {activeTab === 'Rastreamento'
+                  ? `${bikes.length} equipamento(s)`
+                  : activeTab === 'AreaSegura'
+                    ? `${ocorrencias.length} ocorrencia(s) real(is)`
+                    : `${CYCLING_DATA.metadata.routeCount} vias • ${CYCLING_DATA.metadata.segmentCount} segmentos`}
               </p>
             </div>
             {user && activeTab === 'AreaSegura' && (
@@ -769,10 +934,10 @@ export default function Mapa() {
       <div className="flex-1 relative min-h-0">
         <MapContainer center={center} zoom={activeTab === 'Ciclovias' ? 14 : 13} style={{ height: '100%', width: '100%', background: '#0c1222' }} zoomControl={false}>
           {activeTab === 'Ciclovias' ? (
-            <>
-              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}" attribution='Tiles &copy; Esri' />
-              <TileLayer url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}" pane="overlayPane" />
-            </>
+            <TileLayer
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; OpenStreetMap contributors &copy; CARTO'
+            />
           ) : (
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OSM' />
           )}
@@ -829,7 +994,17 @@ export default function Mapa() {
               ))}
             </>
           ) : (
-            <CicloviasLayer />
+            <>
+              <CurrentCyclingLayer
+                routes={cyclingRoutes}
+                selectedRouteId={selectedCyclingRouteId}
+                onSelect={(route) => {
+                  setSelectedCyclingRouteId(route.id);
+                  setCyclingPanelOpen(false);
+                }}
+              />
+              <CyclingViewport routes={cyclingRoutes} selectedRoute={selectedCyclingRoute} />
+            </>
           )}
         </MapContainer>
 
@@ -914,25 +1089,218 @@ export default function Mapa() {
               </div>
             </motion.div>
           ) : activeTab === 'Ciclovias' ? (
-            <motion.div key="legend-ciclov" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-4 left-3 right-3 z-[400]">
-              <div className="glass-card p-3 space-y-2 max-h-[200px] overflow-y-auto scrollbar-hide">
-                {CICLOVIAS.map((c) => (
-                  <div key={c.id} className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full shrink-0 flex items-center justify-center" style={{ backgroundColor: c.corBg }}>
-                      <Bike className="w-5 h-5" style={{ color: c.cor }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-white text-xs font-semibold truncate">{c.nome}</h3>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ color: c.cor, backgroundColor: c.cor + '15' }}>{tipoLabel[c.tipo]}</span>
-                        <span className="text-[10px] text-slate-400">{c.distancia}</span>
-                        <span className="text-[10px] text-emerald-400">Ativa</span>
+            <>
+              <motion.div
+                key="cycling-controls"
+                initial={{ opacity: 0, y: -16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                className="absolute top-3 left-3 right-3 z-[400] max-w-2xl mx-auto"
+              >
+                <div className="rounded-2xl border border-slate-200/80 bg-white/95 shadow-2xl shadow-slate-900/20 backdrop-blur-xl overflow-hidden">
+                  <div className="p-3">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0 shadow-lg shadow-emerald-500/20">
+                        <RouteIcon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-slate-900 text-xs font-extrabold">Rede cicloviaria mapeada</p>
+                            <p className="text-slate-500 text-[9px] mt-0.5">
+                              Fonte: OpenStreetMap • atualizada em {cyclingUpdatedAt}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setCyclingPanelOpen(!cyclingPanelOpen)}
+                            className="px-2.5 py-1.5 rounded-lg bg-slate-900 text-white text-[9px] font-bold flex items-center gap-1.5 shrink-0"
+                          >
+                            <Layers3 className="w-3 h-3" />
+                            <span className="hidden sm:inline">{cyclingPanelOpen ? 'FECHAR' : 'EXPLORAR'}</span>
+                            <span className="sm:hidden">{cyclingPanelOpen ? 'FECHAR' : 'VIAS'}</span>
+                          </button>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-1.5 mt-2">
+                          <div className="rounded-lg bg-slate-100 px-2 py-1.5">
+                            <p className="text-slate-900 text-xs font-extrabold">{formatCyclingDistance(CYCLING_DATA.metadata.totalDistanceM)}</p>
+                            <p className="text-slate-500 text-[8px]">extensao mapeada</p>
+                          </div>
+                          <div className="rounded-lg bg-slate-100 px-2 py-1.5">
+                            <p className="text-slate-900 text-xs font-extrabold">{CYCLING_DATA.metadata.routeCount}</p>
+                            <p className="text-slate-500 text-[8px]">vias e conexoes</p>
+                          </div>
+                          <div className="rounded-lg bg-slate-100 px-2 py-1.5">
+                            <p className="text-slate-900 text-xs font-extrabold">{CYCLING_DATA.metadata.segmentCount}</p>
+                            <p className="text-slate-500 text-[8px]">segmentos</p>
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    <div className="flex items-center gap-1.5 mt-2.5">
+                      {([
+                        ['todos', `Todas (${CYCLING_DATA.metadata.routeCount})`],
+                        ['protegida', `Protegidas (${CYCLING_COUNTS.protegida})`],
+                        ['ciclofaixa', `Ciclofaixas (${CYCLING_COUNTS.ciclofaixa})`],
+                      ] as [CyclingFilter, string][]).map(([value, label]) => (
+                        <button
+                          key={value}
+                          onClick={() => setCyclingFilter(value)}
+                          className={`flex-1 py-1.5 rounded-lg border text-[9px] font-bold transition-colors ${
+                            cyclingFilter === value
+                              ? value === 'protegida'
+                                ? 'bg-emerald-500 border-emerald-500 text-white'
+                                : value === 'ciclofaixa'
+                                  ? 'bg-amber-500 border-amber-500 text-slate-950'
+                                  : 'bg-slate-900 border-slate-900 text-white'
+                              : 'bg-white border-slate-200 text-slate-500'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 text-[8px]">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1 text-slate-600">
+                          <span className="w-5 h-1 rounded-full bg-emerald-500" /> protegida
+                        </span>
+                        <span className="flex items-center gap-1 text-slate-600">
+                          <span className="w-5 border-t-2 border-dashed border-amber-500" /> na pista
+                        </span>
+                      </div>
+                      <span className="text-slate-500">
+                        {cyclingRoutes.length} vias • {formatCyclingDistance(visibleCyclingDistance)}
+                      </span>
+                    </div>
                   </div>
-                ))}
-              </div>
-            </motion.div>
+
+                  <AnimatePresence>
+                    {cyclingPanelOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden border-t border-slate-200"
+                      >
+                        <div className="p-3 bg-slate-50">
+                          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
+                            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <input
+                              value={cyclingSearch}
+                              onChange={(event) => setCyclingSearch(event.target.value)}
+                              placeholder="Buscar avenida ou rua..."
+                              className="w-full bg-transparent outline-none text-slate-900 placeholder:text-slate-400 text-[11px]"
+                            />
+                            {cyclingSearch && (
+                              <button onClick={() => setCyclingSearch('')} className="text-slate-400">
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="mt-2 max-h-[32vh] overflow-y-auto space-y-1.5 scrollbar-hide">
+                            {cyclingRoutes.map((route) => (
+                              <button
+                                key={route.id}
+                                onClick={() => {
+                                  setSelectedCyclingRouteId(route.id);
+                                  setCyclingPanelOpen(false);
+                                }}
+                                className={`w-full text-left rounded-xl border p-2.5 flex items-center gap-2.5 transition-colors ${
+                                  route.id === selectedCyclingRouteId
+                                    ? 'bg-slate-900 border-slate-900'
+                                    : 'bg-white border-slate-200 hover:border-slate-300'
+                                }`}
+                              >
+                                <div
+                                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                                  style={{ backgroundColor: `${CYCLING_COLORS[route.type]}18` }}
+                                >
+                                  <Bike className="w-4 h-4" style={{ color: CYCLING_COLORS[route.type] }} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-[11px] font-bold truncate ${route.id === selectedCyclingRouteId ? 'text-white' : 'text-slate-900'}`}>
+                                    {route.name}
+                                  </p>
+                                  <p className={`text-[9px] mt-0.5 ${route.id === selectedCyclingRouteId ? 'text-slate-300' : 'text-slate-500'}`}>
+                                    {CYCLING_LABELS[route.type]} • {formatCyclingDistance(route.distanceM)} • {route.segmentCount} segmento(s)
+                                  </p>
+                                </div>
+                                <Navigation className="w-3.5 h-3.5 shrink-0" style={{ color: CYCLING_COLORS[route.type] }} />
+                              </button>
+                            ))}
+                            {cyclingRoutes.length === 0 && (
+                              <div className="py-6 text-center">
+                                <Search className="w-6 h-6 text-slate-300 mx-auto mb-2" />
+                                <p className="text-slate-500 text-[10px]">Nenhuma via encontrada.</p>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-start gap-1.5 mt-2 text-slate-400 text-[8px] leading-relaxed">
+                            <Database className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{CYCLING_DATA.metadata.note}</span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+
+              <AnimatePresence>
+                {selectedCyclingRoute && !cyclingPanelOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    className="absolute bottom-4 left-3 right-3 z-[400] max-w-xl mx-auto"
+                  >
+                    <div className="rounded-2xl bg-slate-950/94 border border-white/10 shadow-2xl shadow-black/40 backdrop-blur-xl p-3">
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${CYCLING_COLORS[selectedCyclingRoute.type]}22` }}
+                        >
+                          <Bike className="w-5 h-5" style={{ color: CYCLING_COLORS[selectedCyclingRoute.type] }} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-white text-xs font-extrabold truncate">{selectedCyclingRoute.name}</p>
+                              <p className="text-slate-400 text-[9px] mt-0.5">
+                                {CYCLING_LABELS[selectedCyclingRoute.type]} • {formatCyclingDistance(selectedCyclingRoute.distanceM)}
+                              </p>
+                            </div>
+                            <button onClick={() => setSelectedCyclingRouteId(null)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center shrink-0">
+                              <X className="w-3.5 h-3.5 text-slate-400" />
+                            </button>
+                          </div>
+                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                            <span className="px-2 py-1 rounded-lg bg-white/5 text-slate-300 text-[8px]">
+                              {selectedCyclingRoute.segmentCount} segmento(s)
+                            </span>
+                            {selectedCyclingRoute.surfaces[0] && (
+                              <span className="px-2 py-1 rounded-lg bg-white/5 text-slate-300 text-[8px]">
+                                piso: {selectedCyclingRoute.surfaces[0].name}
+                              </span>
+                            )}
+                            {selectedCyclingRoute.litSegments > 0 && (
+                              <span className="px-2 py-1 rounded-lg bg-white/5 text-slate-300 text-[8px]">
+                                iluminacao mapeada
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
           ) : (
             <motion.div key="legend-rast" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="absolute bottom-4 left-3 right-3 z-[400]">
               <div className="glass-card p-3 flex items-center gap-3">
