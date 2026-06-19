@@ -258,7 +258,7 @@
   }
 
   .home-carousel-card {
-    height: clamp(86px, 13.5dvh, 108px) !important;
+    height: 118px !important;
   }
 
   .home-carousel-card + div {
@@ -270,15 +270,15 @@
   }
 
   .home-menu-card {
-    height: clamp(56px, 8.6dvh, 74px) !important;
-    padding-top: 0.25rem !important;
-    padding-bottom: 0.25rem !important;
-    gap: 0.15rem !important;
+    height: 88px !important;
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    gap: 0.3rem !important;
   }
 
   .home-menu-icon {
-    width: clamp(1.85rem, 4.8dvh, 2.35rem) !important;
-    height: clamp(1.85rem, 4.8dvh, 2.35rem) !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
   }
 
   .home-menu-icon svg {
@@ -296,8 +296,8 @@
   }
 
   .home-emergency-button {
-    width: clamp(2.75rem, 6.5dvh, 3.45rem) !important;
-    height: clamp(2.75rem, 6.5dvh, 3.45rem) !important;
+    width: 3.75rem !important;
+    height: 3.75rem !important;
   }
 
   .home-emergency-button svg {
@@ -315,13 +315,13 @@
   }
 
   .home-referral button {
-    padding-top: 0.55rem !important;
-    padding-bottom: 0.55rem !important;
+    padding-top: 0.7rem !important;
+    padding-bottom: 0.7rem !important;
   }
 
   .home-verse {
-    margin-top: 0.3rem !important;
-    margin-bottom: 0.15rem !important;
+    margin-top: 0.45rem !important;
+    margin-bottom: 0.25rem !important;
   }
 
   .home-verse p {
@@ -331,6 +331,34 @@
 
   .bottom-nav-card {
     margin-bottom: 0.35rem !important;
+  }
+}
+
+@media (max-width: 767px) and (max-height: 780px) {
+  .home-carousel-card {
+    height: 98px !important;
+  }
+
+  .home-menu-card {
+    height: 66px !important;
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+    gap: 0.2rem !important;
+  }
+
+  .home-menu-icon {
+    width: 2.1rem !important;
+    height: 2.1rem !important;
+  }
+
+  .home-emergency-button {
+    width: 3rem !important;
+    height: 3rem !important;
+  }
+
+  .home-referral button {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
   }
 }
 
@@ -346,6 +374,9 @@
 
   .home-menu-card {
     height: 51px !important;
+    padding-top: 0.2rem !important;
+    padding-bottom: 0.2rem !important;
+    gap: 0.1rem !important;
   }
 
   .home-menu-card span {
@@ -355,6 +386,11 @@
   .home-emergency-button {
     width: 2.5rem !important;
     height: 2.5rem !important;
+  }
+
+  .home-menu-icon {
+    width: 1.85rem !important;
+    height: 1.85rem !important;
   }
 
   .home-referral button {
