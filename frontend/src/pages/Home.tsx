@@ -245,7 +245,7 @@ export default function Home() {
   const [greeting] = useState(() => { const h = new Date().getHours(); if (h < 12) return 'Bom dia'; if (h < 18) return 'Boa tarde'; return 'Boa noite'; });
   const [alertaOpen, setAlertaOpen] = useState(false);
   const navigate = useNavigate();
-  const { isMobile, isInstalled, promptInstall } = useAppInstall();
+  const { isMobile, isIOS, isInstalled, promptInstall } = useAppInstall();
   const displayName = user?.name?.split(' ')[0] || 'Usuário';
   const initial = user?.name?.charAt(0) || 'U';
   const rootRef = useRef<HTMLDivElement>(null);
@@ -298,7 +298,7 @@ export default function Home() {
   const showInstallButton = isMobile && !isInstalled;
 
   return (
-    <div ref={rootRef} className="home-shell h-[100dvh] w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
+    <div ref={rootRef} className={`home-shell ${isIOS ? 'home-ios' : ''} h-[100dvh] w-full bg-[#0c1222] relative overflow-hidden flex flex-col`}>
 
       {/* Background */}
       <div className="fixed inset-0 z-0">

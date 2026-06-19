@@ -37,6 +37,7 @@ if (typeof window !== 'undefined') {
 export function useAppInstall() {
   const [, setVersion] = useState(installVersion);
   const [isMobile, setIsMobile] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(isStandaloneMode);
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export function useAppInstall() {
       const mobileByScreen = window.matchMedia('(max-width: 767px)').matches;
       const mobileByAgent = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       setIsMobile(mobileByScreen || mobileByAgent);
+      setIsIOS(/iPad|iPhone|iPod/i.test(navigator.userAgent));
       setIsInstalled(isStandaloneMode());
     };
 
@@ -75,6 +77,7 @@ export function useAppInstall() {
 
   return {
     isMobile,
+    isIOS,
     isInstalled,
     canPromptInstall: !!deferredInstallPrompt,
     promptInstall,
