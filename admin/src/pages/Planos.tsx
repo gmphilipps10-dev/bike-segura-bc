@@ -14,7 +14,7 @@ const PLANOS = [
 type PlanoId = 'bronze' | 'prata' | 'ouro' | 'diamante'
 type Precos = Record<PlanoId, number>
 
-const PRECOS_PADRAO: Precos = { bronze: 50, prata: 150, ouro: 300, diamante: 450 }
+const PRECOS_PADRAO: Precos = { bronze: 4.17, prata: 12.5, ouro: 25, diamante: 37.5 }
 
 export default function Planos() {
   const [stats, setStats] = useState({
@@ -125,7 +125,7 @@ export default function Planos() {
                       </div>
                     </div>
                     <div className="w-32">
-                      <label htmlFor={`preco-${plano.id}`} className="block text-slate-500 text-xs mb-1">Valor anual</label>
+                      <label htmlFor={`preco-${plano.id}`} className="block text-slate-500 text-xs mb-1">Mensalidade</label>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400 text-sm">R$</span>
                         <input
@@ -165,7 +165,8 @@ export default function Planos() {
               <h2 className="text-white font-bold text-lg mb-2">Informacoes</h2>
               <p className="text-slate-400 text-sm">
                 Nao ha plano gratuito. Todos os usuarios devem assinar um dos planos para proteger suas bikes.
-                O plano e renovado anualmente.
+                Cada assinatura pertence a um equipamento. O cliente pode pagar em 12 cobrancas mensais
+                ou quitar o total do ano de uma vez.
               </p>
             </div>
           </>

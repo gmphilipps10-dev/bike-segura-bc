@@ -5,10 +5,10 @@ export type PlanId = 'bronze' | 'prata' | 'ouro' | 'diamante';
 export type PlanPrices = Record<PlanId, number>;
 
 export const DEFAULT_PLAN_PRICES: PlanPrices = {
-  bronze: 50,
-  prata: 150,
-  ouro: 300,
-  diamante: 450,
+  bronze: 4.17,
+  prata: 12.5,
+  ouro: 25,
+  diamante: 37.5,
 };
 
 export function formatPlanPrice(value: number) {
@@ -16,6 +16,18 @@ export function formatPlanPrice(value: number) {
     style: 'currency',
     currency: 'BRL',
   });
+}
+
+export function getAnnualPlanPrice(monthlyValue: number) {
+  return Number((monthlyValue * 12).toFixed(2));
+}
+
+export function getDailyProtectionPrice(monthlyValue: number) {
+  return Number(((monthlyValue * 12) / 365).toFixed(2));
+}
+
+export function formatDailyProtectionPrice(monthlyValue: number) {
+  return `${formatPlanPrice(getDailyProtectionPrice(monthlyValue))}/dia`;
 }
 
 export function usePlanPrices() {

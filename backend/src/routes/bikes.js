@@ -2,9 +2,11 @@ const express = require('express');
 const mongoose = require('mongoose');
 const Bike = require('../models/Bike');
 const PrePrintedQR = require('../models/PrePrintedQR');
+const Pagamento = require('../models/Pagamento');
 const authMiddleware = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 const { vincularProximoQR, generateHash } = require('../utils/qrManager');
+const { cancelarCobrancaAsaas } = require('../utils/asaas');
 const { notificarFurto } = require('./push');
 const router = express.Router();
 
@@ -13,6 +15,36 @@ function pickAllowed(source, allowedFields) {
     if (Object.prototype.hasOwnProperty.call(source, field)) acc[field] = source[field];
     return acc;
   }, {});
+}
+
+async function sincronizarPlanoUsuario(userId) {
+  const User = require('../models/User');
+  const ordem = ['free', 'bronze', 'prata', 'ouro', 'diamante'];
+  const ativas = await Bike.find({
+    userId,
+    planoAtivo: true,
+    $or: [{ planoDataExpiracao: null }, { planoDataExpiracao: { $gt: new Date() } }],
+  }).select('plano planoDataAtivacao planoDataExpiracao');
+
+  if (!ativas.length) {
+    await User.findByIdAndUpdate(userId, {
+      plano: 'free',
+      planoAtivo: false,
+      planoDataAtivacao: null,
+      planoDataExpiracao: null,
+    });
+    return;
+  }
+
+  const plano = ativas.reduce((melhor, bike) => (
+    ordem.indexOf(bike.plano) > ordem.indexOf(melhor) ? bike.plano : melhor
+  ), 'free');
+  const expiracoes = ativas.map(bike => bike.planoDataExpiracao).filter(Boolean);
+  await User.findByIdAndUpdate(userId, {
+    plano,
+    planoAtivo: true,
+    planoDataExpiracao: expiracoes.length ? new Date(Math.max(...expiracoes.map(Number))) : null,
+  });
 }
 
 // Consulta publica - SEM AUTH
@@ -284,6 +316,26 @@ router.delete('/:id', async (req, res) => {
       return res.status(404).json({ message: 'Equipamento nao encontrado.' });
     }
 
+    const cobrancasAtivas = await Pagamento.find({ bikeId: bike._id, cobrancaAtiva: true });
+    for (const pagamento of cobrancasAtivas) {
+      try {
+        await cancelarCobrancaAsaas(pagamento);
+      } catch (cancelError) {
+        console.error('[Bike-Excluir] Falha ao cancelar cobranca:', cancelError.message);
+        return res.status(502).json({
+          message: 'Nao foi possivel cancelar a cobranca deste equipamento. Tente novamente antes de excluir.',
+        });
+      }
+
+      pagamento.status = 'cancelado';
+      pagamento.cobrancaAtiva = false;
+      pagamento.historico.push({
+        status: 'cancelado',
+        descricao: 'Cobranca cancelada automaticamente porque o equipamento foi excluido',
+      });
+      await pagamento.save();
+    }
+
     const inativadoAt = new Date();
     const adesivosVinculados = await PrePrintedQR
       .find({ bikeId: bike._id })
@@ -322,6 +374,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     await bike.deleteOne();
+    await sincronizarPlanoUsuario(req.userId);
     res.json({ message: 'Equipamento excluido.', id: bike._id.toString() });
   } catch (error) {
     console.error('[Bike-Excluir] Erro:', error.message);

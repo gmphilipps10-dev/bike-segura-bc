@@ -5,7 +5,7 @@ import {
   Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
+import { formatDailyProtectionPrice, formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
 
 const FAQS = [
   {
@@ -26,7 +26,7 @@ const FAQS = [
   },
   {
     pergunta: 'Posso cancelar minha assinatura?',
-    resposta: 'Sim. O cancelamento pode ser solicitado a qualquer momento, sem burocracia. Como os planos são anuais, não realizamos reembolso do valor proporcional do período restante.',
+    resposta: 'Sim. No pagamento mensal, as cobrancas futuras podem ser canceladas. No pagamento anual, a protecao permanece valida pelo periodo contratado.',
   },
   {
     pergunta: 'Como funciona o sistema de indicações?',
@@ -34,7 +34,7 @@ const FAQS = [
   },
   {
     pergunta: 'O equipamento de rastreamento está incluído no plano?',
-    resposta: 'Não. O valor do plano é referente à assinatura anual do serviço. Os equipamentos de rastreamento (TAG e/ou Rastreador GPS 4G) são cobrados à parte e passam a ser de propriedade do usuário.',
+    resposta: 'Nao. O valor do plano se refere ao servico, com pagamento mensal ou do ano completo. TAG e Rastreador GPS 4G sao cobrados a parte.',
   },
   {
     pergunta: 'Como anunciar meu equipamento para venda?',
@@ -48,7 +48,7 @@ export default function AjudaSuporte() {
   const whatsappNumber = '5547992458380';
   const faqs = FAQS.map((faq, index) => index === 3 ? {
     ...faq,
-    resposta: `Temos quatro planos: Bronze (${formatPlanPrice(prices.bronze)}/ano), Prata (${formatPlanPrice(prices.prata)}/ano), Ouro (${formatPlanPrice(prices.ouro)}/ano) e Diamante (${formatPlanPrice(prices.diamante)}/ano).`,
+    resposta: `Mensalidades: Bronze ${formatPlanPrice(prices.bronze)} (${formatDailyProtectionPrice(prices.bronze)}), Prata ${formatPlanPrice(prices.prata)} (${formatDailyProtectionPrice(prices.prata)}), Ouro ${formatPlanPrice(prices.ouro)} (${formatDailyProtectionPrice(prices.ouro)}) e Diamante ${formatPlanPrice(prices.diamante)} (${formatDailyProtectionPrice(prices.diamante)}).`,
   } : faq);
 
   return (

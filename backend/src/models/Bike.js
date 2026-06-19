@@ -21,6 +21,11 @@ const bikeSchema = new mongoose.Schema({
   boNumber: { type: String, default: '' },
   scanCount: { type: Number, default: 0 },
   lastScanAt: { type: Date, default: null },
+  plano: { type: String, enum: ['free', 'bronze', 'prata', 'ouro', 'diamante'], default: 'free' },
+  planoAtivo: { type: Boolean, default: false },
+  planoDataAtivacao: { type: Date, default: null },
+  planoDataExpiracao: { type: Date, default: null },
+  pagamentoAtualId: { type: mongoose.Schema.Types.ObjectId, ref: 'Pagamento', default: null },
 }, { timestamps: true });
 
 bikeSchema.set('toJSON', {

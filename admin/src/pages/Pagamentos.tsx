@@ -50,10 +50,13 @@ export default function Pagamentos() {
   }
 
   const getExportData = () => {
-    const headers = ['Usuario', 'Plano', 'Valor', 'Status', 'Metodo', 'Data Vencimento', 'Data Pagamento', 'Asaas ID']
+    const headers = ['Usuario', 'Equipamento', 'Serie', 'Plano', 'Cobranca', 'Valor', 'Status', 'Metodo', 'Data Vencimento', 'Data Pagamento', 'Asaas ID']
     const rows = filtrados.map(p => [
       p.userName || '-',
+      p.bikeName || 'Legado sem vinculo',
+      p.bikeSerie || '-',
       p.plano || '-',
+      p.frequencia || 'legado',
       `R$ ${((p.valor || 0) / 100).toFixed(2)}`,
       p.status || '-',
       p.metodoPagamento || '-',
@@ -149,12 +152,14 @@ export default function Pagamentos() {
               </div>
             </div>
 
-            <div className="glass-card overflow-hidden">
-              <table className="w-full text-sm">
+            <div className="glass-card overflow-x-auto">
+              <table className="w-full min-w-[980px] text-sm">
                 <thead className="bg-white/5 text-slate-400 text-xs uppercase">
                   <tr>
                     <th className="text-left p-3">Usuario</th>
+                    <th className="text-left p-3">Equipamento</th>
                     <th className="text-left p-3">Plano</th>
+                    <th className="text-left p-3">Cobranca</th>
                     <th className="text-left p-3">Valor</th>
                     <th className="text-left p-3">Status</th>
                     <th className="text-left p-3">Metodo</th>
@@ -163,7 +168,7 @@ export default function Pagamentos() {
                 </thead>
                 <tbody>
                   {filtrados.length === 0 && (
-                    <tr><td colSpan={6} className="p-6 text-center text-slate-500">Nenhum pagamento encontrado</td></tr>
+                    <tr><td colSpan={8} className="p-6 text-center text-slate-500">Nenhum pagamento encontrado</td></tr>
                   )}
                   {filtrados.map(p => {
                     const cfg = statusConfig[p.status] || statusConfig.pendente
@@ -171,7 +176,12 @@ export default function Pagamentos() {
                     return (
                       <tr key={p._id} className="border-t border-white/5 hover:bg-white/[0.02]">
                         <td className="p-3 text-white font-medium">{p.userName || '-'}</td>
+                        <td className="p-3">
+                          <p className="text-white text-xs">{p.bikeName || 'Legado sem vinculo'}</p>
+                          <p className="text-slate-500 text-[10px]">{p.bikeSerie || '-'}</p>
+                        </td>
                         <td className="p-3 text-slate-400 capitalize">{p.plano || '-'}</td>
+                        <td className="p-3 text-slate-400 capitalize text-xs">{p.frequencia || 'legado'}</td>
                         <td className="p-3 text-white">R${((p.valor || 0) / 100).toFixed(2)}</td>
                         <td className="p-3">
                           <span className={`${cfg.bg} ${cfg.cor} text-[10px] font-bold px-2 py-0.5 rounded flex items-center gap-1 w-fit`}>

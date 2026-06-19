@@ -7,7 +7,13 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
-import { formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
+import {
+  formatDailyProtectionPrice,
+  formatPlanPrice,
+  getAnnualPlanPrice,
+  usePlanPrices,
+} from '../hooks/usePlanPrices';
+import { useBikes } from '../context/BikeContext';
 
 const plans = [
   {
@@ -15,7 +21,7 @@ const plans = [
     name: 'Bronze',
     subtitle: 'Cadastro + Alerta de Furto',
     icon: Award,
-    period: '/ano',
+    period: '/mes',
     color: 'from-amber-600 to-amber-700',
     borderColor: 'border-amber-600/30',
     popular: false,
@@ -33,7 +39,7 @@ const plans = [
     name: 'Prata',
     subtitle: 'TAG (iOS ou Android)',
     icon: Medal,
-    period: '/ano',
+    period: '/mes',
     color: 'from-slate-400 to-slate-500',
     borderColor: 'border-slate-400/30',
     popular: false,
@@ -52,7 +58,7 @@ const plans = [
     name: 'Ouro',
     subtitle: 'Rastreador GPS 4G',
     icon: Crown,
-    period: '/ano',
+    period: '/mes',
     color: 'from-amber-400 to-yellow-500',
     borderColor: 'border-amber-400/50',
     popular: true,
@@ -71,7 +77,7 @@ const plans = [
     name: 'Diamante',
     subtitle: 'TAG + Rastreador GPS 4G',
     icon: Gem,
-    period: '/ano',
+    period: '/mes',
     color: 'from-blue-400 to-cyan-400',
     borderColor: 'border-blue-400/30',
     popular: false,
@@ -90,11 +96,19 @@ const plans = [
 export default function Planos() {
   const navigate = useNavigate();
   const { prices } = usePlanPrices();
+  const { bikes, loading: bikesLoading } = useBikes();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [selectedBike, setSelectedBike] = useState('');
+  const [selectionError, setSelectionError] = useState('');
   const [showFaq, setShowFaq] = useState(false);
 
   const handleAssinar = (planId: string) => {
-    navigate(`/pagamento?plano=${planId}`);
+    if (!selectedBike) {
+      setSelectionError('Escolha primeiro o equipamento que recebera a protecao.');
+      document.getElementById('selecionar-equipamento')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    navigate(`/pagamento?plano=${planId}&bike=${selectedBike}`);
   };
 
   return (
@@ -133,6 +147,55 @@ export default function Planos() {
             <p className="text-white font-semibold text-sm">2.400+ bikes recuperadas</p>
             <p className="text-slate-400 text-[11px]">Taxa de recuperação de 94% em Balneário Camboriú</p>
           </div>
+        </motion.div>
+
+        <motion.div
+          id="selecionar-equipamento"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.12 }}
+          className="glass-card p-4 mb-5 border border-amber-400/20"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Bike className="w-4 h-4 text-amber-400" />
+            <h2 className="text-white font-bold text-sm">1. Escolha o equipamento</h2>
+          </div>
+          <p className="text-slate-400 text-xs mb-3">
+            Toda assinatura fica vinculada a um unico equipamento.
+          </p>
+
+          {bikesLoading ? (
+            <p className="text-slate-500 text-xs">Carregando seus equipamentos...</p>
+          ) : bikes.length ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {bikes.map(bike => (
+                <button
+                  key={bike.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedBike(bike.id);
+                    setSelectionError('');
+                  }}
+                  className={`rounded-xl border p-3 text-left transition-all ${
+                    selectedBike === bike.id
+                      ? 'border-amber-400 bg-amber-400/10'
+                      : 'border-white/10 bg-white/[0.03]'
+                  }`}
+                >
+                  <p className="text-white text-sm font-semibold">{bike.name}</p>
+                  <p className="text-slate-500 text-[11px]">{bike.brand} • Serie {bike.serie}</p>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <Link
+              to="/cadastrar"
+              className="block w-full rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 py-3 text-center text-sm font-bold text-[#0c1222]"
+            >
+              CADASTRAR EQUIPAMENTO
+            </Link>
+          )}
+          {selectionError && <p role="alert" className="text-red-400 text-xs mt-3">{selectionError}</p>}
         </motion.div>
 
         {/* Plans */}
@@ -177,7 +240,13 @@ export default function Planos() {
                   <div className="mb-1">
                     <span className={`text-3xl font-bold ${plan.popular ? 'text-gradient-gold' : 'text-white'}`}>{formatPlanPrice(prices[plan.id as keyof typeof prices])}</span>
                     <span className="text-slate-500 text-sm ml-1">{plan.period}</span>
+                    <span className="ml-2 text-[11px] font-semibold text-emerald-400">
+                      ({formatDailyProtectionPrice(prices[plan.id as keyof typeof prices])})
+                    </span>
                   </div>
+                  <p className="text-slate-500 text-[10px] mb-1">
+                    ou {formatPlanPrice(getAnnualPlanPrice(prices[plan.id as keyof typeof prices]))} pelo ano completo
+                  </p>
                   <p className="text-slate-600 text-[10px] mb-4">Equipamentos de rastreamento vendidos à parte</p>
 
                   {/* Features */}
@@ -206,28 +275,6 @@ export default function Planos() {
               </motion.div>
             );
           })}
-        </motion.div>
-
-        {/* Select Bike Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass-card p-5 mb-6"
-        >
-          <div className="flex items-center gap-2 mb-3">
-            <Bike className="w-4 h-4 text-amber-400" />
-            <h3 className="text-amber-400 font-bold text-sm">Selecione a bike para proteger</h3>
-          </div>
-          <p className="text-slate-500 text-xs mb-4">Escolha qual equipamento deseja vincular ao plano</p>
-          <Link to="/cadastrar">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-[#0c1222] font-bold text-sm cursor-pointer shadow-lg shadow-amber-500/20"
-            >
-              CADASTRAR BIKE
-            </motion.button>
-          </Link>
         </motion.div>
 
         {/* Indique e Ganhe */}
@@ -274,11 +321,11 @@ export default function Planos() {
               </div>
               <div>
                 <p className="text-amber-400 text-xs font-semibold mb-1">Posso cancelar a qualquer momento?</p>
-                <p className="text-slate-400 text-xs leading-relaxed">Sim. O cancelamento pode ser solicitado a qualquer momento, sem burocracia. Como os planos são anuais, não realizamos reembolso do valor proporcional do período restante.</p>
+                <p className="text-slate-400 text-xs leading-relaxed">Sim. No pagamento mensal, as cobrancas futuras podem ser canceladas. No pagamento anual, a protecao permanece valida pelo periodo ja contratado.</p>
               </div>
               <div>
                 <p className="text-amber-400 text-xs font-semibold mb-1">Os equipamentos de rastreamento estão incluídos no plano?</p>
-                <p className="text-slate-400 text-xs leading-relaxed">Não. O valor do plano é referente à assinatura anual do serviço Bike Segura BC. Os equipamentos de rastreamento (TAG e/ou Rastreador GPS 4G) são cobrados à parte e passam a ser de propriedade do usuário. Não realizamos compra de equipamentos usados.</p>
+                <p className="text-slate-400 text-xs leading-relaxed">Nao. O valor do plano se refere ao servico Bike Segura BC, com opcao de cobranca mensal ou pagamento do ano completo. TAG e Rastreador GPS 4G sao cobrados a parte.</p>
               </div>
               <div>
                 <p className="text-amber-400 text-xs font-semibold mb-1">O que é o ACT?</p>
