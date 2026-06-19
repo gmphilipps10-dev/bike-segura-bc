@@ -13,12 +13,14 @@ router.get('/', adminMiddleware, async (req, res) => {
     const query = {};
     if (status) query.status = status;
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const parsedPage = Math.max(parseInt(page) || 1, 1);
+    const parsedLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 2000);
+    const skip = (parsedPage - 1) * parsedLimit;
     const [items, total, disponiveis, vinculados, inativos] = await Promise.all([
       PrePrintedQR.find(query)
         .sort({ stickerNumber: 1 })
         .skip(skip)
-        .limit(parseInt(limit))
+        .limit(parsedLimit)
         .populate('bikeId', 'name brand type serie color')
         .populate('userId', 'name email'),
       PrePrintedQR.countDocuments(query),
@@ -33,8 +35,8 @@ router.get('/', adminMiddleware, async (req, res) => {
       disponiveis,
       vinculados,
       inativos,
-      page: parseInt(page),
-      totalPages: Math.ceil(total / parseInt(limit)),
+      page: parsedPage,
+      totalPages: Math.ceil(total / parsedLimit),
     });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao listar.' });

@@ -56,18 +56,18 @@ const dividirEmPaginas = <T,>(items: T[], tamanho: number) =>
   )
 
 export default function Adesivos() {
-  const [items, setItems] = useState<Adesivo[]>([])
+  const [todosItems, setTodosItems] = useState<Adesivo[]>([])
   const [stats, setStats] = useState({ total: 0, disponiveis: 0, vinculados: 0, inativos: 0 })
   const [loading, setLoading] = useState(true)
   const [gerando, setGerando] = useState(false)
   const [imprimindo, setImprimindo] = useState(false)
   const [msg, setMsg] = useState('')
-  const [filtro, setFiltro] = useState<FiltroAdesivo>('disponivel')
+  const [filtro, setFiltro] = useState<FiltroAdesivo>('todos')
   const token = localStorage.getItem('admin_token') || ''
 
   const fetchData = () => {
-    const status = filtro !== 'todos' ? `&status=${filtro}` : ''
-    fetch(`${API_BASE}/preprinted?limit=100${status}`, { headers: { Authorization: `Bearer ${token}` } })
+    setLoading(true)
+    fetch(`${API_BASE}/preprinted?limit=2000`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => {
         if (!r.ok) {
           console.error('[Adesivos] Erro API:', r.status, r.statusText)
@@ -76,7 +76,7 @@ export default function Adesivos() {
         return r.json()
       })
       .then(d => {
-        setItems(d.items || [])
+        setTodosItems(d.items || [])
         setStats({
           total: d.total || 0,
           disponiveis: d.disponiveis || 0,
@@ -88,7 +88,7 @@ export default function Adesivos() {
       .catch(err => { console.error('[Adesivos] Erro:', err); setLoading(false) })
   }
 
-  useEffect(() => { fetchData() }, [filtro, token])
+  useEffect(() => { fetchData() }, [token])
 
   const gerarLote = () => {
     const confirmou = window.confirm(
@@ -127,7 +127,15 @@ export default function Adesivos() {
       .finally(() => setGerando(false))
   }
 
-  const adesivosParaImpressao = items.filter(item => item.status === 'disponivel')
+  const items = filtro === 'todos'
+    ? todosItems
+    : todosItems.filter(item => item.status === filtro)
+
+  // A grafica precisa receber a sequencia fisica completa. Por isso, a
+  // impressao inclui livres, vinculados e inativos, independentemente do
+  // filtro usado apenas para visualizar o estoque no painel.
+  const adesivosParaImpressao = todosItems
+  const textoInativos = `${stats.inativos} ${stats.inativos === 1 ? 'inativa' : 'inativas'}`
 
   const imprimirAdesivos = async () => {
     if (adesivosParaImpressao.length === 0 || imprimindo) return
@@ -314,11 +322,21 @@ export default function Adesivos() {
               disabled={loading || imprimindo || adesivosParaImpressao.length === 0}
               className="btn-secondary flex items-center gap-2 disabled:opacity-50"
             >
-              <Printer className="w-4 h-4" />{imprimindo ? 'Preparando...' : 'Imprimir'}
+              <Printer className="w-4 h-4" />
+              {imprimindo ? 'Preparando...' : `Imprimir todos (${adesivosParaImpressao.length})`}
             </button>
           </div>
 
           {msg && <div className="glass-card bg-emerald-500/10 border border-emerald-500/20 p-3 mb-4 flex items-center gap-2"><CheckCircle className="w-4 h-4 text-emerald-400" /><p className="text-emerald-400 text-xs">{msg}</p></div>}
+
+          {!loading && adesivosParaImpressao.length > 0 && (
+            <div className="glass-card border border-blue-500/20 bg-blue-500/5 p-3 mb-4">
+              <p className="text-blue-300 text-xs">
+                A impressao completa inclui {adesivosParaImpressao.length} etiquetas:
+                {' '}{stats.disponiveis} livres, {stats.vinculados} em uso e {textoInativos}.
+              </p>
+            </div>
+          )}
 
           <div className="flex gap-2 mb-3">
             {(['disponivel', 'vinculado', 'inativo', 'todos'] as const).map(f => (
