@@ -3,11 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Camera, FileText, Tag, MapPin, Link as LinkIcon,
   Upload, ClipboardList, NotebookPen, CheckCircle, Copy, QrCode,
-  Lock
+  Lock, Download
 } from 'lucide-react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
+import { useAppInstall } from '../hooks/useAppInstall';
 
 const categories = [
   'Bicicleta Mountain Bike', 'Bicicleta Mountain Bike Eletrica',
@@ -103,6 +104,7 @@ export default function CadastrarNovo() {
   const { addBike } = useBikes();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isMobile, isInstalled, promptInstall } = useAppInstall();
 
   const [form, setForm] = useState({
     marca: '', modelo: '', cor: '', numeroSerie: '',
@@ -171,6 +173,11 @@ export default function CadastrarNovo() {
   };
 
   const isFormValid = form.marca && form.modelo && form.cor && form.numeroSerie && !rastreioBloqueado;
+
+  const handleInstall = async () => {
+    const openedNativePrompt = await promptInstall();
+    if (!openedNativePrompt) navigate('/baixar');
+  };
 
   const sectionHeader = (icon: React.ReactNode, title: string) => (
     <div className="flex items-center gap-2 mb-4">
@@ -411,6 +418,16 @@ export default function CadastrarNovo() {
                   >
                     ESCOLHER PLANO DE PROTECAO
                   </button>
+
+                  {isMobile && !isInstalled && (
+                    <button
+                      onClick={handleInstall}
+                      className="w-full py-3 rounded-xl border border-amber-400/30 bg-amber-400/10 text-amber-300 font-bold text-sm cursor-pointer mb-3 flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      INSTALAR APP NA TELA INICIAL
+                    </button>
+                  )}
 
                   <button onClick={() => { setBikeCadastrada(null); navigate('/equipamentos'); }} className="w-full py-3 rounded-xl glass-card text-slate-400 text-sm cursor-pointer">
                     Meus Equipamentos

@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 
 export default function IndicarLanding() {
   const { codigo } = useParams<{ codigo: string }>();
+  const cadastroUrl = `/login?cadastro=1&indicacao=${encodeURIComponent(codigo || '')}`;
 
   return (
     <div className="min-h-screen bg-[#0c1222] relative overflow-x-hidden flex flex-col items-center justify-center px-5">
@@ -74,7 +75,7 @@ export default function IndicarLanding() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Link to="/login">
+          <Link to={cadastroUrl}>
             <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer">
               <span className="text-[#0c1222] font-bold text-sm tracking-wide">CADASTRAR AGORA</span>
               <ArrowRight className="w-5 h-5 text-[#0c1222]" />

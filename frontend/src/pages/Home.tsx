@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Bike, Plus, ShieldAlert, User, CreditCard, Users, Map, Store, Tag,
-  AlertTriangle, Share2, Radio, Settings, MapPin, Route
+  AlertTriangle, Share2, Radio, MapPin, Download
 } from 'lucide-react';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
 import AlertaFurtoModal from '../components/AlertaFurtoModal';
 import BottomNav from '../components/BottomNav';
+import { useAppInstall } from '../hooks/useAppInstall';
 
 /* ===== Data ===== */
 const anunciantes = [
@@ -113,7 +114,7 @@ function AnunciantesCarousel() {
   const a = anunciantes[current];
 
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-2 shrink-0">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="home-carousel mb-2 shrink-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-1.5 px-1">
         <span className="text-slate-500 text-[10px] font-bold tracking-wider uppercase">Parceiros</span>
@@ -121,7 +122,7 @@ function AnunciantesCarousel() {
       </div>
 
       {/* Card com ALTURA FIXA */}
-      <div className="relative overflow-hidden rounded-xl" style={{ height: '118px' }}>
+      <div className="home-carousel-card relative overflow-hidden rounded-xl" style={{ height: '118px' }}>
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -190,14 +191,14 @@ function AnunciantesCarousel() {
 
 function MenuGrid() {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="shrink-0">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="home-menu shrink-0">
       <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 md:gap-3 lg:gap-4">
         {menuItems.map((item, i) => {
           const Icon = item.icon;
           return (
             <Link key={item.label} to={item.path} className="min-w-0">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="glass-card-hover py-3 md:py-4 px-1 flex flex-col items-center justify-center gap-1.5 text-center group cursor-pointer h-[88px] md:h-[100px]">
-                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${item.color} p-[2px] group-hover:scale-110 transition-transform duration-300`}>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * i + 0.3 }} whileTap={{ scale: 0.95 }} className="home-menu-card glass-card-hover py-3 md:py-4 px-1 flex flex-col items-center justify-center gap-1.5 text-center group cursor-pointer h-[88px] md:h-[100px]">
+                <div className={`home-menu-icon w-10 h-10 md:w-12 md:h-12 rounded-xl bg-gradient-to-br ${item.color} p-[2px] group-hover:scale-110 transition-transform duration-300`}>
                   <div className="w-full h-full rounded-[10px] bg-[#111827] flex items-center justify-center"><Icon className="w-5 h-5 md:w-6 md:h-6 text-white" /></div>
                 </div>
                 <span className="text-[10px] md:text-xs text-slate-300 font-medium leading-tight whitespace-pre-line">{item.label}</span>
@@ -213,8 +214,8 @@ function MenuGrid() {
 
 function EmergencyButton({ onClick }: { onClick: () => void }) {
   return (
-    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="flex flex-col items-center shrink-0 my-2">
-      <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="relative w-16 h-16 rounded-full flex flex-col items-center justify-center gap-0.5 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
+    <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, type: 'spring' }} className="home-emergency flex flex-col items-center shrink-0 my-2">
+      <motion.button onClick={onClick} whileTap={{ scale: 0.92 }} className="home-emergency-button relative w-16 h-16 rounded-full flex flex-col items-center justify-center gap-0.5 animate-pulse-glow cursor-pointer" style={{ background: 'radial-gradient(circle at 30% 30%, #ff6b6b, #dc2626, #991b1b)' }}>
         <span className="absolute inset-0 rounded-full border-2 border-red-400/30 animate-ping" style={{ animationDuration: '2s' }} />
         <AlertTriangle className="w-6 h-6 text-white" strokeWidth={2.5} />
         <span className="text-white text-[8px] font-bold leading-tight text-center px-1">EMITIR<br/>ALERTA</span>
@@ -226,7 +227,7 @@ function EmergencyButton({ onClick }: { onClick: () => void }) {
 
 function ReferralCTA() {
   return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="shrink-0 mb-1">
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="home-referral shrink-0 mb-1">
       <Link to="/indicacoes">
         <motion.button whileTap={{ scale: 0.98 }} className="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer">
           <Share2 className="w-4 h-4 text-[#0c1222]" />
@@ -243,6 +244,8 @@ export default function Home() {
   const { user } = useAuth();
   const [greeting] = useState(() => { const h = new Date().getHours(); if (h < 12) return 'Bom dia'; if (h < 18) return 'Boa tarde'; return 'Boa noite'; });
   const [alertaOpen, setAlertaOpen] = useState(false);
+  const navigate = useNavigate();
+  const { isMobile, isInstalled, promptInstall } = useAppInstall();
   const displayName = user?.name?.split(' ')[0] || 'Usuário';
   const initial = user?.name?.charAt(0) || 'U';
   const rootRef = useRef<HTMLDivElement>(null);
@@ -267,8 +270,35 @@ export default function Home() {
     return () => mq.removeEventListener('change', apply);
   }, []);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousOverscroll = body.style.overscrollBehavior;
+
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      html.style.overflow = 'hidden';
+      body.style.overflow = 'hidden';
+      body.style.overscrollBehavior = 'none';
+    }
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+      body.style.overscrollBehavior = previousOverscroll;
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    const openedNativePrompt = await promptInstall();
+    if (!openedNativePrompt) navigate('/baixar');
+  };
+
+  const showInstallButton = isMobile && !isInstalled;
+
   return (
-    <div ref={rootRef} className="h-screen w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
+    <div ref={rootRef} className="home-shell h-[100dvh] w-full bg-[#0c1222] relative overflow-hidden flex flex-col">
 
       {/* Background */}
       <div className="fixed inset-0 z-0">
@@ -278,19 +308,31 @@ export default function Home() {
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col min-h-0">
-        <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-10 pt-4 pb-24 flex flex-col flex-1 min-h-0">
+        <div className="home-content w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto px-4 md:px-6 lg:px-8 xl:px-10 pt-4 pb-24 flex flex-col flex-1 min-h-0">
 
           {/* Header */}
-          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between shrink-0 mb-3">
+          <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="home-header flex items-center justify-between shrink-0 mb-3">
             <div>
               <p className="text-slate-400 text-xs leading-none mb-0.5">{greeting},</p>
               <h1 className="text-lg font-bold text-gradient-gold leading-tight">{displayName.toUpperCase()}</h1>
             </div>
-            <Link to="/perfil">
-              <motion.div whileTap={{ scale: 0.95 }} className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
-                <span className="text-[#0c1222] font-bold text-sm">{initial}</span>
-              </motion.div>
-            </Link>
+            <div className="flex items-center gap-2">
+              {showInstallButton && (
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  onClick={handleInstall}
+                  className="home-install-button rounded-xl border border-amber-400/30 bg-amber-400/10 px-2.5 py-2 text-amber-300 flex items-center gap-1.5 shadow-lg shadow-amber-500/10"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span className="text-[9px] font-bold leading-none">INSTALAR APP</span>
+                </motion.button>
+              )}
+              <Link to="/perfil">
+                <motion.div whileTap={{ scale: 0.95 }} className="home-avatar w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center cursor-pointer shadow-lg shadow-amber-500/20">
+                  <span className="text-[#0c1222] font-bold text-sm">{initial}</span>
+                </motion.div>
+              </Link>
+            </div>
           </motion.header>
 
           {/* Status */}
@@ -303,7 +345,7 @@ export default function Home() {
           <MenuGrid />
 
           {/* Flexible spacer */}
-          <div className="flex-1 min-h-4" />
+          <div className="home-spacer flex-1 min-h-1" />
 
           {/* Botão Alerta */}
           <EmergencyButton onClick={() => setAlertaOpen(true)} />
@@ -316,7 +358,7 @@ export default function Home() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="shrink-0 text-center my-3"
+            className="home-verse shrink-0 text-center my-3"
           >
             <p
               className="text-white/80 text-xs md:text-sm leading-relaxed tracking-wide"

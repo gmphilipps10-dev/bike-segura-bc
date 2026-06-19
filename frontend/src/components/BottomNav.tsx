@@ -19,9 +19,9 @@ export default function BottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50">
+    <nav className="app-bottom-nav fixed bottom-0 left-0 right-0 z-50">
       <div className="mx-auto max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl">
-        <div className="mx-4 mb-3 rounded-2xl glass-card border border-white/[0.1] shadow-2xl shadow-black/50 overflow-hidden">
+        <div className="bottom-nav-card mx-4 mb-3 rounded-2xl glass-card border border-white/[0.1] shadow-2xl shadow-black/50 overflow-hidden">
           <div className="flex items-center justify-around py-1.5 relative">
             <motion.div
               layoutId="nav-indicator"

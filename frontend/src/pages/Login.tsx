@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bike, Mail, Lock, User, Phone, ChevronRight, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login, register, clearError, error: authError } = useAuth();
-  const [isRegister, setIsRegister] = useState(false);
+  const [isRegister, setIsRegister] = useState(searchParams.get('cadastro') === '1');
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,6 +51,8 @@ export default function Login() {
       setLoading(false);
 
       if (success) {
+        const referralCode = searchParams.get('indicacao');
+        if (referralCode) sessionStorage.setItem('bike_segura_referral_code', referralCode);
         navigate('/');
       } else {
         setError(authError || 'Este e-mail já está cadastrado');

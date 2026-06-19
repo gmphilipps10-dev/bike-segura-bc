@@ -26,8 +26,8 @@ export default function Indicacoes() {
 
   const codigoIndicacao = generateCode();
   // Usa o dominio real do app (funciona em qualquer ambiente)
-  const baseUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}` : 'https://bikesegurabc.com.br/';
-  const linkIndicacao = `${baseUrl}#/indicar/${codigoIndicacao}`;
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://bikesegurabc.com.br';
+  const linkIndicacao = `${baseUrl}/indicar/${codigoIndicacao}`;
 
   const copyToClipboard = async (text: string) => {
     let success = false;
