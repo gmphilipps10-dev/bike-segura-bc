@@ -136,7 +136,8 @@ export default function Pagamentos() {
       fecharModalExcluir()
       fetchData()
     } catch (err: any) {
-      setToast({ tipo: 'erro', msg: err.message || 'Erro ao excluir cobranca.' })
+      console.error('Erro ao excluir:', err);
+      setToast({ tipo: 'erro', msg: `Erro: ${err.message || 'Falha na conexão'}` })
     } finally {
       setExcluindo(false)
       setTimeout(() => setToast(null), 5000)
