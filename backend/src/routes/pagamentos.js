@@ -391,17 +391,48 @@ router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
     const pagamento = await Pagamento.findById(req.params.id);
     if (!pagamento) return res.status(404).json({ message: 'Pagamento nao encontrado.' });
 
+    if (pagamento.status !== 'pendente') {
+      return res.status(400).json({
+        message: `Nao e possivel excluir cobrancas com status "${pagamento.status}". Apenas cobrancas PENDENTES podem ser excluidas.`,
+      });
+    }
+
+    const { motivo } = req.body || {};
+    if (!motivo || motivo.trim().length < 5) {
+      return res.status(400).json({ message: 'Informe um motivo com pelo menos 5 caracteres para a exclusao.' });
+    }
+
     await cancelarCobrancaAsaas(pagamento);
+
+    const adminNome = req.user?.name || req.user?.email || 'Admin';
+    const agora = new Date();
+
     pagamento.status = 'cancelado';
     pagamento.cobrancaAtiva = false;
-    pagamento.historico.push({ status: 'cancelado', descricao: 'Cobranca cancelada pelo painel' });
+    pagamento.excluidoPor = req.userId;
+    pagamento.excluidoPorNome = adminNome;
+    pagamento.dataExclusao = agora;
+    pagamento.motivoExclusao = motivo.trim();
+    pagamento.historico.push({
+      status: 'cancelado',
+      descricao: `Cobranca excluida por ${adminNome}. Motivo: ${motivo.trim()}`,
+    });
     await pagamento.save();
 
     if (pagamento.bikeId) {
       await Bike.findByIdAndUpdate(pagamento.bikeId, { pagamentoAtualId: null });
     }
     if (pagamento.bikeId) await atualizarPlanoUsuario(pagamento.userId);
-    res.json({ success: true });
+
+    res.json({
+      success: true,
+      message: 'Cobranca excluida com sucesso.',
+      exclusao: {
+        excluidoPor: adminNome,
+        dataExclusao: agora,
+        motivo: motivo.trim(),
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message || 'Erro ao cancelar cobranca.' });
   }
