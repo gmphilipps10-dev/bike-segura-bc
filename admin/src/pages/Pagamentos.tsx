@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
-import { CreditCard, CheckCircle, Clock, AlertTriangle, XCircle, Download, FileText, Table } from '../components/Icons'
+import { CreditCard, CheckCircle, Clock, AlertTriangle, XCircle, Download, FileText, Table, Trash2 } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 
@@ -14,6 +14,10 @@ export default function Pagamentos() {
   })
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState<'todos' | 'pago' | 'pendente' | 'atrasado' | 'cancelado'>('todos')
+  const [modalExcluir, setModalExcluir] = useState<{ aberto: boolean, pagamento: any | null }>({ aberto: false, pagamento: null })
+  const [motivo, setMotivo] = useState('')
+  const [excluindo, setExcluindo] = useState(false)
+  const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro', msg: string } | null>(null)
   const token = localStorage.getItem('admin_token') || ''
 
   const fetchData = () => {
@@ -97,6 +101,48 @@ export default function Pagamentos() {
     ])
   }
 
+  const abrirModalExcluir = (pagamento: any) => {
+    setModalExcluir({ aberto: true, pagamento })
+    setMotivo('')
+  }
+
+  const fecharModalExcluir = () => {
+    setModalExcluir({ aberto: false, pagamento: null })
+    setMotivo('')
+  }
+
+  const handleExcluir = async () => {
+    if (!modalExcluir.pagamento) return
+    if (!motivo.trim() || motivo.trim().length < 5) {
+      setToast({ tipo: 'erro', msg: 'Informe um motivo com pelo menos 5 caracteres.' })
+      setTimeout(() => setToast(null), 4000)
+      return
+    }
+
+    setExcluindo(true)
+    try {
+      const res = await fetch(`${API_BASE}/pagamentos/${modalExcluir.pagamento._id}/cancelar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ motivo: motivo.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Erro ao excluir cobranca.')
+
+      setToast({ tipo: 'sucesso', msg: 'Cobranca excluida com sucesso!' })
+      fecharModalExcluir()
+      fetchData()
+    } catch (err: any) {
+      setToast({ tipo: 'erro', msg: err.message || 'Erro ao excluir cobranca.' })
+    } finally {
+      setExcluindo(false)
+      setTimeout(() => setToast(null), 5000)
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-900">
       <Sidebar />
@@ -164,11 +210,12 @@ export default function Pagamentos() {
                     <th className="text-left p-3">Status</th>
                     <th className="text-left p-3">Metodo</th>
                     <th className="text-left p-3">Vencimento</th>
+                    <th className="text-left p-3">Acoes</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtrados.length === 0 && (
-                    <tr><td colSpan={8} className="p-6 text-center text-slate-500">Nenhum pagamento encontrado</td></tr>
+                    <tr><td colSpan={9} className="p-6 text-center text-slate-500">Nenhum pagamento encontrado</td></tr>
                   )}
                   {filtrados.map(p => {
                     const cfg = statusConfig[p.status] || statusConfig.pendente
@@ -190,12 +237,100 @@ export default function Pagamentos() {
                         </td>
                         <td className="p-3 text-slate-400 uppercase text-xs">{p.metodoPagamento || '-'}</td>
                         <td className="p-3 text-slate-500 text-xs">{p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-BR') : '-'}</td>
+                        <td className="p-3">
+                          {p.status === 'pendente' && (
+                            <button
+                              onClick={() => abrirModalExcluir(p)}
+                              className="text-red-400 hover:text-red-300 transition-colors p-1 rounded hover:bg-red-500/10"
+                              title="Excluir cobranca"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                          {p.status !== 'pendente' && (
+                            <span className="text-slate-600 text-[10px]">-</span>
+                          )}
+                        </td>
                       </tr>
                     )
                   })}
                 </tbody>
               </table>
             </div>
+
+            {/* Modal de confirmacao de exclusao */}
+            {modalExcluir.aberto && modalExcluir.pagamento && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center">
+                      <Trash2 className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">Excluir cobranca</h3>
+                      <p className="text-slate-400 text-xs">Esta acao nao pode ser desfeita.</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900/50 rounded-lg p-3 mb-4 space-y-1">
+                    <p className="text-slate-300 text-sm"><strong className="text-white">Usuario:</strong> {modalExcluir.pagamento.userName}</p>
+                    <p className="text-slate-300 text-sm"><strong className="text-white">Equipamento:</strong> {modalExcluir.pagamento.bikeName || 'N/A'}</p>
+                    <p className="text-slate-300 text-sm"><strong className="text-white">Plano:</strong> {modalExcluir.pagamento.plano} | <strong className="text-white">Valor:</strong> R${((modalExcluir.pagamento.valor || 0) / 100).toFixed(2)}</p>
+                    <p className="text-slate-300 text-sm"><strong className="text-white">Asaas ID:</strong> <span className="text-slate-500 text-xs">{modalExcluir.pagamento.asaasId}</span></p>
+                  </div>
+
+                  <div className="mb-4">
+                    <label className="block text-slate-300 text-sm font-medium mb-1.5">Motivo da exclusao *</label>
+                    <textarea
+                      value={motivo}
+                      onChange={e => setMotivo(e.target.value)}
+                      placeholder="Ex: Cliente desistiu, cobranca duplicada, erro no valor..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/20 resize-none"
+                      rows={3}
+                      maxLength={200}
+                    />
+                    <p className="text-slate-500 text-[10px] mt-1 text-right">{motivo.length}/200 caracteres</p>
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      onClick={fecharModalExcluir}
+                      disabled={excluindo}
+                      className="flex-1 btn-secondary py-2.5 text-sm font-medium disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleExcluir}
+                      disabled={excluindo || !motivo.trim() || motivo.trim().length < 5}
+                      className="flex-1 bg-red-500 hover:bg-red-600 disabled:bg-red-500/30 disabled:cursor-not-allowed text-white py-2.5 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                    >
+                      {excluindo ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Excluindo...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4" /> Excluir
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Toast */}
+            {toast && (
+              <div className={`fixed bottom-6 right-6 z-50 px-5 py-3 rounded-xl shadow-2xl text-sm font-medium transition-all ${
+                toast.tipo === 'sucesso'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-red-500 text-white'
+              }`}>
+                {toast.msg}
+              </div>
+            )}
           </>
         )}
       </div>
