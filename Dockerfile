@@ -18,6 +18,7 @@ COPY admin/package*.json ./
 RUN npm ci
 
 COPY admin/ .
+# Cache bust: force rebuild 2025-06-21-22-50
 RUN npm run build
 
 # Production stage
