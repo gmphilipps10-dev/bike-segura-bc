@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const adminMiddleware = require('../middleware/admin');
+const { normalizarCpf, cpfValido } = require('../utils/cpf');
 const router = express.Router();
 
 function requireEnv(name) {
@@ -164,6 +165,14 @@ router.put('/profile', async (req, res) => {
       'endereco',
       'contatoEmergencia',
     ]);
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'cpf')) {
+      const cpf = normalizarCpf(updates.cpf);
+      if (cpf && !cpfValido(cpf)) {
+        return res.status(400).json({ message: 'CPF invalido. Confira os 11 numeros informados.' });
+      }
+      updates.cpf = cpf;
+    }
 
     const user = await User.findByIdAndUpdate(decoded.id, updates, { new: true }).select('-password');
     

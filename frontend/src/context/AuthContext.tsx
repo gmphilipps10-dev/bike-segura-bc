@@ -133,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(updated);
     } catch (err: any) {
       console.error('Update error:', err);
+      throw err;
     }
   };
 

@@ -11,13 +11,17 @@ const pagamentoSchema = new mongoose.Schema({
   bikeSerie: { type: String, default: '' },
   plano: { type: String, enum: ['bronze', 'prata', 'ouro', 'diamante'], required: true },
   valor: { type: Number, required: true }, // em centavos
+  valorBase: { type: Number, default: 0 },
+  valorEncargos: { type: Number, default: 0 },
   valorMensal: { type: Number, default: 0 },
   valorTotal: { type: Number, default: 0 },
+  parcelasCartao: { type: Number, default: 1 },
   frequencia: { type: String, enum: ['mensal', 'anual', 'legado'], default: 'legado' },
   quantidadeCobrancas: { type: Number, default: 1 },
   cobrancaAtiva: { type: Boolean, default: false },
   asaasId: { type: String, default: '' }, // ID da cobranca no Asaas
   asaasSubscriptionId: { type: String, default: '' },
+  asaasInstallmentId: { type: String, default: '' },
   externalReference: { type: String, default: '' },
   status: { type: String, enum: ['pendente', 'pago', 'atrasado', 'cancelado'], default: 'pendente' },
   metodoPagamento: { type: String, default: '' }, // PIX, BOLETO, CREDIT_CARD

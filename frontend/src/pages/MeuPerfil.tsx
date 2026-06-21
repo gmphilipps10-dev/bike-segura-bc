@@ -21,6 +21,9 @@ export default function MeuPerfil() {
   const [pushLoading, setPushLoading] = useState(false);
 
   const [editMode, setEditMode] = useState(false);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileMessage, setProfileMessage] = useState('');
+  const [profileError, setProfileError] = useState('');
   const [form, setForm] = useState({
     nome: user?.name || '',
     email: user?.email || '',
@@ -36,18 +39,34 @@ export default function MeuPerfil() {
     setForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    updateUser({
-      name: form.nome,
-      email: form.email,
-      phone: form.telefone,
-      cpf: form.cpf,
-      rg: form.rg,
-      nascimento: form.nascimento,
-      endereco: form.endereco,
-      contatoEmergencia: form.contatoEmergencia
-    });
-    setEditMode(false);
+  const handleSave = async () => {
+    setSavingProfile(true);
+    setProfileMessage('');
+    setProfileError('');
+    try {
+      await updateUser({
+        name: form.nome,
+        email: form.email,
+        phone: form.telefone,
+        cpf: form.cpf,
+        rg: form.rg,
+        nascimento: form.nascimento,
+        endereco: form.endereco,
+        contatoEmergencia: form.contatoEmergencia
+      });
+      setForm(prev => ({ ...prev, cpf: prev.cpf.replace(/\D/g, '') }));
+      setProfileMessage('Dados salvos com sucesso.');
+      setEditMode(false);
+    } catch (err: any) {
+      try {
+        const parsed = JSON.parse(err.message);
+        setProfileError(parsed.message || 'Nao foi possivel salvar os dados.');
+      } catch {
+        setProfileError(err.message || 'Nao foi possivel salvar os dados.');
+      }
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   const handleLogout = () => {
@@ -96,7 +115,8 @@ export default function MeuPerfil() {
                 setEditMode(true);
               }
             }}
-            className="w-10 h-10 rounded-xl glass-card flex items-center justify-center shrink-0 cursor-pointer hover:bg-amber-500/10 transition-colors"
+            disabled={savingProfile}
+            className="w-10 h-10 rounded-xl glass-card flex items-center justify-center shrink-0 cursor-pointer hover:bg-amber-500/10 transition-colors disabled:opacity-50"
           >
             {editMode ? <Save className="w-5 h-5 text-emerald-400" /> : <Edit3 className="w-5 h-5 text-amber-400" />}
           </button>
@@ -147,6 +167,8 @@ export default function MeuPerfil() {
                 {editMode ? (
                   <input
                     type={item.type}
+                    inputMode={item.field === 'cpf' ? 'numeric' : undefined}
+                    maxLength={item.field === 'cpf' ? 14 : undefined}
                     value={form[item.field as keyof typeof form]}
                     onChange={e => handleChange(item.field, e.target.value)}
                     className="w-full glass-card px-3 py-2 text-white text-sm outline-none focus:border-amber-400/50 transition-colors"
@@ -161,15 +183,19 @@ export default function MeuPerfil() {
             ))}
           </div>
 
+          {profileMessage && <p className="text-emerald-400 text-xs mt-4">{profileMessage}</p>}
+          {profileError && <p role="alert" className="text-red-400 text-xs mt-4">{profileError}</p>}
+
           {editMode && (
             <motion.button
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleSave}
-              className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] font-bold text-sm cursor-pointer"
+              disabled={savingProfile}
+              className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222] font-bold text-sm cursor-pointer disabled:opacity-50"
             >
-              SALVAR ALTERAÇÕES
+              {savingProfile ? 'SALVANDO...' : 'SALVAR ALTERAÇÕES'}
             </motion.button>
           )}
         </motion.section>

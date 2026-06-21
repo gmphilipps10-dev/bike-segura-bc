@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Check, Shield, Crown, Gem, Medal, Award,
-  HelpCircle, Bike
+  HelpCircle, Bike, Clock3, FileText, QrCode, CreditCard
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
@@ -14,6 +14,24 @@ import {
   usePlanPrices,
 } from '../hooks/usePlanPrices';
 import { useBikes } from '../context/BikeContext';
+import { useAuth } from '../context/AuthContext';
+import { apiGet } from '../config/api';
+
+type CobrancaPendente = {
+  id: string;
+  plano: string;
+  bikeId: string;
+  bikeName: string;
+  frequencia: 'mensal' | 'anual';
+  valor: number;
+  status: 'pendente' | 'atrasado';
+  cobrancaAtiva: boolean;
+  metodoPagamento: string;
+  boletoUrl?: string;
+  pixPayload?: string;
+  linkPagamento?: string;
+  dataVencimento?: string;
+};
 
 const plans = [
   {
@@ -95,12 +113,28 @@ const plans = [
 
 export default function Planos() {
   const navigate = useNavigate();
+  const { token } = useAuth();
   const { prices } = usePlanPrices();
   const { bikes, loading: bikesLoading } = useBikes();
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
   const [selectedBike, setSelectedBike] = useState('');
   const [selectionError, setSelectionError] = useState('');
   const [showFaq, setShowFaq] = useState(false);
+  const [cobrancasPendentes, setCobrancasPendentes] = useState<CobrancaPendente[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+
+    apiGet('/pagamentos/meu-plano', token)
+      .then(data => {
+        const pagamentos = Array.isArray(data?.pagamentos) ? data.pagamentos : [];
+        setCobrancasPendentes(pagamentos.filter((pagamento: CobrancaPendente) => (
+          pagamento.cobrancaAtiva
+          && ['pendente', 'atrasado'].includes(pagamento.status)
+        )));
+      })
+      .catch(() => setCobrancasPendentes([]));
+  }, [token]);
 
   const handleAssinar = (planId: string) => {
     if (!selectedBike) {
@@ -148,6 +182,72 @@ export default function Planos() {
             <p className="text-slate-400 text-[11px]">Taxa de recuperação de 94% em Balneário Camboriú</p>
           </div>
         </motion.div>
+
+        {cobrancasPendentes.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.11 }}
+            className="mb-5 space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <Clock3 className="w-4 h-4 text-amber-400" />
+              <h2 className="text-white font-bold text-sm">Pagamento pendente</h2>
+            </div>
+
+            {cobrancasPendentes.map(cobranca => {
+              const metodo = String(cobranca.metodoPagamento || '').toLowerCase();
+              const MetodoIcon = metodo === 'boleto' ? FileText : metodo === 'pix' ? QrCode : CreditCard;
+              const vencimento = cobranca.dataVencimento
+                ? new Intl.DateTimeFormat('pt-BR').format(new Date(cobranca.dataVencimento))
+                : '';
+
+              return (
+                <div key={cobranca.id} className="glass-card border border-amber-400/30 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-amber-400/10 flex items-center justify-center shrink-0">
+                      <MetodoIcon className="w-5 h-5 text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-bold">
+                        Plano {cobranca.plano?.charAt(0).toUpperCase() + cobranca.plano?.slice(1)}
+                      </p>
+                      <p className="text-slate-400 text-xs truncate">{cobranca.bikeName || 'Equipamento cadastrado'}</p>
+                      <p className="text-amber-400 text-sm font-bold mt-1">
+                        {formatPlanPrice(Number(cobranca.valor || 0) / 100)}
+                        <span className="text-slate-500 text-[10px] font-normal ml-1">
+                          {cobranca.frequencia === 'mensal' ? 'mensal' : 'ano completo'}
+                        </span>
+                      </p>
+                      {vencimento && (
+                        <p className={`text-[10px] mt-1 ${cobranca.status === 'atrasado' ? 'text-red-400' : 'text-slate-500'}`}>
+                          {cobranca.status === 'atrasado' ? 'Vencido em' : 'Vence em'} {vencimento}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/pagamento?plano=${cobranca.plano}&bike=${cobranca.bikeId}&frequencia=${cobranca.frequencia}&cobranca=${cobranca.id}`)}
+                      className="rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 px-4 py-3 text-[#0c1222] text-xs font-bold"
+                    >
+                      {metodo === 'boleto' ? 'ABRIR BOLETO' : metodo === 'pix' ? 'VER PIX' : 'ABRIR PAGAMENTO'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigate(`/pagamento?plano=${cobranca.plano}&bike=${cobranca.bikeId}&frequencia=${cobranca.frequencia}&alterar=1`)}
+                      className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-white text-xs font-bold"
+                    >
+                      TROCAR FORMA DE PAGAMENTO
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </motion.section>
+        )}
 
         <motion.div
           id="selecionar-equipamento"

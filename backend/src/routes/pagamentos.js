@@ -15,6 +15,12 @@ const {
   cancelarCobrancaAsaas,
   getAsaasApiKey,
 } = require('../utils/asaas');
+const { exigirCpfValido, normalizarCpf } = require('../utils/cpf');
+const {
+  calcularParcelamentoCartao,
+  normalizarParcelasCartao,
+  opcoesParcelamentoCartao,
+} = require('../utils/cartao');
 
 const router = express.Router();
 const PLANOS_ORDEM = ['free', 'bronze', 'prata', 'ouro', 'diamante'];
@@ -66,14 +72,20 @@ function respostaPagamento(pagamento, cobranca = null) {
     bikeSerie: pagamento.bikeSerie,
     frequencia: pagamento.frequencia,
     valor: pagamento.valor,
+    valorBase: pagamento.valorBase || pagamento.valor,
+    valorEncargos: pagamento.valorEncargos || 0,
     valorMensal: pagamento.valorMensal,
     valorTotal: pagamento.valorTotal,
+    parcelasCartao: pagamento.parcelasCartao || 1,
     status: pagamento.status,
+    cobrancaAtiva: pagamento.cobrancaAtiva,
+    metodoPagamento: pagamento.metodoPagamento,
     linkPagamento: cobranca?.invoiceUrl || pagamento.linkPagamento || '',
     pixQrCode: pagamento.pixQrCode || '',
     pixPayload: pagamento.pixPayload || '',
     boletoUrl: cobranca?.bankSlipUrl || pagamento.boletoUrl || '',
     dataVencimento: pagamento.dataVencimento,
+    createdAt: pagamento.createdAt,
   };
 }
 
@@ -113,15 +125,31 @@ async function atualizarPlanoUsuario(userId) {
 }
 
 async function buscarOuCriarClienteAsaas(user) {
+  const cpf = exigirCpfValido(user.cpf);
   const clientes = await asaasRequest(`/customers?email=${encodeURIComponent(user.email)}`);
-  if (clientes.data?.[0]?.id) return clientes.data[0].id;
-
-  const novoCliente = await asaasRequest('/customers', 'POST', {
+  const cliente = clientes.data?.[0];
+  const dadosAtualizados = {
     name: user.name,
     email: user.email,
     phone: user.phone,
-    cpfCnpj: user.cpf ? user.cpf.replace(/\D/g, '') : '',
-  });
+    cpfCnpj: cpf,
+  };
+
+  if (cliente?.id) {
+    const precisaAtualizar = (
+      cliente.name !== dadosAtualizados.name
+      || cliente.email !== dadosAtualizados.email
+      || String(cliente.phone || '').replace(/\D/g, '') !== String(dadosAtualizados.phone || '').replace(/\D/g, '')
+      || normalizarCpf(cliente.cpfCnpj) !== cpf
+    );
+
+    if (precisaAtualizar) {
+      await asaasRequest(`/customers/${cliente.id}`, 'PUT', dadosAtualizados);
+    }
+    return cliente.id;
+  }
+
+  const novoCliente = await asaasRequest('/customers', 'POST', dadosAtualizados);
   if (!novoCliente.id) throw new Error('O Asaas nao retornou o cliente criado.');
   return novoCliente.id;
 }
@@ -153,27 +181,69 @@ async function obterCobrancaAtiva(bike) {
   }).sort({ createdAt: -1 });
 }
 
-async function criarCobranca({ user, bike, plano, metodoPagamento, frequencia, dataVencimento }) {
+async function criarCobranca({
+  user,
+  bike,
+  plano,
+  metodoPagamento,
+  frequencia,
+  dataVencimento,
+  parcelasCartao = 1,
+}) {
   if (!getAsaasApiKey()) throw new Error('ASAAS_API_KEY nao configurada.');
   if (!FREQUENCIAS.includes(frequencia)) throw new Error('Escolha pagamento mensal ou anual.');
   if (!METODOS.includes(metodoPagamento)) throw new Error('Forma de pagamento invalida.');
 
   const valorMensal = await getPlanoValorCentavos(plano);
   if (!valorMensal) throw new Error('Plano invalido.');
+  const parcelas = metodoPagamento === 'cartao' && frequencia === 'anual'
+    ? normalizarParcelasCartao(parcelasCartao)
+    : 1;
 
   const existente = await obterCobrancaAtiva(bike);
   if (existente) {
-    return {
-      pagamento: existente,
-      reutilizada: true,
-    };
+    const mesmoContrato = (
+      existente.plano === plano
+      && existente.frequencia === frequencia
+      && String(existente.metodoPagamento || '').toLowerCase() === metodoPagamento
+      && Number(existente.parcelasCartao || 1) === parcelas
+    );
+
+    if (existente.status === 'pago' || mesmoContrato) {
+      return {
+        pagamento: existente,
+        reutilizada: true,
+        substituida: false,
+      };
+    }
   }
 
   const valorTotal = valorMensal * 12;
-  const valorCobrado = frequencia === 'mensal' ? valorMensal : valorTotal;
+  const parcelamentoCartao = metodoPagamento === 'cartao' && frequencia === 'anual'
+    ? calcularParcelamentoCartao(valorTotal, parcelas)
+    : null;
+  const valorBase = frequencia === 'mensal' ? valorMensal : valorTotal;
+  const valorEncargos = parcelamentoCartao?.valorEncargos || 0;
+  const valorCobrado = parcelamentoCartao?.valorCobrado || valorBase;
   const vencimento = dataVencimento ? new Date(dataVencimento) : new Date();
   if (!dataVencimento) vencimento.setDate(vencimento.getDate() + 3);
   const externalReference = `bike-${bike._id}-${Date.now()}`;
+  const customerId = await buscarOuCriarClienteAsaas(user);
+  let substituida = false;
+
+  if (existente) {
+    await cancelarCobrancaAsaas(existente);
+    existente.status = 'cancelado';
+    existente.cobrancaAtiva = false;
+    existente.historico.push({
+      status: 'cancelado',
+      descricao: `Cobranca substituida por ${metodoPagamento.toUpperCase()}`,
+    });
+    await existente.save();
+    bike.pagamentoAtualId = null;
+    await bike.save();
+    substituida = true;
+  }
 
   let pagamento;
   try {
@@ -188,10 +258,13 @@ async function criarCobranca({ user, bike, plano, metodoPagamento, frequencia, d
       bikeSerie: bike.serie,
       plano,
       valor: valorCobrado,
+      valorBase,
+      valorEncargos,
       valorMensal,
       valorTotal,
+      parcelasCartao: parcelas,
       frequencia,
-      quantidadeCobrancas: frequencia === 'mensal' ? 12 : 1,
+      quantidadeCobrancas: frequencia === 'mensal' ? 12 : parcelas,
       cobrancaAtiva: true,
       status: 'pendente',
       metodoPagamento,
@@ -211,7 +284,6 @@ async function criarCobranca({ user, bike, plano, metodoPagamento, frequencia, d
   }
 
   try {
-    const customerId = await buscarOuCriarClienteAsaas(user);
     let cobranca;
 
     if (frequencia === 'mensal') {
@@ -227,14 +299,23 @@ async function criarCobranca({ user, bike, plano, metodoPagamento, frequencia, d
       pagamento.asaasSubscriptionId = assinatura.id || '';
       cobranca = assinatura.id ? await buscarPrimeiraCobrancaAssinatura(assinatura.id) : null;
     } else {
-      cobranca = await asaasRequest('/payments', 'POST', {
+      const dadosCobranca = {
         customer: customerId,
         billingType: billingType(metodoPagamento),
-        value: valorTotal / 100,
         dueDate: dataAsaas(vencimento),
         description: `Bike Segura BC - ${plano.toUpperCase()} anual - ${bike.name}`,
         externalReference,
-      });
+      };
+
+      if (metodoPagamento === 'cartao' && parcelas > 1) {
+        dadosCobranca.installmentCount = parcelas;
+        dadosCobranca.totalValue = valorCobrado / 100;
+      } else {
+        dadosCobranca.value = valorCobrado / 100;
+      }
+
+      cobranca = await asaasRequest('/payments', 'POST', dadosCobranca);
+      pagamento.asaasInstallmentId = cobranca.installment || '';
     }
 
     if (!cobranca?.id) {
@@ -266,7 +347,7 @@ async function criarCobranca({ user, bike, plano, metodoPagamento, frequencia, d
     bike.pagamentoAtualId = pagamento._id;
     await bike.save();
 
-    return { pagamento, cobranca, reutilizada: false };
+    return { pagamento, cobranca, reutilizada: false, substituida };
   } catch (error) {
     try {
       console.log(`[Admin] Excluindo cobranca ${pagamento._id} (${pagamento.asaasId}) por motivo: ${motivo.trim()}`);
@@ -301,6 +382,22 @@ router.get('/planos', async (_req, res) => {
     });
   } catch {
     res.status(500).json({ message: 'Erro ao carregar os precos dos planos.' });
+  }
+});
+
+router.get('/simulacao-cartao', async (req, res) => {
+  try {
+    const valorMensal = await getPlanoValorCentavos(req.query.plano);
+    if (!valorMensal) return res.status(400).json({ message: 'Plano invalido.' });
+
+    const valorAnual = valorMensal * 12;
+    res.json({
+      valorBase: valorAnual,
+      opcoes: opcoesParcelamentoCartao(valorAnual, 12),
+      observacao: 'Os encargos exibidos correspondem ao processamento do cartao. Antecipacao de recebiveis nao esta incluida.',
+    });
+  } catch (error) {
+    res.status(400).json({ message: error.message || 'Erro ao simular o parcelamento.' });
   }
 });
 
@@ -355,6 +452,7 @@ router.post('/criar', adminMiddleware, async (req, res) => {
       dataVencimento,
       metodoPagamento,
       frequencia = 'mensal',
+      parcelasCartao = 1,
     } = req.body;
     if (!bikeId) return res.status(400).json({ message: 'Selecione um equipamento para gerar a cobranca.' });
 
@@ -372,14 +470,18 @@ router.post('/criar', adminMiddleware, async (req, res) => {
       metodoPagamento,
       frequencia,
       dataVencimento,
+      parcelasCartao,
     });
     res.json({
       success: true,
       reused: resultado.reutilizada,
+      replaced: resultado.substituida,
       pagamento: respostaPagamento(resultado.pagamento, resultado.cobranca),
       mensagem: resultado.reutilizada
         ? 'Este equipamento ja possui uma cobranca ativa.'
-        : 'Cobranca vinculada ao equipamento com sucesso.',
+        : resultado.substituida
+          ? 'A cobranca anterior foi cancelada e substituida com sucesso.'
+          : 'Cobranca vinculada ao equipamento com sucesso.',
     });
   } catch (error) {
     console.error('[Pagamento admin] Erro:', error);
@@ -560,6 +662,7 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
       bikeId,
       metodoPagamento,
       frequencia = 'mensal',
+      parcelasCartao = 1,
     } = req.body;
     if (!bikeId) return res.status(400).json({ message: 'Escolha o equipamento que recebera a protecao.' });
 
@@ -576,14 +679,18 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
       plano,
       metodoPagamento,
       frequencia,
+      parcelasCartao,
     });
     res.json({
       success: true,
       reused: resultado.reutilizada,
+      replaced: resultado.substituida,
       pagamento: respostaPagamento(resultado.pagamento, resultado.cobranca),
       mensagem: resultado.reutilizada
         ? 'Este equipamento ja possui uma cobranca ativa. Exibimos a cobranca existente.'
-        : 'Cobranca criada e vinculada ao equipamento.',
+        : resultado.substituida
+          ? 'A cobranca anterior foi cancelada e substituida pela nova forma de pagamento.'
+          : 'Cobranca criada e vinculada ao equipamento.',
     });
   } catch (error) {
     console.error('[Pagamento] Erro:', error);
@@ -596,13 +703,14 @@ router.get('/meu-plano', userAuth, async (req, res) => {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
     const pagamentos = await Pagamento.find({ userId: user._id }).sort({ createdAt: -1 });
+    const pagamentosVisiveis = pagamentos.map(pagamento => respostaPagamento(pagamento));
     res.json({
       plano: user.plano,
       planoAtivo: user.planoAtivo,
       planoDataAtivacao: user.planoDataAtivacao,
       planoDataExpiracao: user.planoDataExpiracao,
-      pagamentos,
-      ultimoPagamento: pagamentos[0] || null,
+      pagamentos: pagamentosVisiveis,
+      ultimoPagamento: pagamentosVisiveis[0] || null,
     });
   } catch {
     res.status(500).json({ message: 'Erro ao verificar plano.' });

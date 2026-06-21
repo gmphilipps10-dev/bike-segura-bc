@@ -25,6 +25,19 @@ Marque como secretas:
 - `ADMIN_PIN`
 - `ASAAS_API_KEY`
 - `ASAAS_WEBHOOK_TOKEN`
+
+Taxas de cartao usadas para repassar os encargos ao cliente (opcionais; os
+valores abaixo ja sao os padroes do sistema):
+
+- `ASAAS_CARD_FIXED_FEE_CENTS=49`
+- `ASAAS_CARD_FEE_1X=0.0299`
+- `ASAAS_CARD_FEE_2_6X=0.0349`
+- `ASAAS_CARD_FEE_7_12X=0.0399`
+- `ASAAS_CARD_FEE_13_21X=0.0429`
+
+Se o Asaas conceder taxas promocionais ou personalizadas, atualize estas
+variaveis para que o encargo exibido ao cliente corresponda exatamente a taxa
+da conta.
 - `VAPID_PRIVATE_KEY`
 
 Use:

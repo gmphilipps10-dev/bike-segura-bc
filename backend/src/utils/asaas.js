@@ -37,6 +37,11 @@ async function asaasRequest(endpoint, method = 'GET', body = null) {
 async function cancelarCobrancaAsaas(pagamento) {
   if (!ASAAS_API_KEY || !pagamento) return;
 
+  if (pagamento.asaasInstallmentId && pagamento.status !== 'pago') {
+    await asaasRequest(`/installments/${pagamento.asaasInstallmentId}`, 'DELETE');
+    return;
+  }
+
   if (pagamento.asaasSubscriptionId) {
     await asaasRequest(`/subscriptions/${pagamento.asaasSubscriptionId}`, 'DELETE');
     return;
