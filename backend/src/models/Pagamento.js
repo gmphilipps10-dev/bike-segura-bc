@@ -38,7 +38,11 @@ const pagamentoSchema = new mongoose.Schema({
     data: { type: Date, default: Date.now },
     status: { type: String },
     descricao: { type: String }
-  }]
+  }],
+  excluidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  excluidoPorNome: { type: String, default: '' },
+  dataExclusao: { type: Date, default: null },
+  motivoExclusao: { type: String, default: '' },
 }, { timestamps: true });
 
 // Impede duas contratacoes simultaneas para o mesmo equipamento, inclusive
