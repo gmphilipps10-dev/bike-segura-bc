@@ -389,8 +389,65 @@ router.post('/criar', adminMiddleware, async (req, res) => {
 
 router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
   try {
+    console.log('[Admin] Tentando excluir pagamento:', req.params.id);
     const pagamento = await Pagamento.findById(req.params.id);
-    if (!pagamento) return res.status(404).json({ message: 'Pagamento nao encontrado.' });
+    if (!pagamento) return res.status(404).json({ message: 'Pagamento não encontrado.' });
+    
+    if (pagamento.status !== 'pendente') {
+      return res.status(400).json({
+        message: `Não é possível excluir cobranças com status "${pagamento.status}". Apenas cobranças PENDENTES podem ser excluídas.`,
+      });
+    }
+
+    const { motivo } = req.body || {};
+    if (!motivo || motivo.trim().length < 5) {
+      return res.status(400).json({ message: 'Informe um motivo com pelo menos 5 caracteres para a exclusão.' });
+    }
+
+    // Tentar cancelar no Asaas, mas não travar se der erro
+    try {
+      if (pagamento.asaasId || pagamento.asaasSubscriptionId) {
+        await cancelarCobrancaAsaas(pagamento);
+      }
+    } catch (asaasError) {
+      console.error('[Admin] Erro Asaas:', asaasError.message);
+    }
+
+    const adminNome = req.user?.name || req.user?.email || 'Admin';
+    const agora = new Date();
+
+    pagamento.status = 'cancelado';
+    pagamento.cobrancaAtiva = false;
+    pagamento.excluidoPor = req.userId;
+    pagamento.excluidoPorNome = adminNome;
+    pagamento.dataExclusao = agora;
+    pagamento.motivoExclusao = motivo.trim();
+    pagamento.historico.push({
+      status: 'cancelado',
+      descricao: `Cobrança excluída por ${adminNome}. Motivo: ${motivo.trim()}`,
+    });
+
+    await pagamento.save();
+
+    if (pagamento.bikeId) {
+      await Bike.findByIdAndUpdate(pagamento.bikeId, { pagamentoAtualId: null });
+      await atualizarPlanoUsuario(pagamento.userId);
+    }
+
+    res.json({
+      success: true,
+      message: 'Cobrança excluída com sucesso.',
+      exclusao: {
+        excluidoPor: adminNome,
+        dataExclusao: agora,
+        motivo: motivo.trim(),
+      },
+    });
+  } catch (error) {
+    console.error('[Admin] Erro ao cancelar:', error);
+    res.status(500).json({ message: error.message || 'Erro ao cancelar cobrança.' });
+  }
+});
 
     if (pagamento.status !== 'pendente') {
       return res.status(400).json({
