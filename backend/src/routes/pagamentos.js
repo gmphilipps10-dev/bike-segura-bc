@@ -269,7 +269,8 @@ async function criarCobranca({ user, bike, plano, metodoPagamento, frequencia, d
     return { pagamento, cobranca, reutilizada: false };
   } catch (error) {
     try {
-      await cancelarCobrancaAsaas(pagamento);
+      console.log(`[Admin] Excluindo cobranca ${pagamento._id} (${pagamento.asaasId}) por motivo: ${motivo.trim()}`);
+    await cancelarCobrancaAsaas(pagamento);
     } catch (cancelError) {
       console.error('[Pagamento] Falha ao desfazer cobranca incompleta:', cancelError.message);
     }
@@ -402,6 +403,7 @@ router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Informe um motivo com pelo menos 5 caracteres para a exclusao.' });
     }
 
+    console.log(`[Admin] Excluindo cobranca ${pagamento._id} (${pagamento.asaasId}) por motivo: ${motivo.trim()}`);
     await cancelarCobrancaAsaas(pagamento);
 
     const adminNome = req.user?.name || req.user?.email || 'Admin';
@@ -510,7 +512,8 @@ router.post('/webhook', async (req, res) => {
           && pagamento.recebimentos.length >= pagamento.quantidadeCobrancas
         ) {
           try {
-            await cancelarCobrancaAsaas(pagamento);
+            console.log(`[Admin] Excluindo cobranca ${pagamento._id} (${pagamento.asaasId}) por motivo: ${motivo.trim()}`);
+    await cancelarCobrancaAsaas(pagamento);
           } catch (cancelError) {
             console.error('[Webhook] Nao foi possivel encerrar assinatura anual:', cancelError.message);
           }
