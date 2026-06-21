@@ -6,6 +6,7 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci
 
+ARG CACHE_BUST_FRONT=2025-06-21-23-00
 COPY frontend/ .
 RUN npm run build
 
@@ -17,8 +18,8 @@ WORKDIR /admin
 COPY admin/package*.json ./
 RUN npm ci
 
+ARG CACHE_BUST=2025-06-21-23-00
 COPY admin/ .
-# Cache bust: force rebuild 2025-06-21-22-50
 RUN npm run build
 
 # Production stage
