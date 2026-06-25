@@ -494,10 +494,33 @@ router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
     console.log('[Admin] Tentando excluir pagamento:', req.params.id);
     const pagamento = await Pagamento.findById(req.params.id);
     if (!pagamento) return res.status(404).json({ message: 'Pagamento não encontrado.' });
-    
-    if (pagamento.status !== 'pendente') {
+
+    const status = String(pagamento.status || '');
+    if (status === 'pago') {
       return res.status(400).json({
-        message: `Não é possível excluir cobranças com status "${pagamento.status}". Apenas cobranças PENDENTES podem ser excluídas.`,
+        message: 'Pagamentos ja pagos nao podem ser excluidos pelo painel.',
+      });
+    }
+    if (status === 'cancelado') {
+      return res.status(400).json({
+        message: 'Esta cobranca ja esta cancelada.',
+      });
+    }
+
+    const dataLocal = data => new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Sao_Paulo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(data);
+    const hojeLocal = dataLocal(new Date());
+    const vencimentoLocal = pagamento.dataVencimento ? dataLocal(new Date(pagamento.dataVencimento)) : '';
+    const cobrancaVencida = Boolean(vencimentoLocal && vencimentoLocal < hojeLocal);
+    const cobrancaAtrasada = status === 'atrasado';
+
+    if (!cobrancaVencida && !cobrancaAtrasada) {
+      return res.status(400).json({
+        message: 'Apenas pagamentos vencidos ou atrasados podem ser excluidos. Pagamentos dentro do prazo devem permanecer ativos.',
       });
     }
 
@@ -506,13 +529,15 @@ router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Informe um motivo com pelo menos 5 caracteres para a exclusão.' });
     }
 
-    // Tentar cancelar no Asaas, mas não travar se der erro
     try {
-      if (pagamento.asaasId || pagamento.asaasSubscriptionId) {
+      if (pagamento.asaasId || pagamento.asaasSubscriptionId || pagamento.asaasInstallmentId) {
         await cancelarCobrancaAsaas(pagamento);
       }
     } catch (asaasError) {
       console.error('[Admin] Erro Asaas:', asaasError.message);
+      return res.status(502).json({
+        message: `Não foi possível cancelar esta cobrança no Asaas: ${asaasError.message}. Tente novamente antes de excluir no painel.`,
+      });
     }
 
     const adminNome = req.user?.name || req.user?.email || 'Admin';

@@ -53,6 +53,19 @@ export default function Pagamentos() {
     cancelado: { label: 'CANCELADO', cor: 'text-slate-400', bg: 'bg-slate-500/10', icon: XCircle },
   }
 
+  const pagamentoVencido = (pagamento: any) => {
+    if (!pagamento?.dataVencimento) return false
+    const hoje = new Date()
+    hoje.setHours(0, 0, 0, 0)
+    const vencimento = new Date(pagamento.dataVencimento)
+    vencimento.setHours(0, 0, 0, 0)
+    return vencimento.getTime() < hoje.getTime()
+  }
+  const podeExcluirPagamento = (pagamento: any) => {
+    if (!pagamento || ['pago', 'cancelado'].includes(pagamento.status)) return false
+    return pagamento.status === 'atrasado' || pagamentoVencido(pagamento)
+  }
+
   const getExportData = () => {
     const headers = ['Usuario', 'Equipamento', 'Serie', 'Plano', 'Cobranca', 'Valor', 'Status', 'Metodo', 'Data Vencimento', 'Data Pagamento', 'Asaas ID']
     const rows = filtrados.map(p => [
@@ -132,7 +145,7 @@ export default function Pagamentos() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erro ao excluir cobranca.')
 
-      setToast({ tipo: 'sucesso', msg: 'Cobranca excluida com sucesso!' })
+      setToast({ tipo: 'sucesso', msg: 'Pagamento excluido com sucesso!' })
       fecharModalExcluir()
       fetchData()
     } catch (err: any) {
@@ -239,16 +252,17 @@ export default function Pagamentos() {
                         <td className="p-3 text-slate-400 uppercase text-xs">{p.metodoPagamento || '-'}</td>
                         <td className="p-3 text-slate-500 text-xs">{p.dataVencimento ? new Date(p.dataVencimento).toLocaleDateString('pt-BR') : '-'}</td>
                         <td className="p-3">
-                          {p.status === 'pendente' && (
+                          {podeExcluirPagamento(p) && (
                             <button
                               onClick={() => abrirModalExcluir(p)}
-                              className="text-red-400 hover:text-red-300 transition-colors p-1 rounded hover:bg-red-500/10"
-                              title="Excluir cobranca"
+                              className="inline-flex items-center gap-1.5 text-red-400 hover:text-red-300 transition-colors px-2 py-1 rounded hover:bg-red-500/10"
+                              title="Excluir pagamento vencido ou atrasado"
                             >
                               <Trash2 className="w-4 h-4" />
+                              <span className="text-[10px] font-bold hidden xl:inline">EXCLUIR</span>
                             </button>
                           )}
-                          {p.status !== 'pendente' && (
+                          {!podeExcluirPagamento(p) && (
                             <span className="text-slate-600 text-[10px]">-</span>
                           )}
                         </td>
@@ -268,8 +282,8 @@ export default function Pagamentos() {
                       <Trash2 className="w-5 h-5 text-red-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-bold text-lg">Excluir cobranca</h3>
-                      <p className="text-slate-400 text-xs">Esta acao nao pode ser desfeita.</p>
+                      <h3 className="text-white font-bold text-lg">Excluir pagamento</h3>
+                      <p className="text-slate-400 text-xs">Somente pagamentos vencidos ou atrasados podem ser excluidos. Pagamentos pagos ficam protegidos.</p>
                     </div>
                   </div>
 
@@ -277,6 +291,7 @@ export default function Pagamentos() {
                     <p className="text-slate-300 text-sm"><strong className="text-white">Usuario:</strong> {modalExcluir.pagamento.userName}</p>
                     <p className="text-slate-300 text-sm"><strong className="text-white">Equipamento:</strong> {modalExcluir.pagamento.bikeName || 'N/A'}</p>
                     <p className="text-slate-300 text-sm"><strong className="text-white">Plano:</strong> {modalExcluir.pagamento.plano} | <strong className="text-white">Valor:</strong> R${((modalExcluir.pagamento.valor || 0) / 100).toFixed(2)}</p>
+                    <p className="text-slate-300 text-sm"><strong className="text-white">Metodo:</strong> {modalExcluir.pagamento.metodoPagamento || '-'} | <strong className="text-white">Status:</strong> {modalExcluir.pagamento.status}</p>
                     <p className="text-slate-300 text-sm"><strong className="text-white">Asaas ID:</strong> <span className="text-slate-500 text-xs">{modalExcluir.pagamento.asaasId}</span></p>
                   </div>
 
@@ -313,7 +328,7 @@ export default function Pagamentos() {
                         </>
                       ) : (
                         <>
-                          <Trash2 className="w-4 h-4" /> Excluir
+                          <Trash2 className="w-4 h-4" /> Excluir pagamento
                         </>
                       )}
                     </button>
