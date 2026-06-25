@@ -3,6 +3,18 @@ const router = express.Router();
 const Ocorrencia = require('../models/Ocorrencia');
 const auth = require('../middleware/auth');
 
+function podeGerenciarOcorrencias(req) {
+  return Boolean(req.isOwner || req.user?.isOwner);
+}
+
+function exigirProprietario(req, res) {
+  if (podeGerenciarOcorrencias(req)) return true;
+  res.status(403).json({
+    error: 'Apenas o proprietario do sistema pode cadastrar, editar ou excluir ocorrencias da Area Segura.'
+  });
+  return false;
+}
+
 // ===== GEOCODING via Nominatim (OpenStreetMap) =====
 async function geocodeEndereco(endereco) {
   try {
@@ -411,6 +423,8 @@ router.get('/stats', async (req, res) => {
 // ===== CRIAR VIA TEXTO DO WHATSAPP =====
 router.post('/whatsapp', auth, async (req, res) => {
   try {
+    if (!exigirProprietario(req, res)) return;
+
     const { texto } = req.body;
     if (!texto || texto.trim().length < 5) {
       return res.status(400).json({ error: 'Texto muito curto ou vazio' });
@@ -501,6 +515,8 @@ router.post('/whatsapp', auth, async (req, res) => {
 // ===== CRIAR MANUALMENTE (admin) =====
 router.post('/', auth, async (req, res) => {
   try {
+    if (!exigirProprietario(req, res)) return;
+
     const { endereco, lat, lng, titulo, descricao, dataOcorrencia, bairro, veiculoTipo, veiculoCor, veiculoMarca } = req.body;
 
     if (!endereco || !lat || !lng) {
@@ -533,6 +549,8 @@ router.post('/', auth, async (req, res) => {
 // ===== ATUALIZAR (admin) =====
 router.put('/:id', auth, async (req, res) => {
   try {
+    if (!exigirProprietario(req, res)) return;
+
     const ocorrencia = await Ocorrencia.findByIdAndUpdate(
       req.params.id,
       { $set: req.body },
@@ -548,6 +566,8 @@ router.put('/:id', auth, async (req, res) => {
 // ===== DELETAR (admin) =====
 router.delete('/:id', auth, async (req, res) => {
   try {
+    if (!exigirProprietario(req, res)) return;
+
     const ocorrencia = await Ocorrencia.findByIdAndDelete(req.params.id);
     if (!ocorrencia) return res.status(404).json({ error: 'Ocorrencia nao encontrada' });
     res.json({ sucesso: true, message: 'Ocorrencia removida' });

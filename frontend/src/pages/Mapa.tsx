@@ -828,6 +828,7 @@ function getCorRisco(count: number) {
 export default function Mapa() {
   const { bikes } = useBikes();
   const { user } = useAuth();
+  const isOwner = Boolean(user?.isOwner || user?.role === 'owner');
   const [activeTab, setActiveTab] = useState<TabType>('Rastreamento');
   const [showWhatsApp, setShowWhatsApp] = useState(false);
   const [ocorrencias, setOcorrencias] = useState<Ocorrencia[]>([]);
@@ -914,7 +915,7 @@ export default function Mapa() {
                     : `${CYCLING_DATA.metadata.routeCount} vias • ${CYCLING_DATA.metadata.segmentCount} segmentos`}
               </p>
             </div>
-            {user && activeTab === 'AreaSegura' && (
+            {isOwner && activeTab === 'AreaSegura' && (
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowWhatsApp(true)} className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shrink-0 cursor-pointer shadow-lg shadow-emerald-500/20" title="Nova ocorrencia">
                 <ClipboardPaste className="w-4 h-4 text-white" />
               </motion.button>
@@ -1034,7 +1035,11 @@ export default function Mapa() {
                             </div>
                           </div>
                         ))}
-                        {ocorrencias.length === 0 && <p className="text-[10px] text-slate-500 text-center py-2">Nenhuma ocorrencia. Clique no botao verde para adicionar.</p>}
+                        {ocorrencias.length === 0 && (
+                          <p className="text-[10px] text-slate-500 text-center py-2">
+                            {isOwner ? 'Nenhuma ocorrencia. Clique no botao verde para adicionar.' : 'Nenhuma ocorrencia cadastrada pela equipe.'}
+                          </p>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -1322,7 +1327,7 @@ export default function Mapa() {
       </div>
 
       <AnimatePresence>
-        {showWhatsApp && <WhatsAppModal onClose={() => setShowWhatsApp(false)} onSuccess={() => { fetchOcorrencias(); fetchStats(); }} />}
+        {isOwner && showWhatsApp && <WhatsAppModal onClose={() => setShowWhatsApp(false)} onSuccess={() => { fetchOcorrencias(); fetchStats(); }} />}
       </AnimatePresence>
     </div>
   );
