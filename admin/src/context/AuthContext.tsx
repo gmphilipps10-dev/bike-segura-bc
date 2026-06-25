@@ -5,13 +5,15 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/a
 interface AuthContextType {
   isLoggedIn: boolean
   isAdmin: boolean
-  login: (password: string) => Promise<{ success: boolean; message?: string }>
+  isOwner: boolean
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
   isAdmin: false,
+  isOwner: false,
   login: async () => ({ success: false }),
   logout: () => {},
 })
@@ -19,31 +21,36 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
     const token = localStorage.getItem('admin_token')
     const admin = localStorage.getItem('admin_user')
     if (token && admin) {
+      const adminUser = JSON.parse(admin)
       setIsLoggedIn(true)
-      setIsAdmin(JSON.parse(admin).isAdmin === true)
+      setIsAdmin(adminUser.isAdmin === true)
+      setIsOwner(adminUser.isOwner === true || adminUser.role === 'owner')
     }
   }, [])
 
-  const login = async (password: string) => {
+  const login = async (email: string, password: string) => {
     try {
+      const emailLimpo = email.trim()
       const painelRes = await fetch(`${API_BASE}/auth/painel-login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ senha: password }),
+        body: JSON.stringify(emailLimpo ? { email: emailLimpo, senha: password } : { senha: password }),
       })
       const painelData = await painelRes.json()
 
       if (painelRes.ok && painelData.token) {
-        const painelUser = { id: 'painel-admin', isAdmin: true, name: 'Painel Admin' }
+        const painelUser = painelData.user || { id: 'painel-admin', isAdmin: true, isOwner: false, name: 'Painel Admin', role: 'admin' }
         localStorage.setItem('admin_token', painelData.token)
         localStorage.setItem('admin_user', JSON.stringify(painelUser))
         setIsLoggedIn(true)
-        setIsAdmin(true)
+        setIsAdmin(painelUser.isAdmin === true)
+        setIsOwner(painelUser.isOwner === true || painelUser.role === 'owner')
         return { success: true }
       }
 
@@ -64,10 +71,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('admin_user')
     setIsLoggedIn(false)
     setIsAdmin(false)
+    setIsOwner(false)
   }
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, isAdmin, isOwner, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

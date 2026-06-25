@@ -14,6 +14,8 @@ export interface UserData {
   plano?: string;
   planoAtivo?: boolean;
   isAdmin?: boolean;
+  isOwner?: boolean;
+  role?: 'owner' | 'admin' | 'user' | string;
 }
 
 interface AuthContextType {

@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema({
   planoDataExpiracao: { type: Date, default: null },
   indicacoes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   isAdmin: { type: Boolean, default: false },
+  isOwner: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Hash password before saving

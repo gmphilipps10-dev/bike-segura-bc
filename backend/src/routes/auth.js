@@ -34,6 +34,64 @@ function emailQuery(email) {
   };
 }
 
+function ownerEmails() {
+  const configurado = process.env.OWNER_EMAILS || process.env.OWNER_EMAIL || '';
+  return configurado
+    .split(',')
+    .map(email => normalizarEmail(email))
+    .filter(Boolean);
+}
+
+function isOwnerEmail(email) {
+  return ownerEmails().includes(normalizarEmail(email));
+}
+
+function isOwnerUser(user) {
+  return Boolean(user?.isOwner || isOwnerEmail(user?.email));
+}
+
+async function garantirProprietario(user) {
+  if (!user || !isOwnerEmail(user.email)) return user;
+  if (!user.isOwner || !user.isAdmin) {
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { isOwner: true, isAdmin: true } }
+    );
+    user.isOwner = true;
+    user.isAdmin = true;
+  }
+  return user;
+}
+
+function tokenPayload(user) {
+  const isOwner = isOwnerUser(user);
+  return {
+    id: user._id,
+    isAdmin: Boolean(user.isAdmin || isOwner),
+    isOwner,
+  };
+}
+
+function usuarioPublico(user) {
+  const isOwner = isOwnerUser(user);
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone,
+    cpf: user.cpf,
+    rg: user.rg,
+    nascimento: user.nascimento,
+    endereco: user.endereco,
+    contatoEmergencia: user.contatoEmergencia,
+    plano: user.plano,
+    planoAtivo: user.planoAtivo,
+    isAdmin: Boolean(user.isAdmin || isOwner),
+    isOwner,
+    role: isOwner ? 'owner' : (user.isAdmin ? 'admin' : 'user'),
+  };
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -57,27 +115,18 @@ router.post('/register', async (req, res) => {
 
     // Create user
     const user = new User({ name, email, phone, password });
+    if (isOwnerEmail(email)) {
+      user.isOwner = true;
+      user.isAdmin = true;
+    }
     await user.save();
 
     // Generate token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(tokenPayload(user), process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.status(201).json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        cpf: user.cpf,
-        rg: user.rg,
-        nascimento: user.nascimento,
-        endereco: user.endereco,
-        contatoEmergencia: user.contatoEmergencia,
-        plano: user.plano,
-        planoAtivo: user.planoAtivo,
-        isAdmin: user.isAdmin,
-      }
+      user: usuarioPublico(user),
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -115,25 +164,14 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Email ou senha incorretos.' });
     }
 
+    await garantirProprietario(user);
+
     // Generate token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign(tokenPayload(user), process.env.JWT_SECRET, { expiresIn: '7d' });
 
     res.json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        cpf: user.cpf,
-        rg: user.rg,
-        nascimento: user.nascimento,
-        endereco: user.endereco,
-        contatoEmergencia: user.contatoEmergencia,
-        plano: user.plano,
-        planoAtivo: user.planoAtivo,
-        isAdmin: user.isAdmin,
-      }
+      user: usuarioPublico(user),
     });
   } catch (error) {
     console.error('Login error:', error);
@@ -151,21 +189,9 @@ router.get('/me', async (req, res) => {
     const user = await User.findById(decoded.id).select('-password');
     
     if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+    await garantirProprietario(user);
 
-    res.json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      cpf: user.cpf,
-      rg: user.rg,
-      nascimento: user.nascimento,
-      endereco: user.endereco,
-      contatoEmergencia: user.contatoEmergencia,
-      plano: user.plano,
-      planoAtivo: user.planoAtivo,
-      isAdmin: user.isAdmin,
-    });
+    res.json(usuarioPublico(user));
   } catch (error) {
     res.status(401).json({ message: 'Token invalido.' });
   }
@@ -212,21 +238,9 @@ router.put('/profile', async (req, res) => {
     const user = await User.findByIdAndUpdate(decoded.id, updates, { new: true }).select('-password');
     
     if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+    await garantirProprietario(user);
 
-    res.json({
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      cpf: user.cpf,
-      rg: user.rg,
-      nascimento: user.nascimento,
-      endereco: user.endereco,
-      contatoEmergencia: user.contatoEmergencia,
-      plano: user.plano,
-      planoAtivo: user.planoAtivo,
-      isAdmin: user.isAdmin,
-    });
+    res.json(usuarioPublico(user));
   } catch (error) {
     console.error('Update profile error:', error);
     res.status(500).json({ message: 'Erro ao atualizar perfil.' });
@@ -258,23 +272,11 @@ router.post('/become-admin', async (req, res) => {
     ).select('-password');
 
     if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+    await garantirProprietario(user);
 
     res.json({
       message: 'Agora voce e administrador!',
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        cpf: user.cpf,
-        rg: user.rg,
-        nascimento: user.nascimento,
-        endereco: user.endereco,
-        contatoEmergencia: user.contatoEmergencia,
-        plano: user.plano,
-        planoAtivo: user.planoAtivo,
-        isAdmin: user.isAdmin,
-      }
+      user: usuarioPublico(user),
     });
   } catch (error) {
     res.status(500).json({ message: 'Erro.' });
@@ -285,6 +287,29 @@ router.post('/become-admin', async (req, res) => {
 router.post('/painel-login', async (req, res) => {
   try {
     const { senha } = req.body;
+    const email = normalizarEmail(req.body.email);
+
+    if (email) {
+      const user = await User.findOne({ email: emailQuery(email) });
+      if (!user) return res.status(403).json({ message: 'E-mail ou senha incorretos.' });
+
+      const senhaConfere = await user.comparePassword(String(senha || ''));
+      if (!senhaConfere) return res.status(403).json({ message: 'E-mail ou senha incorretos.' });
+
+      if (!isOwnerEmail(user.email) && !user.isOwner) {
+        return res.status(403).json({ message: 'Esta conta nao possui status de proprietario do sistema.' });
+      }
+
+      await garantirProprietario(user);
+
+      const token = jwt.sign(tokenPayload(user), process.env.JWT_SECRET, { expiresIn: '8h' });
+      return res.json({
+        token,
+        message: 'Login de proprietario efetuado com sucesso.',
+        user: usuarioPublico(user),
+      });
+    }
+
     const senhaCorreta = requireEnv('PAINEL_SENHA');
 
     if (senha !== senhaCorreta) {
@@ -298,7 +323,11 @@ router.post('/painel-login', async (req, res) => {
       { expiresIn: '8h' }
     );
 
-    res.json({ token, message: 'Login efetuado com sucesso.' });
+    res.json({
+      token,
+      message: 'Login efetuado com sucesso.',
+      user: { id: 'painel-admin', isAdmin: true, isOwner: false, name: 'Painel Admin', role: 'admin' },
+    });
   } catch (error) {
     res.status(500).json({ message: 'Erro ao fazer login.' });
   }
