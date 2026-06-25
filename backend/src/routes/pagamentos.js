@@ -540,12 +540,13 @@ router.post('/:id/cancelar', adminMiddleware, async (req, res) => {
       });
     }
 
-    const adminNome = req.user?.name || req.user?.email || 'Admin';
+    const adminNome = req.user?.name || req.user?.email || (req.isPainelAdmin ? 'Painel Admin' : 'Admin');
+    const adminIdValido = /^[0-9a-fA-F]{24}$/.test(String(req.userId || ''));
     const agora = new Date();
 
     pagamento.status = 'cancelado';
     pagamento.cobrancaAtiva = false;
-    pagamento.excluidoPor = req.userId;
+    pagamento.excluidoPor = adminIdValido ? String(req.userId) : null;
     pagamento.excluidoPorNome = adminNome;
     pagamento.dataExclusao = agora;
     pagamento.motivoExclusao = motivo.trim();
