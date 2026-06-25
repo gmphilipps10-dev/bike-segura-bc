@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setError('');
-      const data = await apiPost('/auth/login', { email, password });
+      const data = await apiPost('/auth/login', { email: email.trim(), password });
       setToken(data.token);
       setUser(data.user);
       return true;
@@ -103,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: Omit<UserData, 'id'> & { password: string }): Promise<boolean> => {
     try {
       setError('');
-      const result = await apiPost('/auth/register', data);
+      const result = await apiPost('/auth/register', { ...data, email: data.email.trim() });
       setToken(result.token);
       setUser(result.user);
       return true;

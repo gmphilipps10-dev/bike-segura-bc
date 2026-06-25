@@ -9,6 +9,10 @@ export default function Clientes() {
   const [clientes, setClientes] = useState<any[]>([])
   const [busca, setBusca] = useState('')
   const [loading, setLoading] = useState(true)
+  const [modalSenha, setModalSenha] = useState<{ aberto: boolean, cliente: any | null }>({ aberto: false, cliente: null })
+  const [novaSenha, setNovaSenha] = useState('')
+  const [salvandoSenha, setSalvandoSenha] = useState(false)
+  const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro', msg: string } | null>(null)
   const token = localStorage.getItem('admin_token') || ''
 
   useEffect(() => {
@@ -38,6 +42,46 @@ export default function Clientes() {
   const handleExportarCSV = () => { const { headers, rows } = getExportData(); exportarCSV('clientes', headers, rows) }
   const handleExportarPDF = () => { const { headers, rows } = getExportData(); exportarPDF('Relatorio de Clientes', `${filtrados.length} clientes`, headers, rows, [{ label: 'Total', value: String(filtrados.length) }]) }
   const handleExportarExcel = () => { const { headers, rows } = getExportData(); exportarExcel('clientes', 'Clientes', headers, rows, [{ label: 'Total', value: String(filtrados.length) }]) }
+
+  const abrirModalSenha = (cliente: any) => {
+    setModalSenha({ aberto: true, cliente })
+    setNovaSenha('')
+  }
+
+  const fecharModalSenha = () => {
+    setModalSenha({ aberto: false, cliente: null })
+    setNovaSenha('')
+  }
+
+  const redefinirSenha = async () => {
+    if (!modalSenha.cliente) return
+    if (novaSenha.length < 6) {
+      setToast({ tipo: 'erro', msg: 'A nova senha deve ter pelo menos 6 caracteres.' })
+      setTimeout(() => setToast(null), 4000)
+      return
+    }
+
+    setSalvandoSenha(true)
+    try {
+      const res = await fetch(`${API_BASE}/auth/users/${modalSenha.cliente._id}/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password: novaSenha }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Erro ao redefinir senha.')
+      setToast({ tipo: 'sucesso', msg: 'Senha redefinida com sucesso.' })
+      fecharModalSenha()
+    } catch (err: any) {
+      setToast({ tipo: 'erro', msg: err.message || 'Erro ao redefinir senha.' })
+    } finally {
+      setSalvandoSenha(false)
+      setTimeout(() => setToast(null), 5000)
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-900">
@@ -69,6 +113,7 @@ export default function Clientes() {
                   <th className="text-left p-3">Email</th>
                   <th className="text-left p-3">Telefone</th>
                   <th className="text-left p-3">Cadastro</th>
+                  <th className="text-left p-3">Acoes</th>
                 </tr>
               </thead>
               <tbody>
@@ -78,10 +123,65 @@ export default function Clientes() {
                     <td className="p-3 text-slate-400 flex items-center gap-1"><Mail className="w-3 h-3" />{c.email || '-'}</td>
                     <td className="p-3 text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3" />{c.phone || '-'}</td>
                     <td className="p-3 text-slate-500 text-xs flex items-center gap-1"><Calendar className="w-3 h-3" />{c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '-'}</td>
+                    <td className="p-3">
+                      <button
+                        type="button"
+                        onClick={() => abrirModalSenha(c)}
+                        className="rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-[11px] font-bold text-amber-300 hover:bg-amber-400/20"
+                      >
+                        Redefinir senha
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {modalSenha.aberto && modalSenha.cliente && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-800 p-6 shadow-2xl">
+              <h3 className="text-lg font-bold text-white">Redefinir senha</h3>
+              <p className="mt-1 text-sm text-slate-400">
+                Cliente: <span className="text-white">{modalSenha.cliente.name}</span>
+              </p>
+              <p className="text-xs text-slate-500">{modalSenha.cliente.email}</p>
+
+              <label className="mt-5 block text-sm font-medium text-slate-300">Nova senha temporaria</label>
+              <input
+                type="password"
+                value={novaSenha}
+                onChange={e => setNovaSenha(e.target.value)}
+                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-white outline-none focus:border-amber-400"
+                placeholder="Minimo 6 caracteres"
+              />
+
+              <div className="mt-5 flex gap-3">
+                <button
+                  type="button"
+                  onClick={fecharModalSenha}
+                  disabled={salvandoSenha}
+                  className="flex-1 rounded-lg bg-slate-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={redefinirSenha}
+                  disabled={salvandoSenha || novaSenha.length < 6}
+                  className="flex-1 rounded-lg bg-amber-400 px-4 py-3 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {salvandoSenha ? 'Salvando...' : 'Salvar senha'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toast && (
+          <div className={`fixed bottom-6 right-6 z-50 rounded-xl px-5 py-3 text-sm font-medium text-white shadow-2xl ${toast.tipo === 'sucesso' ? 'bg-emerald-500' : 'bg-red-500'}`}>
+            {toast.msg}
           </div>
         )}
       </div>

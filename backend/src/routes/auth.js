@@ -18,10 +18,27 @@ function pickAllowed(source, allowedFields) {
   }, {});
 }
 
+function normalizarEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function escapeRegex(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function emailQuery(email) {
+  const normalizado = normalizarEmail(email);
+  return {
+    $regex: `^\\s*${escapeRegex(normalizado)}\\s*$`,
+    $options: 'i',
+  };
+}
+
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, phone, password } = req.body;
+    const email = normalizarEmail(req.body.email);
 
     // Validate
     if (!name || !email || !phone || !password) {
@@ -33,7 +50,7 @@ router.post('/register', async (req, res) => {
     }
 
     // Check if email exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: emailQuery(email) });
     if (existingUser) {
       return res.status(400).json({ message: 'Este email ja esta cadastrado.' });
     }
@@ -71,7 +88,9 @@ router.post('/register', async (req, res) => {
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = String(req.body.email || '').trim();
+    const emailNormalizado = normalizarEmail(email);
 
     if (!email || !password) {
       return res.status(400).json({ message: 'Preencha email e senha.' });
@@ -79,7 +98,11 @@ router.post('/login', async (req, res) => {
 
     // Find user by email or phone
     const user = await User.findOne({
-      $or: [{ email }, { phone: email }]
+      $or: [
+        { email: emailQuery(emailNormalizado) },
+        { phone: email },
+        { phone: email.replace(/\D/g, '') },
+      ],
     });
 
     if (!user) {
@@ -172,6 +195,18 @@ router.put('/profile', async (req, res) => {
         return res.status(400).json({ message: 'CPF invalido. Confira os 11 numeros informados.' });
       }
       updates.cpf = cpf;
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'email')) {
+      const email = normalizarEmail(updates.email);
+      if (!email || !email.includes('@')) {
+        return res.status(400).json({ message: 'Informe um email valido.' });
+      }
+      const existente = await User.findOne({ email: emailQuery(email), _id: { $ne: decoded.id } });
+      if (existente) {
+        return res.status(400).json({ message: 'Este email ja esta cadastrado em outra conta.' });
+      }
+      updates.email = email;
     }
 
     const user = await User.findByIdAndUpdate(decoded.id, updates, { new: true }).select('-password');
@@ -276,6 +311,30 @@ router.get('/users', adminMiddleware, async (req, res) => {
     res.json(users);
   } catch (error) {
     res.status(500).json({ message: 'Erro ao listar usuarios.' });
+  }
+});
+
+// Redefinir senha de usuario pelo painel administrativo
+router.post('/users/:id/reset-password', adminMiddleware, async (req, res) => {
+  try {
+    const { password } = req.body || {};
+    if (!password || String(password).length < 6) {
+      return res.status(400).json({ message: 'A nova senha deve ter pelo menos 6 caracteres.' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'Usuario nao encontrado.' });
+
+    user.password = String(password);
+    await user.save();
+
+    res.json({
+      success: true,
+      message: `Senha redefinida com sucesso para ${user.email}.`,
+    });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Erro ao redefinir senha.' });
   }
 });
 
