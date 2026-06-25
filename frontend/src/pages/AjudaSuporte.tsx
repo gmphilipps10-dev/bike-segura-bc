@@ -5,7 +5,12 @@ import {
   Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { formatDailyProtectionPrice, formatPlanPrice, usePlanPrices } from '../hooks/usePlanPrices';
+import {
+  formatDailyProtectionPrice,
+  formatPlanPrice,
+  getMonthlyPlanPrice,
+  usePlanPrices,
+} from '../hooks/usePlanPrices';
 
 const FAQS = [
   {
@@ -46,9 +51,12 @@ export default function AjudaSuporte() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const { prices } = usePlanPrices();
   const whatsappNumber = '5547992458380';
+  const resumoPlano = (nome: string, valorAnual: number) => (
+    `${nome}: ${formatPlanPrice(getMonthlyPlanPrice(valorAnual))}/mes ou ${formatPlanPrice(valorAnual)}/ano (${formatDailyProtectionPrice(valorAnual)})`
+  );
   const faqs = FAQS.map((faq, index) => index === 3 ? {
     ...faq,
-    resposta: `Mensalidades: Bronze ${formatPlanPrice(prices.bronze)} (${formatDailyProtectionPrice(prices.bronze)}), Prata ${formatPlanPrice(prices.prata)} (${formatDailyProtectionPrice(prices.prata)}), Ouro ${formatPlanPrice(prices.ouro)} (${formatDailyProtectionPrice(prices.ouro)}) e Diamante ${formatPlanPrice(prices.diamante)} (${formatDailyProtectionPrice(prices.diamante)}).`,
+    resposta: `Valores: ${resumoPlano('Bronze', prices.bronze)}, ${resumoPlano('Prata', prices.prata)}, ${resumoPlano('Ouro', prices.ouro)} e ${resumoPlano('Diamante', prices.diamante)}.`,
   } : faq);
 
   return (

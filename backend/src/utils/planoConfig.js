@@ -1,33 +1,39 @@
 const PlanoConfig = require('../models/PlanoConfig');
 
 const PLANOS_PADRAO_CENTAVOS = Object.freeze({
-  bronze: 417,
-  prata: 1250,
-  ouro: 2500,
-  diamante: 3750,
+  bronze: 5000,
+  prata: 15000,
+  ouro: 30000,
+  diamante: 45000,
 });
 
 const PLANOS_IDS = Object.keys(PLANOS_PADRAO_CENTAVOS);
+const MODELO_COBRANCA_ATUAL = 'anual-v1';
 
 async function getPrecosCentavos() {
   let config = await PlanoConfig.findOne({ chave: 'principal' }).lean();
 
-  // Os valores salvos antes desta versao eram anuais. A migracao divide por
-  // doze uma unica vez para preservar o mesmo total anual e passar a exibir
-  // mensalidades menores no aplicativo.
-  if (config?.precosCentavos && config.modeloCobranca !== 'mensal-v1') {
-    const precosMensais = Object.fromEntries(
+  // A fonte oficial dos planos voltou a ser o valor anual. Caso a base ainda
+  // esteja na versao mensal-v1, multiplicamos por 12 uma unica vez.
+  if (config?.precosCentavos && config.modeloCobranca === 'mensal-v1') {
+    const precosAnuais = Object.fromEntries(
       PLANOS_IDS.map(plano => [
         plano,
-        Math.max(1, Math.round(Number(config.precosCentavos[plano] || 0) / 12)),
+        Math.max(1, Math.round(Number(config.precosCentavos[plano] || 0) * 12)),
       ])
     );
 
     config = await PlanoConfig.findOneAndUpdate(
-      { chave: 'principal', modeloCobranca: { $ne: 'mensal-v1' } },
-      { $set: { precosCentavos: precosMensais, modeloCobranca: 'mensal-v1' } },
+      { chave: 'principal', modeloCobranca: 'mensal-v1' },
+      { $set: { precosCentavos: precosAnuais, modeloCobranca: MODELO_COBRANCA_ATUAL } },
       { new: true }
-    ).lean() || { ...config, precosCentavos: precosMensais, modeloCobranca: 'mensal-v1' };
+    ).lean() || { ...config, precosCentavos: precosAnuais, modeloCobranca: MODELO_COBRANCA_ATUAL };
+  } else if (config?.precosCentavos && config.modeloCobranca !== MODELO_COBRANCA_ATUAL) {
+    config = await PlanoConfig.findOneAndUpdate(
+      { chave: 'principal' },
+      { $set: { modeloCobranca: MODELO_COBRANCA_ATUAL } },
+      { new: true }
+    ).lean() || { ...config, modeloCobranca: MODELO_COBRANCA_ATUAL };
   }
 
   return config?.precosCentavos
@@ -65,7 +71,7 @@ async function salvarPrecos(precosEmReais) {
   const precosCentavos = validarPrecosEmReais(precosEmReais);
   const config = await PlanoConfig.findOneAndUpdate(
     { chave: 'principal' },
-    { $set: { precosCentavos, modeloCobranca: 'mensal-v1' } },
+    { $set: { precosCentavos, modeloCobranca: MODELO_COBRANCA_ATUAL } },
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
   ).lean();
 

@@ -14,7 +14,20 @@ const PLANOS = [
 type PlanoId = 'bronze' | 'prata' | 'ouro' | 'diamante'
 type Precos = Record<PlanoId, number>
 
-const PRECOS_PADRAO: Precos = { bronze: 4.17, prata: 12.5, ouro: 25, diamante: 37.5 }
+const PRECOS_PADRAO: Precos = { bronze: 50, prata: 150, ouro: 300, diamante: 450 }
+const PRECOS_MENSAIS_LEGADOS: Precos = { bronze: 4.17, prata: 12.5, ouro: 25, diamante: 37.5 }
+
+function formatCurrency(value: number) {
+  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
+
+function mensalidadeDoAnual(valorAnual: number) {
+  return Number(((valorAnual || 0) / 12).toFixed(2))
+}
+
+function diariaDoAnual(valorAnual: number) {
+  return Number(((valorAnual || 0) / 365).toFixed(2))
+}
 
 export default function Planos() {
   const [stats, setStats] = useState({
@@ -43,7 +56,15 @@ export default function Planos() {
           totalDiamante: u.filter((x: any) => x.plano === 'diamante').length,
           totalGeral: u.length,
         })
-        if (config?.precos) setPrecos({ ...PRECOS_PADRAO, ...config.precos })
+        if (config?.precosAnuais) setPrecos({ ...PRECOS_PADRAO, ...config.precosAnuais })
+        else if (config?.precos && config.periodicidade === 'mensal') {
+          setPrecos(Object.fromEntries(
+            Object.entries({ ...PRECOS_MENSAIS_LEGADOS, ...config.precos }).map(([plano, valor]) => [
+              plano,
+              Number((Number(valor) * 12).toFixed(2)),
+            ])
+          ) as Precos)
+        } else if (config?.precos) setPrecos({ ...PRECOS_PADRAO, ...config.precos })
         setLoading(false)
       })
       .catch(() => setLoading(false))
@@ -70,8 +91,8 @@ export default function Planos() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Nao foi possivel salvar.')
-      setPrecos({ ...PRECOS_PADRAO, ...data.precos })
-      setMensagem('Precos atualizados com sucesso.')
+      setPrecos({ ...PRECOS_PADRAO, ...(data.precosAnuais || data.precos) })
+      setMensagem('Valores anuais atualizados com sucesso.')
     } catch (error: any) {
       setErro(error.message || 'Nao foi possivel salvar os precos.')
     } finally {
@@ -124,8 +145,8 @@ export default function Planos() {
                         <p className="text-slate-500 text-xs">{plano.desc}</p>
                       </div>
                     </div>
-                    <div className="w-32">
-                      <label htmlFor={`preco-${plano.id}`} className="block text-slate-500 text-xs mb-1">Mensalidade</label>
+                    <div className="w-36">
+                      <label htmlFor={`preco-${plano.id}`} className="block text-slate-500 text-xs mb-1">Valor anual</label>
                       <div className="flex items-center gap-2">
                         <span className="text-slate-400 text-sm">R$</span>
                         <input
@@ -139,6 +160,12 @@ export default function Planos() {
                           className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-right text-white outline-none focus:border-amber-400"
                         />
                       </div>
+                      <p className="mt-1 text-[10px] text-slate-500">
+                        {formatCurrency(mensalidadeDoAnual(precos[plano.id as PlanoId]))}/mes
+                      </p>
+                      <p className="text-[10px] text-emerald-400">
+                        Menos de {formatCurrency(diariaDoAnual(precos[plano.id as PlanoId]))} por dia
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -157,7 +184,7 @@ export default function Planos() {
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-amber-400 px-5 py-3 font-semibold text-slate-950 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <CheckCircle className="w-4 h-4" />
-                {salvando ? 'Salvando...' : 'Salvar precos'}
+                {salvando ? 'Salvando...' : 'Salvar valores anuais'}
               </button>
             </div>
 
@@ -165,8 +192,8 @@ export default function Planos() {
               <h2 className="text-white font-bold text-lg mb-2">Informacoes</h2>
               <p className="text-slate-400 text-sm">
                 Nao ha plano gratuito. Todos os usuarios devem assinar um dos planos para proteger suas bikes.
-                Cada assinatura pertence a um equipamento. O cliente pode pagar em 12 cobrancas mensais
-                ou quitar o total do ano de uma vez.
+                Cada assinatura pertence a um equipamento. Aqui voce define o valor anual oficial.
+                No app, o cliente escolhe se paga o total do ano ou em 12 cobrancas mensais.
               </p>
             </div>
           </>

@@ -11,6 +11,7 @@ import {
   formatDailyProtectionPrice,
   formatPlanPrice,
   getAnnualPlanPrice,
+  getMonthlyPlanPrice,
   usePlanPrices,
 } from '../hooks/usePlanPrices';
 import { useBikes } from '../context/BikeContext';
@@ -136,13 +137,13 @@ export default function Planos() {
       .catch(() => setCobrancasPendentes([]));
   }, [token]);
 
-  const handleAssinar = (planId: string) => {
+  const handleAssinar = (planId: string, frequencia: 'mensal' | 'anual') => {
     if (!selectedBike) {
       setSelectionError('Escolha primeiro o equipamento que recebera a protecao.');
       document.getElementById('selecionar-equipamento')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    navigate(`/pagamento?plano=${planId}&bike=${selectedBike}`);
+    navigate(`/pagamento?plano=${planId}&bike=${selectedBike}&frequencia=${frequencia}`);
   };
 
   return (
@@ -303,6 +304,8 @@ export default function Planos() {
           {plans.map((plan, i) => {
             const Icon = plan.icon;
             const isSelected = selectedPlan === plan.id;
+            const valorAnual = getAnnualPlanPrice(prices[plan.id as keyof typeof prices]);
+            const mensalidade = getMonthlyPlanPrice(valorAnual);
 
             return (
               <motion.div
@@ -337,15 +340,15 @@ export default function Planos() {
                   </div>
 
                   {/* Price */}
-                  <div className="mb-1">
-                    <span className={`text-3xl font-bold ${plan.popular ? 'text-gradient-gold' : 'text-white'}`}>{formatPlanPrice(prices[plan.id as keyof typeof prices])}</span>
-                    <span className="text-slate-500 text-sm ml-1">{plan.period}</span>
-                    <span className="ml-2 text-[11px] font-semibold text-emerald-400">
-                      ({formatDailyProtectionPrice(prices[plan.id as keyof typeof prices])})
-                    </span>
+                  <div className="mb-2">
+                    <span className={`text-3xl font-bold ${plan.popular ? 'text-gradient-gold' : 'text-white'}`}>{formatPlanPrice(mensalidade)}</span>
+                    <span className="text-slate-500 text-sm ml-1">/mes</span>
                   </div>
-                  <p className="text-slate-500 text-[10px] mb-1">
-                    ou {formatPlanPrice(getAnnualPlanPrice(prices[plan.id as keyof typeof prices]))} pelo ano completo
+                  <p className="text-slate-400 text-[11px] mb-1">
+                    ou {formatPlanPrice(valorAnual)} no pagamento anual
+                  </p>
+                  <p className="text-emerald-400 text-[11px] font-semibold mb-1">
+                    {formatDailyProtectionPrice(valorAnual)}
                   </p>
                   <p className="text-slate-600 text-[10px] mb-4">Equipamentos de rastreamento vendidos à parte</p>
 
@@ -360,17 +363,34 @@ export default function Planos() {
                   </div>
 
                   {/* CTA */}
-                  <motion.button
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleAssinar(plan.id)}
-                    className={`w-full mt-5 py-3.5 rounded-xl font-bold text-sm tracking-wide cursor-pointer transition-all ${
-                      plan.popular
-                        ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-[#0c1222] shadow-lg shadow-amber-500/20'
-                        : 'glass-card text-white border border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    {plan.popular ? 'ASSINAR AGORA' : 'ESCOLHER PLANO'}
-                  </motion.button>
+                  <div className="grid grid-cols-2 gap-2 mt-5">
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleAssinar(plan.id, 'mensal');
+                      }}
+                      className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-3 text-white text-xs font-bold cursor-pointer hover:border-white/20"
+                    >
+                      MENSAL
+                      <span className="block text-[10px] font-normal text-slate-400">{formatPlanPrice(mensalidade)}/mes</span>
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleAssinar(plan.id, 'anual');
+                      }}
+                      className={`rounded-xl px-3 py-3 text-xs font-bold cursor-pointer ${
+                        plan.popular
+                          ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-[#0c1222] shadow-lg shadow-amber-500/20'
+                          : 'bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222]'
+                      }`}
+                    >
+                      ANUAL
+                      <span className="block text-[10px] font-normal opacity-80">{formatPlanPrice(valorAnual)}</span>
+                    </motion.button>
+                  </div>
                 </div>
               </motion.div>
             );

@@ -12,6 +12,7 @@ import {
   formatDailyProtectionPrice,
   formatPlanPrice,
   getAnnualPlanPrice,
+  getMonthlyPlanPrice,
   usePlanPrices,
 } from '../hooks/usePlanPrices';
 
@@ -59,8 +60,8 @@ export default function PagamentoPlano() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const mensalidade = prices[planoId as keyof typeof prices];
-  const valorAnual = getAnnualPlanPrice(mensalidade);
+  const valorAnual = getAnnualPlanPrice(prices[planoId as keyof typeof prices]);
+  const mensalidade = getMonthlyPlanPrice(valorAnual);
   const valorEscolhido = frequencia === 'mensal' ? mensalidade : valorAnual;
   const opcaoCartao = opcoesParcelamento.find(opcao => opcao.parcelas === parcelasCartao);
   const cartaoAnual = metodo === 'cartao' && frequencia === 'anual';
@@ -174,7 +175,7 @@ export default function PagamentoPlano() {
               <h2 className={`text-lg font-bold ${plano.color}`}>{plano.name}</h2>
               <p className="text-slate-400 text-xs">{plano.desc}</p>
               <p className="text-emerald-400 text-[11px] font-semibold mt-1">
-                ({formatDailyProtectionPrice(mensalidade)})
+                {formatDailyProtectionPrice(valorAnual)}
               </p>
             </div>
             <div className="text-right">

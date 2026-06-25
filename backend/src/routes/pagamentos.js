@@ -62,6 +62,10 @@ function billingType(metodo) {
   return 'CREDIT_CARD';
 }
 
+function mensalidadeDoValorAnual(valorAnualCentavos) {
+  return Math.max(1, Math.round(Number(valorAnualCentavos || 0) / 12));
+}
+
 function respostaPagamento(pagamento, cobranca = null) {
   return {
     id: pagamento._id,
@@ -194,8 +198,9 @@ async function criarCobranca({
   if (!FREQUENCIAS.includes(frequencia)) throw new Error('Escolha pagamento mensal ou anual.');
   if (!METODOS.includes(metodoPagamento)) throw new Error('Forma de pagamento invalida.');
 
-  const valorMensal = await getPlanoValorCentavos(plano);
-  if (!valorMensal) throw new Error('Plano invalido.');
+  const valorTotal = await getPlanoValorCentavos(plano);
+  if (!valorTotal) throw new Error('Plano invalido.');
+  const valorMensal = mensalidadeDoValorAnual(valorTotal);
   const parcelas = metodoPagamento === 'cartao' && frequencia === 'anual'
     ? normalizarParcelasCartao(parcelasCartao)
     : 1;
@@ -218,7 +223,6 @@ async function criarCobranca({
     }
   }
 
-  const valorTotal = valorMensal * 12;
   const parcelamentoCartao = metodoPagamento === 'cartao' && frequencia === 'anual'
     ? calcularParcelamentoCartao(valorTotal, parcelas)
     : null;
@@ -375,10 +379,15 @@ router.get('/status', adminMiddleware, async (_req, res) => {
 
 router.get('/planos', async (_req, res) => {
   try {
-    const precosCentavos = await getPrecosCentavos();
+    const precosAnuaisCentavos = await getPrecosCentavos();
+    const precosMensaisCentavos = Object.fromEntries(
+      Object.entries(precosAnuaisCentavos).map(([plano, valor]) => [plano, mensalidadeDoValorAnual(valor)])
+    );
     res.json({
-      precos: centavosParaReais(precosCentavos),
-      periodicidade: 'mensal',
+      precos: centavosParaReais(precosAnuaisCentavos),
+      precosAnuais: centavosParaReais(precosAnuaisCentavos),
+      precosMensais: centavosParaReais(precosMensaisCentavos),
+      periodicidade: 'anual',
     });
   } catch {
     res.status(500).json({ message: 'Erro ao carregar os precos dos planos.' });
@@ -387,10 +396,9 @@ router.get('/planos', async (_req, res) => {
 
 router.get('/simulacao-cartao', async (req, res) => {
   try {
-    const valorMensal = await getPlanoValorCentavos(req.query.plano);
-    if (!valorMensal) return res.status(400).json({ message: 'Plano invalido.' });
+    const valorAnual = await getPlanoValorCentavos(req.query.plano);
+    if (!valorAnual) return res.status(400).json({ message: 'Plano invalido.' });
 
-    const valorAnual = valorMensal * 12;
     res.json({
       valorBase: valorAnual,
       opcoes: opcoesParcelamentoCartao(valorAnual, 12),
@@ -404,7 +412,16 @@ router.get('/simulacao-cartao', async (req, res) => {
 router.put('/planos', adminMiddleware, async (req, res) => {
   try {
     const precos = await salvarPrecos(req.body?.precos);
-    res.json({ success: true, precos, periodicidade: 'mensal' });
+    const precosMensaisCentavos = Object.fromEntries(
+      Object.entries(await getPrecosCentavos()).map(([plano, valor]) => [plano, mensalidadeDoValorAnual(valor)])
+    );
+    res.json({
+      success: true,
+      precos,
+      precosAnuais: precos,
+      precosMensais: centavosParaReais(precosMensaisCentavos),
+      periodicidade: 'anual',
+    });
   } catch (error) {
     const validacao = error.message?.startsWith('O valor') || error.message?.startsWith('Informe');
     res.status(validacao ? 400 : 500).json({
