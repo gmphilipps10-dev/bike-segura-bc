@@ -51,7 +51,7 @@ const anunciantes = [
     nome: 'Bicicletaria Aquários',
     tag: 'BIKE',
     desc: 'Bicicletas, pecas, acessorios e oficina especializada em Balneario Camboriu.',
-    url: 'https://www.bicicletariaaquarios.com.br',
+    url: 'https://www.google.com/maps/search/?api=1&query=Bicicletaria%20Aqu%C3%A1rios%205a%20Avenida%20547%20Vila%20Real%20Balne%C3%A1rio%20Cambori%C3%BA',
     endereco: '5a Avenida, 547, Vila Real - Balneario Camboriu',
     cor: 'from-violet-500 to-purple-600',
     logo: '/partners/bicicletaria-aquarius.png',
