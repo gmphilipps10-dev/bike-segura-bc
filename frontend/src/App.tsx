@@ -23,6 +23,7 @@ import AjudaSuporte from './pages/AjudaSuporte';
 import TermosPoliticas from './pages/TermosPoliticas';
 import InstalarPWA from './pages/InstalarPWA';
 import Baixar from './pages/Baixar';
+import { useAnalyticsTracker } from './hooks/useAnalytics';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth();
@@ -32,6 +33,7 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
+  useAnalyticsTracker();
 
   // SPA redirect handler: le a rota salva pelo 404.html e navega para ela
   useEffect(() => {

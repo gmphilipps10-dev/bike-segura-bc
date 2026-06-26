@@ -75,6 +75,7 @@ app.use('/api/auth/login', createRateLimiter({ windowMs: 15 * 60 * 1000, max: 20
 app.use('/api/auth/register', createRateLimiter({ windowMs: 60 * 60 * 1000, max: 20 }));
 app.use('/api/auth/painel-login', createRateLimiter({ windowMs: 15 * 60 * 1000, max: 10 }));
 app.use('/api/pagamentos/webhook', createRateLimiter({ windowMs: 60 * 1000, max: 120 }));
+app.use('/api/analytics/event', createRateLimiter({ windowMs: 60 * 1000, max: 300 }));
 
 // ========== CONSULTA PUBLICA POR QR CODE (antes de tudo!) ==========
 // Estas rotas precisam vir ANTES dos arquivos estaticos e do catch-all
@@ -173,6 +174,7 @@ app.get('/qr/:hash', async (req, res) => {
 
 // ========== API ROUTES ==========
 const pushModule = require('./routes/push');
+const analyticsModule = require('./routes/analytics');
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
 app.use('/api/preprinted', require('./routes/preprinted'));
@@ -181,6 +183,8 @@ app.use('/api/sinistros', sinistrosRouter);
 app.use('/api/pagamentos', require('./routes/pagamentos'));
 app.use('/api/push', pushModule.router);
 app.use('/api/noticias', require('./routes/noticias'));
+app.use('/api/analytics', analyticsModule.publicRouter);
+app.use('/api/admin/analytics', analyticsModule.adminRouter);
 
 // ========== STATIC FILES (depois das rotas!) ==========
 const publicPath = path.join(__dirname, '../public');

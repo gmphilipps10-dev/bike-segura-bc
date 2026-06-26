@@ -9,6 +9,7 @@ const menu = [
   { path: '/adesivos', label: 'Adesivos QR', icon: QrCode },
   { path: '/planos', label: 'Planos', icon: ClipboardList },
   { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
+  { path: '/analytics', label: 'Estatisticas', icon: Activity },
   { path: '/relatorios', label: 'Relatorios', icon: Activity },
   { path: '/sinistros', label: 'Sinistros', icon: AlertTriangle },
 ]
