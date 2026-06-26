@@ -146,7 +146,7 @@ export function RankingList({
   return (
     <div className="space-y-3">
       {items.slice(0, 8).map((item, index) => {
-        const label = item[labelKey] || item.button_name || item.button || item.page || item.usuario || 'Sem nome'
+        const label = item[labelKey] || item.advertiser_name || item.button_name || item.button || item.page || item.usuario || 'Sem nome'
         const value = Number(item.total || item.convertidas || 0)
         return (
           <div key={`${label}-${index}`} className="rounded-xl bg-white/[0.03] border border-white/5 p-3">

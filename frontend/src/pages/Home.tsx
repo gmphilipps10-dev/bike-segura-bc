@@ -131,6 +131,9 @@ function AnunciantesCarousel() {
             exit={{ opacity: 0, x: -50 }}
             transition={{ duration: 0.4 }}
             className="relative h-full overflow-hidden border border-white/10 bg-slate-900 cursor-pointer active:scale-[0.98] transition-transform"
+            data-analytics-button={`Banner anunciante: ${a.nome}`}
+            data-analytics-advertiser-id={String(a.id)}
+            data-analytics-advertiser-name={a.nome}
             onClick={() => window.open(a.url, '_blank')}
           >
             <div className="absolute inset-0" style={{ backgroundColor: a.fundo }} />

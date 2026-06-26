@@ -47,6 +47,8 @@ type DashboardData = {
     usuariosUnicos: number
     paginasMaisAcessadas: any[]
     cliquesPorBotao: any[]
+    cliquesAnunciantes: any[]
+    totalCliquesAnunciantes: number
   }
   funilComercial: {
     visitantes: number
@@ -116,6 +118,8 @@ const emptyData: DashboardData = {
     usuariosUnicos: 0,
     paginasMaisAcessadas: [],
     cliquesPorBotao: [],
+    cliquesAnunciantes: [],
+    totalCliquesAnunciantes: 0,
   },
   funilComercial: {
     visitantes: 0,
@@ -247,6 +251,7 @@ export default function Dashboard() {
                   <MetricCard title="Ultimos 7 dias" value={formatNumber(analytics.acessosUltimos7Dias)} icon={TrendingUp} color="text-blue-400" bg="bg-blue-400/10" />
                   <MetricCard title="Ultimos 30 dias" value={formatNumber(analytics.acessosUltimos30Dias)} icon={Clock} color="text-amber-400" bg="bg-amber-400/10" />
                   <MetricCard title="Usuarios unicos" value={formatNumber(analytics.usuariosUnicos)} icon={Users} color="text-purple-400" bg="bg-purple-400/10" />
+                  <MetricCard title="Cliques banners" value={formatNumber(analytics.totalCliquesAnunciantes || 0)} icon={TrendingUp} color="text-orange-400" bg="bg-orange-400/10" link="/analytics" />
                 </div>
               </SectionCard>
 
@@ -391,13 +396,17 @@ export default function Dashboard() {
               </SectionCard>
             </section>
 
-            <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+            <section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
               <SectionCard title="Paginas mais acessadas" subtitle="Analytics dos ultimos 30 dias">
                 <RankingList items={analytics.paginasMaisAcessadas || []} labelKey="page" empty="Ainda nao ha paginas registradas." />
               </SectionCard>
 
               <SectionCard title="Botoes mais clicados" subtitle="Eventos button_click dos ultimos 30 dias">
                 <RankingList items={analytics.cliquesPorBotao || []} labelKey="button" empty="Ainda nao ha cliques registrados." />
+              </SectionCard>
+
+              <SectionCard title="Cliques nos anunciantes" subtitle="Banners do carrossel nos ultimos 30 dias">
+                <RankingList items={analytics.cliquesAnunciantes || []} labelKey="advertiser_name" empty="Ainda nao ha cliques nos anunciantes." />
               </SectionCard>
             </section>
 

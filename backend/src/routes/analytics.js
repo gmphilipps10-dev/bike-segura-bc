@@ -79,6 +79,8 @@ async function buildAnalyticsSummary() {
     visitorAnon: { $ifNull: ['$anonymous_id', '$anonymousId'] },
     date: { $ifNull: ['$created_at', '$createdAt'] },
     buttonLabel: { $ifNull: ['$button_name', '$button'] },
+    advertiserId: { $ifNull: ['$advertiser_id', '$advertiserId'] },
+    advertiserName: { $ifNull: ['$advertiser_name', '$advertiserName'] },
   };
 
   const [
@@ -87,6 +89,7 @@ async function buildAnalyticsSummary() {
     acessosUltimos30Dias,
     usuariosUnicosAgg,
     cliquesPorBotao,
+    cliquesAnunciantes,
     paginasMaisAcessadas,
   ] = await Promise.all([
     countAppOpensSince(hojeInicio, amanhaInicio),
@@ -125,6 +128,47 @@ async function buildAnalyticsSummary() {
       { $project: { _id: 0, button: '$_id', button_name: '$_id', total: 1 } },
     ]),
     AppAnalytics.aggregate([
+      { $project: normalizeFields },
+      {
+        $match: {
+          event: 'button_click',
+          advertiserName: { $exists: true, $ne: '' },
+          date: { $gte: ultimos30Dias },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            id: '$advertiserId',
+            name: '$advertiserName',
+          },
+          total: { $sum: 1 },
+          hoje: {
+            $sum: {
+              $cond: [
+                { $and: [{ $gte: ['$date', hojeInicio] }, { $lt: ['$date', amanhaInicio] }] },
+                1,
+                0,
+              ],
+            },
+          },
+          ultimoCliqueEm: { $max: '$date' },
+        },
+      },
+      { $sort: { total: -1, '_id.name': 1 } },
+      { $limit: 20 },
+      {
+        $project: {
+          _id: 0,
+          advertiser_id: '$_id.id',
+          advertiser_name: '$_id.name',
+          total: 1,
+          hoje: 1,
+          ultimoCliqueEm: 1,
+        },
+      },
+    ]),
+    AppAnalytics.aggregate([
       { $project: { ...normalizeFields, page: 1 } },
       {
         $match: {
@@ -146,6 +190,8 @@ async function buildAnalyticsSummary() {
       acessosUltimos30Dias,
       usuariosUnicos: usuariosUnicosAgg[0]?.total || 0,
       cliquesPorBotao,
+      cliquesAnunciantes,
+      totalCliquesAnunciantes: cliquesAnunciantes.reduce((total, item) => total + Number(item.total || 0), 0),
       paginasMaisAcessadas,
       janela: 'ultimos_30_dias',
       lgpd: {
@@ -168,6 +214,12 @@ publicRouter.post('/event', async (req, res) => {
       ? cleanText(req.body?.button_name || req.body?.button, 120)
       : '';
     const anonymousId = userId ? '' : cleanText(req.body?.anonymous_id || req.body?.anonymousId, 120);
+    const advertiserId = eventType === 'button_click'
+      ? cleanText(req.body?.advertiser_id || req.body?.advertiserId, 80)
+      : '';
+    const advertiserName = eventType === 'button_click'
+      ? cleanText(req.body?.advertiser_name || req.body?.advertiserName, 120)
+      : '';
     const userAgent = cleanText(req.get('user-agent'), 500);
 
     await AppAnalytics.create({
@@ -180,6 +232,10 @@ publicRouter.post('/event', async (req, res) => {
       userId,
       anonymous_id: anonymousId,
       anonymousId,
+      advertiser_id: advertiserId,
+      advertiserId,
+      advertiser_name: advertiserName,
+      advertiserName,
       user_agent: userAgent,
       userAgent,
     });

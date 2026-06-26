@@ -10,12 +10,22 @@ type RankingItem = {
   page?: string
 }
 
+type AdvertiserClickItem = {
+  advertiser_id?: string
+  advertiser_name?: string
+  total: number
+  hoje: number
+  ultimoCliqueEm?: string
+}
+
 type AnalyticsSummary = {
   acessosHoje: number
   acessosUltimos7Dias: number
   acessosUltimos30Dias: number
   usuariosUnicos: number
   cliquesPorBotao: RankingItem[]
+  cliquesAnunciantes: AdvertiserClickItem[]
+  totalCliquesAnunciantes: number
   paginasMaisAcessadas: RankingItem[]
   janela: string
   lgpd?: {
@@ -30,6 +40,8 @@ const resumoInicial: AnalyticsSummary = {
   acessosUltimos30Dias: 0,
   usuariosUnicos: 0,
   cliquesPorBotao: [],
+  cliquesAnunciantes: [],
+  totalCliquesAnunciantes: 0,
   paginasMaisAcessadas: [],
   janela: 'ultimos_30_dias',
 }
@@ -45,6 +57,11 @@ function friendlyPage(page: string) {
     .replace(/^\//, '')
     .replace(/-/g, ' ')
     .replace(/\//g, ' / ')
+}
+
+function formatDateTime(value?: string) {
+  if (!value) return 'Ainda sem clique'
+  return new Date(value).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
 
 function RankingList({
@@ -87,6 +104,55 @@ function RankingList({
   )
 }
 
+function AdvertiserClicksList({ items }: { items: AdvertiserClickItem[] }) {
+  const max = Math.max(...items.map(item => item.total), 1)
+
+  return (
+    <div className="glass-card p-5 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-4">
+        <div>
+          <h2 className="text-white font-bold text-lg">Cliques nos banners dos anunciantes</h2>
+          <p className="text-slate-500 text-sm">Ranking dos parceiros no carrossel da tela inicial, nos ultimos 30 dias.</p>
+        </div>
+        <span className="inline-flex w-fit rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1 text-amber-300 text-xs font-semibold">
+          Material para demonstrar resultado comercial
+        </span>
+      </div>
+
+      {items.length === 0 ? (
+        <p className="text-slate-500 text-sm">Ainda nao ha cliques registrados nos banners dos anunciantes.</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map(item => (
+            <div key={`${item.advertiser_id || item.advertiser_name}`} className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <p className="text-white font-semibold truncate">{item.advertiser_name || 'Anunciante sem nome'}</p>
+                  <p className="text-slate-500 text-xs">Ultimo clique: {formatDateTime(item.ultimoCliqueEm)}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-lg bg-amber-400/10 px-3 py-1 text-amber-300 text-xs font-bold">
+                    {formatNumber(item.total)} em 30 dias
+                  </span>
+                  <span className="rounded-lg bg-emerald-400/10 px-3 py-1 text-emerald-300 text-xs font-bold">
+                    {formatNumber(item.hoje)} hoje
+                  </span>
+                </div>
+              </div>
+              <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-500"
+                  style={{ width: `${Math.max(6, (item.total / max) * 100)}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Analytics() {
   const [summary, setSummary] = useState<AnalyticsSummary>(resumoInicial)
   const [loading, setLoading] = useState(true)
@@ -106,6 +172,8 @@ export default function Analytics() {
           ...resumoInicial,
           ...data,
           cliquesPorBotao: Array.isArray(data.cliquesPorBotao) ? data.cliquesPorBotao : [],
+          cliquesAnunciantes: Array.isArray(data.cliquesAnunciantes) ? data.cliquesAnunciantes : [],
+          totalCliquesAnunciantes: Number(data.totalCliquesAnunciantes || 0),
           paginasMaisAcessadas: Array.isArray(data.paginasMaisAcessadas) ? data.paginasMaisAcessadas : [],
         })
       } catch (err: any) {
@@ -147,6 +215,13 @@ export default function Analytics() {
       color: 'text-purple-400',
       bg: 'bg-purple-400/10',
     },
+    {
+      title: 'Cliques em banners',
+      value: summary.totalCliquesAnunciantes,
+      icon: TrendingUp,
+      color: 'text-amber-400',
+      bg: 'bg-amber-400/10',
+    },
   ]
 
   return (
@@ -173,7 +248,7 @@ export default function Analytics() {
           </div>
         ) : (
           <>
-            <section className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <section className="grid grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
               {cards.map(card => (
                 <div key={card.title} className="glass-card p-5">
                   <div className={`w-10 h-10 rounded-lg ${card.bg} flex items-center justify-center mb-3`}>
@@ -184,6 +259,8 @@ export default function Analytics() {
                 </div>
               ))}
             </section>
+
+            <AdvertiserClicksList items={summary.cliquesAnunciantes} />
 
             <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">
               <RankingList

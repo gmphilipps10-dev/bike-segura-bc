@@ -7,6 +7,11 @@ const VISITOR_ID_KEY = 'bike_segura_visitor_id';
 
 type AnalyticsEventType = 'app_open' | 'page_view' | 'button_click';
 
+type AnalyticsMetadata = {
+  advertiser_id?: string;
+  advertiser_name?: string;
+};
+
 function getVisitorId() {
   try {
     const stored = localStorage.getItem(VISITOR_ID_KEY);
@@ -45,13 +50,16 @@ function sendAnalyticsEvent(
   eventType: AnalyticsEventType,
   page: string,
   token: string | null,
-  button?: string
+  button?: string,
+  metadata: AnalyticsMetadata = {}
 ) {
   const body = JSON.stringify({
     event_type: eventType,
     page,
     button_name: button,
     anonymous_id: token ? undefined : getVisitorId(),
+    advertiser_id: metadata.advertiser_id,
+    advertiser_name: metadata.advertiser_name,
   });
 
   fetch(`${API_BASE_URL}/analytics/event`, {
@@ -106,7 +114,10 @@ export function useAnalyticsTracker() {
       if (!button) return;
 
       const page = `${locationRef.current.pathname}${locationRef.current.search}`;
-      sendAnalyticsEvent('button_click', page || '/', tokenRef.current, button);
+      sendAnalyticsEvent('button_click', page || '/', tokenRef.current, button, {
+        advertiser_id: clickable.getAttribute('data-analytics-advertiser-id') || undefined,
+        advertiser_name: clickable.getAttribute('data-analytics-advertiser-name') || undefined,
+      });
     };
 
     document.addEventListener('click', handleClick, true);
