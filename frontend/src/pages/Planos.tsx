@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Check, Shield, Crown, Gem, Medal, Award,
   HelpCircle, Bike, Clock3, FileText, QrCode, CreditCard
@@ -115,6 +116,7 @@ const plans = [
 
 export default function Planos() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { token } = useAuth();
   const { prices } = usePlanPrices();
   const { bikes, loading: bikesLoading } = useBikes();
@@ -144,7 +146,10 @@ export default function Planos() {
       document.getElementById('selecionar-equipamento')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
     }
-    navigate(`/pagamento?plano=${planId}&bike=${selectedBike}&frequencia=${frequencia}`);
+    const loja = searchParams.get('loja');
+    const params = new URLSearchParams({ plano: planId, bike: selectedBike, frequencia });
+    if (loja) params.set('loja', loja);
+    navigate(`/pagamento?${params.toString()}`);
   };
 
   return (

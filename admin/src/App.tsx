@@ -10,6 +10,7 @@ import Pagamentos from './pages/Pagamentos'
 import Relatorios from './pages/Relatorios'
 import Sinistros from './pages/Sinistros'
 import Analytics from './pages/Analytics'
+import LojasParceiras from './pages/LojasParceiras'
 import GlobalSearch from './components/GlobalSearch'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ function AppRoutes() {
       <Route path="/planos" element={<PrivateRoute><Planos /></PrivateRoute>} />
       <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
       <Route path="/analytics" element={<PrivateRoute><Analytics /></PrivateRoute>} />
+      <Route path="/lojas-parceiras" element={<PrivateRoute><LojasParceiras /></PrivateRoute>} />
       <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
       <Route path="/sinistros" element={<PrivateRoute><Sinistros /></PrivateRoute>} />
     </Routes>

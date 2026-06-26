@@ -25,6 +25,10 @@ const pagamentoSchema = new mongoose.Schema({
   externalReference: { type: String, default: '' },
   status: { type: String, enum: ['pendente', 'pago', 'atrasado', 'cancelado'], default: 'pendente' },
   metodoPagamento: { type: String, default: '' }, // PIX, BOLETO, CREDIT_CARD
+  partnerStoreId: { type: mongoose.Schema.Types.ObjectId, ref: 'PartnerStore', default: null },
+  codigoParceiro: { type: String, default: '', index: true },
+  partnerStoreName: { type: String, default: '' },
+  partnerCommissionPercentage: { type: Number, default: 10 },
   dataVencimento: { type: Date, required: true },
   dataPagamento: { type: Date, default: null },
   linkPagamento: { type: String, default: '' },

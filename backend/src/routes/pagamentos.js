@@ -21,6 +21,12 @@ const {
   normalizarParcelasCartao,
   opcoesParcelamentoCartao,
 } = require('../utils/cartao');
+const {
+  normalizarCodigoParceiro,
+  buscarLojaAtivaPorCodigo,
+  registrarVendaParceira,
+  cancelarVendasParceirasDoPagamento,
+} = require('../utils/partnerSales');
 
 const router = express.Router();
 const PLANOS_ORDEM = ['free', 'bronze', 'prata', 'ouro', 'diamante'];
@@ -84,6 +90,8 @@ function respostaPagamento(pagamento, cobranca = null) {
     status: pagamento.status,
     cobrancaAtiva: pagamento.cobrancaAtiva,
     metodoPagamento: pagamento.metodoPagamento,
+    codigoParceiro: pagamento.codigoParceiro || '',
+    partnerStoreName: pagamento.partnerStoreName || '',
     linkPagamento: cobranca?.invoiceUrl || pagamento.linkPagamento || '',
     pixQrCode: pagamento.pixQrCode || '',
     pixPayload: pagamento.pixPayload || '',
@@ -193,6 +201,7 @@ async function criarCobranca({
   frequencia,
   dataVencimento,
   parcelasCartao = 1,
+  codigoParceiro = '',
 }) {
   if (!getAsaasApiKey()) throw new Error('ASAAS_API_KEY nao configurada.');
   if (!FREQUENCIAS.includes(frequencia)) throw new Error('Escolha pagamento mensal ou anual.');
@@ -204,6 +213,13 @@ async function criarCobranca({
   const parcelas = metodoPagamento === 'cartao' && frequencia === 'anual'
     ? normalizarParcelasCartao(parcelasCartao)
     : 1;
+  const codigoParceiroNormalizado = normalizarCodigoParceiro(codigoParceiro);
+  const lojaParceira = codigoParceiroNormalizado
+    ? await buscarLojaAtivaPorCodigo(codigoParceiroNormalizado)
+    : null;
+  if (codigoParceiroNormalizado && !lojaParceira) {
+    throw new Error('Loja parceira invalida ou inativa.');
+  }
 
   const existente = await obterCobrancaAtiva(bike);
   if (existente) {
@@ -215,6 +231,17 @@ async function criarCobranca({
     );
 
     if (existente.status === 'pago' || mesmoContrato) {
+      if (lojaParceira && existente.status !== 'pago') {
+        existente.partnerStoreId = lojaParceira._id;
+        existente.codigoParceiro = lojaParceira.codigo_parceiro;
+        existente.partnerStoreName = lojaParceira.nome_fantasia;
+        existente.partnerCommissionPercentage = Number(lojaParceira.percentual_comissao || 10);
+        existente.historico.push({
+          status: existente.status,
+          descricao: `Origem da venda atualizada para loja parceira ${lojaParceira.nome_fantasia}`,
+        });
+        await existente.save();
+      }
       return {
         pagamento: existente,
         reutilizada: true,
@@ -272,11 +299,15 @@ async function criarCobranca({
       cobrancaAtiva: true,
       status: 'pendente',
       metodoPagamento,
+      partnerStoreId: lojaParceira?._id || null,
+      codigoParceiro: lojaParceira?.codigo_parceiro || '',
+      partnerStoreName: lojaParceira?.nome_fantasia || '',
+      partnerCommissionPercentage: Number(lojaParceira?.percentual_comissao || 10),
       dataVencimento: vencimento,
       externalReference,
       historico: [{
         status: 'pendente',
-        descricao: `Contratacao ${frequencia} reservada para o equipamento ${bike.name}`,
+        descricao: `Contratacao ${frequencia} reservada para o equipamento ${bike.name}${lojaParceira ? ` via loja parceira ${lojaParceira.nome_fantasia}` : ''}`,
       }],
     });
   } catch (error) {
@@ -354,8 +385,7 @@ async function criarCobranca({
     return { pagamento, cobranca, reutilizada: false, substituida };
   } catch (error) {
     try {
-      console.log(`[Admin] Excluindo cobranca ${pagamento._id} (${pagamento.asaasId}) por motivo: ${motivo.trim()}`);
-    await cancelarCobrancaAsaas(pagamento);
+      await cancelarCobrancaAsaas(pagamento);
     } catch (cancelError) {
       console.error('[Pagamento] Falha ao desfazer cobranca incompleta:', cancelError.message);
     }
@@ -470,6 +500,7 @@ router.post('/criar', adminMiddleware, async (req, res) => {
       metodoPagamento,
       frequencia = 'mensal',
       parcelasCartao = 1,
+      codigoParceiro = '',
     } = req.body;
     if (!bikeId) return res.status(400).json({ message: 'Selecione um equipamento para gerar a cobranca.' });
 
@@ -488,6 +519,7 @@ router.post('/criar', adminMiddleware, async (req, res) => {
       frequencia,
       dataVencimento,
       parcelasCartao,
+      codigoParceiro,
     });
     res.json({
       success: true,
@@ -606,6 +638,7 @@ router.post('/webhook', async (req, res) => {
 
     const filtros = [{ asaasId: payment.id }];
     if (payment.subscription) filtros.push({ asaasSubscriptionId: payment.subscription });
+    if (payment.installment) filtros.push({ asaasInstallmentId: payment.installment });
     const pagamento = await Pagamento.findOne({ $or: filtros });
     if (!pagamento) return res.status(200).json({ received: true });
 
@@ -618,9 +651,13 @@ router.post('/webhook', async (req, res) => {
       DELETED: 'cancelado',
       REFUNDED: 'cancelado',
       CHARGEBACK_REQUESTED: 'cancelado',
+      CREDIT_CARD_CAPTURE_REFUSED: 'cancelado',
+      REFUSED: 'cancelado',
     };
     const novoStatus = statusMap[evento] || pagamento.status;
     pagamento.status = novoStatus;
+    let registrarVendaParceiraConfirmada = false;
+    let cancelarVendaParceiraConfirmada = false;
 
     if (novoStatus === 'pago') {
       const recebimentoExiste = pagamento.recebimentos.some(item => item.asaasId === payment.id);
@@ -634,6 +671,7 @@ router.post('/webhook', async (req, res) => {
           dataPagamento: new Date(),
         });
         pagamento.dataPagamento = new Date();
+        registrarVendaParceiraConfirmada = true;
 
         const expiracaoCalculada = pagamento.frequencia === 'anual'
           ? adicionarAnos(new Date(), 1)
@@ -666,8 +704,7 @@ router.post('/webhook', async (req, res) => {
           && pagamento.recebimentos.length >= pagamento.quantidadeCobrancas
         ) {
           try {
-            console.log(`[Admin] Excluindo cobranca ${pagamento._id} (${pagamento.asaasId}) por motivo: ${motivo.trim()}`);
-    await cancelarCobrancaAsaas(pagamento);
+            await cancelarCobrancaAsaas(pagamento);
           } catch (cancelError) {
             console.error('[Webhook] Nao foi possivel encerrar assinatura anual:', cancelError.message);
           }
@@ -679,8 +716,10 @@ router.post('/webhook', async (req, res) => {
         // O cancelamento isolado de uma parcela nao significa que a
         // assinatura recorrente inteira foi encerrada.
         pagamento.status = 'atrasado';
+        cancelarVendaParceiraConfirmada = ['REFUNDED', 'CHARGEBACK_REQUESTED'].includes(evento);
       } else {
         pagamento.cobrancaAtiva = false;
+        cancelarVendaParceiraConfirmada = true;
       }
     }
 
@@ -689,6 +728,18 @@ router.post('/webhook', async (req, res) => {
       descricao: `Webhook Asaas: ${event || payment.status}`,
     });
     await pagamento.save();
+
+    try {
+      if (registrarVendaParceiraConfirmada) {
+        await registrarVendaParceira(pagamento, payment);
+      }
+      if (cancelarVendaParceiraConfirmada) {
+        await cancelarVendasParceirasDoPagamento(pagamento, payment);
+      }
+    } catch (partnerError) {
+      console.error('[Webhook] Erro ao sincronizar venda parceira:', partnerError.message);
+    }
+
     if (pagamento.bikeId) await atualizarPlanoUsuario(pagamento.userId);
 
     res.status(200).json({ received: true });
@@ -706,6 +757,7 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
       metodoPagamento,
       frequencia = 'mensal',
       parcelasCartao = 1,
+      codigoParceiro = '',
     } = req.body;
     if (!bikeId) return res.status(400).json({ message: 'Escolha o equipamento que recebera a protecao.' });
 
@@ -723,6 +775,7 @@ router.post('/criar-minha-cobranca', userAuth, async (req, res) => {
       metodoPagamento,
       frequencia,
       parcelasCartao,
+      codigoParceiro,
     });
     res.json({
       success: true,

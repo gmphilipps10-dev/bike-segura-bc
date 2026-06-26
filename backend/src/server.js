@@ -184,6 +184,7 @@ app.use('/api/pagamentos', require('./routes/pagamentos'));
 app.use('/api/push', pushModule.router);
 app.use('/api/protection', require('./routes/protection'));
 app.use('/api/noticias', require('./routes/noticias'));
+app.use('/api/partner-stores', require('./routes/partnerStores'));
 app.use('/api/analytics', analyticsModule.publicRouter);
 app.use('/api/admin/analytics', analyticsModule.adminRouter);
 app.use('/api/admin/dashboard', require('./routes/dashboard'));

@@ -15,6 +15,7 @@ import {
   getMonthlyPlanPrice,
   usePlanPrices,
 } from '../hooks/usePlanPrices';
+import { getStoredPartnerStore } from '../hooks/usePartnerStoreTracking';
 
 const planosConfig = {
   bronze: { name: 'Bronze', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10', desc: 'QR Code + alerta de furto' },
@@ -42,6 +43,7 @@ export default function PagamentoPlano() {
   const { prices, loading: pricesLoading, error: pricesError } = usePlanPrices();
 
   const planoId = searchParams.get('plano') || 'bronze';
+  const codigoParceiroUrl = searchParams.get('loja') || '';
   const plano = planosConfig[planoId as keyof typeof planosConfig] || planosConfig.bronze;
   const [bikeId, setBikeId] = useState(searchParams.get('bike') || '');
   const [frequencia, setFrequencia] = useState<Frequencia>(
@@ -69,6 +71,7 @@ export default function PagamentoPlano() {
     ? opcaoCartao.valorCobrado / 100
     : valorEscolhido;
   const equipamento = bikes.find(bike => bike.id === bikeId);
+  const partnerStore = getStoredPartnerStore();
 
   useEffect(() => {
     setSimulacaoLoading(true);
@@ -123,6 +126,7 @@ export default function PagamentoPlano() {
         frequencia,
         metodoPagamento: metodo,
         parcelasCartao: cartaoAnual ? parcelasCartao : 1,
+        codigoParceiro: partnerStore?.codigo_parceiro || codigoParceiroUrl,
       }, token);
       setResultado(res.pagamento);
       setReused(Boolean(res.reused));
@@ -195,6 +199,15 @@ export default function PagamentoPlano() {
           <div className="glass-card p-5 mb-4 flex items-center justify-center gap-2 text-slate-400 text-sm">
             <Loader2 className="w-4 h-4 animate-spin" />
             Carregando cobranca pendente...
+          </div>
+        )}
+
+        {partnerStore && !resultado && (
+          <div className="glass-card border border-emerald-400/20 bg-emerald-400/5 p-3 mb-4">
+            <p className="text-emerald-300 text-xs font-semibold">Venda vinculada a loja parceira</p>
+            <p className="text-slate-400 text-[11px] mt-1">
+              Origem: {partnerStore.nome_fantasia || partnerStore.codigo_parceiro}
+            </p>
           </div>
         )}
 

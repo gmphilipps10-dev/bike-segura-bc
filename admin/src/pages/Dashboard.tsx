@@ -65,6 +65,12 @@ type DashboardData = {
     assinaturasAtivas: number
     assinaturasCanceladas: number
   }
+  lojasParceiras: {
+    vendasMes: number
+    lojaMaisVendeu: string
+    comissaoPendenteTotal: number
+    comissaoPagaMes: number
+  }
   atividadeRecente: { type: string; title: string; description: string; date: string }[]
   alertasAdministrativos: Record<string, number>
   centralPendencias: {
@@ -136,6 +142,12 @@ const emptyData: DashboardData = {
     assinaturasAtivas: 0,
     assinaturasCanceladas: 0,
   },
+  lojasParceiras: {
+    vendasMes: 0,
+    lojaMaisVendeu: 'Sem vendas no mes',
+    comissaoPendenteTotal: 0,
+    comissaoPagaMes: 0,
+  },
   atividadeRecente: [],
   alertasAdministrativos: {},
   centralPendencias: { total: 0, urgentes: 0, atencao: 0, hoje: 0, items: [] },
@@ -206,6 +218,7 @@ export default function Dashboard() {
   const analytics = data.analytics
   const funil = data.funilComercial
   const financeiro = data.financeiro
+  const lojasParceiras = data.lojasParceiras
   const sinistros = data.sinistros
 
   return (
@@ -279,6 +292,13 @@ export default function Dashboard() {
                   <MetricCard title="Canceladas" value={formatNumber(financeiro.assinaturasCanceladas)} icon={XCircle} color="text-slate-300" bg="bg-slate-400/10" />
                 </div>
               </SectionCard>
+            </section>
+
+            <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              <MetricCard title="Vendas por lojas no mes" value={formatNumber(lojasParceiras.vendasMes)} icon={Users} color="text-amber-400" bg="bg-amber-400/10" link="/lojas-parceiras" />
+              <MetricCard title="Loja que mais vendeu" value={lojasParceiras.lojaMaisVendeu || 'Sem vendas'} icon={TrendingUp} color="text-blue-400" bg="bg-blue-400/10" link="/lojas-parceiras" />
+              <MetricCard title="Comissao pendente total" value={formatCurrency(lojasParceiras.comissaoPendenteTotal)} icon={Clock} color="text-red-400" bg="bg-red-400/10" link="/lojas-parceiras" />
+              <MetricCard title="Comissao paga no mes" value={formatCurrency(lojasParceiras.comissaoPagaMes)} icon={CheckCircle} color="text-emerald-400" bg="bg-emerald-400/10" link="/lojas-parceiras" />
             </section>
 
             <section className="grid grid-cols-1 xl:grid-cols-2 gap-5">

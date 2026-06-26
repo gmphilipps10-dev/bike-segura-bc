@@ -7,6 +7,7 @@ const Pagamento = require('../models/Pagamento');
 const PrePrintedQR = require('../models/PrePrintedQR');
 const Sinistro = require('../models/Sinistro');
 const ProtectionEvent = require('../models/ProtectionEvent');
+const PartnerSale = require('../models/PartnerSale');
 const { buildAnalyticsSummary } = require('./analytics');
 
 const router = express.Router();
@@ -95,6 +96,56 @@ async function buildReferralStats() {
     totalIndicacoes,
     indicacoesConvertidas,
     ranking,
+  };
+}
+
+async function buildPartnerStoreStats(now = new Date()) {
+  const monthStart = startOfMonth(now);
+  const [monthlySales, pendingAgg, paidMonthAgg] = await Promise.all([
+    PartnerSale.find({
+      sale_status: 'confirmed',
+      sold_at: { $gte: monthStart },
+    })
+      .populate('partner_store_id', 'nome_fantasia codigo_parceiro')
+      .lean(),
+    PartnerSale.aggregate([
+      { $match: { sale_status: 'confirmed', commission_status: 'pending' } },
+      { $group: { _id: null, total: { $sum: '$commission_amount' } } },
+    ]),
+    PartnerSale.aggregate([
+      {
+        $match: {
+          sale_status: 'confirmed',
+          commission_status: 'paid',
+          paid_at: { $gte: monthStart },
+        },
+      },
+      { $group: { _id: null, total: { $sum: '$commission_amount' } } },
+    ]),
+  ]);
+
+  const ranking = new Map();
+  monthlySales.forEach(sale => {
+    const key = String(sale.partner_store_id?._id || sale.partner_store_id || sale.codigo_parceiro);
+    const current = ranking.get(key) || {
+      loja: sale.partner_store_id?.nome_fantasia || 'Loja removida',
+      codigo_parceiro: sale.codigo_parceiro,
+      quantidade: 0,
+      valor: 0,
+    };
+    current.quantidade += 1;
+    current.valor += Number(sale.net_amount || sale.gross_amount || 0);
+    ranking.set(key, current);
+  });
+
+  const lojaMaisVendeu = Array.from(ranking.values())
+    .sort((a, b) => b.quantidade - a.quantidade || b.valor - a.valor)[0] || null;
+
+  return {
+    vendasMes: monthlySales.length,
+    lojaMaisVendeu: lojaMaisVendeu?.loja || 'Sem vendas no mes',
+    comissaoPendenteTotal: centsToReais(pendingAgg[0]?.total || 0),
+    comissaoPagaMes: centsToReais(paidMonthAgg[0]?.total || 0),
   };
 }
 
@@ -207,6 +258,7 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
       equipamentos30,
       assinaturas30,
       atividadeRecente,
+      lojasParceiras,
     ] = await Promise.all([
       User.countDocuments(),
       Bike.countDocuments(),
@@ -283,6 +335,7 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
       Bike.countDocuments({ createdAt: { $gte: addDays(now, -30) } }),
       Pagamento.countDocuments({ status: 'pago', dataPagamento: { $gte: addDays(now, -30) } }),
       buildRecentActivity(),
+      buildPartnerStoreStats(now),
     ]);
 
     const visitantes = analytics.usuariosUnicos || analytics.acessosUltimos30Dias || 0;
@@ -381,6 +434,7 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
         assinaturasAtivas,
         assinaturasCanceladas,
       },
+      lojasParceiras,
       atividadeRecente,
       alertasAdministrativos: {
         clientesSemEquipamento,
@@ -419,6 +473,7 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
         'alertas_de_furto',
         'adesivos_qr',
         'analytics',
+        'lojas_parceiras',
       ],
       lgpd: {
         analyticsSemDadosSensiveis: true,
