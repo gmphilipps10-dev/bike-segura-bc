@@ -173,6 +173,11 @@ export default function LojasParceiras() {
     showToast('Link copiado.')
   }
 
+  const openQrCode = (link: string) => {
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(link)}`
+    window.open(qrUrl, '_blank', 'noopener,noreferrer')
+  }
+
   const markPaid = async (sale: any) => {
     const observation = window.prompt('Observacao do pagamento da comissao:', 'Comissao paga manualmente')
     if (observation === null) return
@@ -335,7 +340,7 @@ export default function LojasParceiras() {
                 <div className="glass-card overflow-x-auto">
                   <table className="w-full min-w-[850px] text-sm">
                     <thead className="bg-white/5 text-slate-400 text-xs uppercase">
-                      <tr><th className="text-left p-3">Loja</th><th className="text-left p-3">Responsavel</th><th className="text-left p-3">Codigo</th><th className="text-left p-3">Comissao</th><th className="text-left p-3">Status</th><th className="text-left p-3">Link</th><th className="text-left p-3">Acoes</th></tr>
+                      <tr><th className="text-left p-3">Loja</th><th className="text-left p-3">Responsavel</th><th className="text-left p-3">Codigo</th><th className="text-left p-3">Comissao</th><th className="text-left p-3">Status</th><th className="text-left p-3">Link / QR</th><th className="text-left p-3">Acoes</th></tr>
                     </thead>
                     <tbody>
                       {lojas.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-slate-500">Nenhuma loja parceira cadastrada.</td></tr>}
@@ -346,7 +351,12 @@ export default function LojasParceiras() {
                           <td className="p-3 text-amber-300 font-mono text-xs">{loja.codigo_parceiro}</td>
                           <td className="p-3 text-white">{loja.percentual_comissao}%</td>
                           <td className="p-3"><span className={statusBadge(loja.status)}>{loja.status}</span></td>
-                          <td className="p-3"><button onClick={() => copyLink(loja.link)} className="text-amber-300 text-xs hover:text-amber-200">Copiar link</button></td>
+                          <td className="p-3">
+                            <div className="flex flex-col gap-1">
+                              <button onClick={() => copyLink(loja.link)} className="text-amber-300 text-xs hover:text-amber-200 text-left">Copiar link</button>
+                              <button onClick={() => openQrCode(loja.link)} className="text-cyan-300 text-xs hover:text-cyan-200 text-left">Abrir QR Code</button>
+                            </div>
+                          </td>
                           <td className="p-3"><button onClick={() => editStore(loja)} className="text-slate-300 text-xs hover:text-white">Editar</button></td>
                         </tr>
                       ))}
