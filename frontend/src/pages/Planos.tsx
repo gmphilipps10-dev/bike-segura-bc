@@ -69,7 +69,6 @@ const plans = [
       'Instalação de TAG Bluetooth (iOS ou Android)',
       'Apoio na localização por rede Bluetooth',
       'Recuperação assistida quando houver indício de localização',
-      'Geocerca e Ativar Proteção disponíveis apenas com GPS',
     ],
   },
   {

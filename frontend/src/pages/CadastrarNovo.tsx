@@ -90,7 +90,7 @@ function getMensagemPlanoRastreamento(plano?: string): string | null {
     case 'bronze':
       return 'O plano Bronze nao inclui rastreamento, geocerca ou Ativar Protecao. Para adicionar TAG ou GPS, faca upgrade do plano.';
     case 'prata':
-      return 'No plano Prata, voce pode usar TAG Bluetooth. Geocerca e Ativar Protecao exigem GPS nos planos Ouro ou Diamante.';
+      return 'No plano Prata, voce pode usar TAG Bluetooth. Para adicionar Rastreador GPS, faca upgrade para Ouro ou Diamante.';
     case 'ouro':
       return 'No plano Ouro, voce pode usar Rastreador GPS, geocerca e Ativar Protecao. Para TAG tambem, faca upgrade para Diamante.';
     case 'diamante':
