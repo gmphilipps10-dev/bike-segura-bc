@@ -48,10 +48,10 @@ function sendAnalyticsEvent(
   button?: string
 ) {
   const body = JSON.stringify({
-    eventType,
+    event_type: eventType,
     page,
-    button,
-    anonymousId: token ? undefined : getVisitorId(),
+    button_name: button,
+    anonymous_id: token ? undefined : getVisitorId(),
   });
 
   fetch(`${API_BASE_URL}/analytics/event`, {
