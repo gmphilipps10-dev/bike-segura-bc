@@ -51,7 +51,7 @@ const plans = [
       'Acionamento via ACT (Acordo de Cooperação Técnica)',
       'Adesivo ultradestrutivel identificador',
       'Consulta pública por QR Code',
-      'Sem TAG, GPS, geocerca ou Ativar Proteção',
+      'Proteção inicial com identificação e acionamento rápido',
     ],
   },
   {
