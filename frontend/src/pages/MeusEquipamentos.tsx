@@ -1,13 +1,16 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, Plus, Shield, ShieldCheck, MapPin, QrCode,
   X, Copy, Check, ExternalLink, Share2, Download,
-  Pencil, Trash2, AlertTriangle, Save
+  Pencil, Trash2, AlertTriangle, Save, Lock, Unlock,
+  Navigation, Volume2, VolumeX, Loader2, Crosshair
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useBikes } from '../context/BikeContext';
+import { useAuth } from '../context/AuthContext';
+import { apiPost } from '../config/api';
 
 function getOperationError(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
@@ -307,11 +310,413 @@ function EditBikeModal({ bike, onSave, onClose }: { bike: any; onSave: (id: stri
   );
 }
 
+type GeoPoint = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+};
+
+type MovementAlertData = {
+  bike: any;
+  latitude: number;
+  longitude: number;
+  distance_meters: number;
+  radius_meters: number;
+  timestamp: string;
+};
+
+const radiusOptions = [
+  { value: 5, label: '5m experimental' },
+  { value: 10, label: '10m recomendado' },
+  { value: 15, label: '15m padrão' },
+  { value: 20, label: '20m' },
+  { value: 30, label: '30m' },
+  { value: 50, label: '50m' },
+  { value: 100, label: '100m' },
+];
+
+function hasGpsTracking(bike: any) {
+  const tracking = `${bike?.rastreamento || ''} ${bike?.plataformaTag || ''}`.toLowerCase();
+  return tracking.includes('gps') || tracking.includes('rastreador');
+}
+
+function getCurrentGpsPosition(): Promise<GeoPoint> {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('Não foi possível ativar a proteção. Localização GPS indisponível.'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      position => resolve({
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      }),
+      () => reject(new Error('Não foi possível ativar a proteção. Localização GPS indisponível.')),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 5000 },
+    );
+  });
+}
+
+function formatProtectionDate(value?: string | null) {
+  if (!value) return 'Sem verificação';
+  return new Date(value).toLocaleString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function ProtectionControls({
+  bike,
+  token,
+  onRefresh,
+  onMovementAlert,
+}: {
+  bike: any;
+  token: string | null;
+  onRefresh: () => Promise<void>;
+  onMovementAlert: (alert: MovementAlertData) => void;
+}) {
+  const gpsAvailable = hasGpsTracking(bike);
+  const active = Boolean(bike.protection_active || bike.protectionStatus?.active);
+  const session = bike.protectionStatus;
+  const [radius, setRadius] = useState<number>(session?.radius_meters || 10);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const alertShownRef = useRef(false);
+
+  useEffect(() => {
+    if (session?.radius_meters) setRadius(session.radius_meters);
+    if (!session?.alert_triggered) alertShownRef.current = false;
+  }, [session?.radius_meters, session?.alert_triggered]);
+
+  useEffect(() => {
+    if (!active || !token || !gpsAvailable) return;
+    let stopped = false;
+    let running = false;
+
+    const checkLocation = async () => {
+      if (stopped || running) return;
+      running = true;
+      try {
+        const point = await getCurrentGpsPosition();
+        const result = await apiPost('/protection/check-location', {
+          equipment_id: bike.id,
+          current_latitude: point.latitude,
+          current_longitude: point.longitude,
+          timestamp: new Date().toISOString(),
+        }, token);
+
+        if ((result.alert_triggered || result.status === 'alert_triggered') && !alertShownRef.current) {
+          alertShownRef.current = true;
+          onMovementAlert({
+            bike,
+            latitude: point.latitude,
+            longitude: point.longitude,
+            distance_meters: result.session?.last_distance_meters || 0,
+            radius_meters: result.session?.radius_meters || radius,
+            timestamp: result.session?.alert_triggered_at || new Date().toISOString(),
+          });
+          await onRefresh();
+        }
+      } catch (monitorError) {
+        console.warn('[Proteção] Monitoramento pausado:', monitorError);
+      } finally {
+        running = false;
+      }
+    };
+
+    checkLocation();
+    const timer = window.setInterval(checkLocation, 5000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [active, token, gpsAvailable, bike.id, radius, onMovementAlert, onRefresh]);
+
+  if (!gpsAvailable) {
+    return (
+      <div className="mt-3 rounded-xl border border-slate-700/70 bg-slate-900/50 px-3 py-3">
+        <div className="flex items-start gap-2">
+          <Lock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            Modo Proteção disponível apenas para equipamentos com rastreador GPS.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const handleActivate = async () => {
+    if (!token) {
+      setError('Sua sessão expirou. Entre novamente para ativar a proteção.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const point = await getCurrentGpsPosition();
+      const result = await apiPost('/protection/activate', {
+        equipment_id: bike.id,
+        radius_meters: radius,
+        initial_latitude: point.latitude,
+        initial_longitude: point.longitude,
+      }, token);
+      setMessage(result.message || 'Proteção ativada. Seu equipamento está sendo monitorado.');
+      await onRefresh();
+    } catch (activateError) {
+      setError(getOperationError(activateError, 'Não foi possível ativar a proteção. Localização GPS indisponível.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    if (!token) {
+      setError('Sua sessão expirou. Entre novamente para desativar a proteção.');
+      return;
+    }
+
+    setBusy(true);
+    setError('');
+    setMessage('');
+    try {
+      const result = await apiPost('/protection/deactivate', { equipment_id: bike.id }, token);
+      setMessage(result.message || 'Proteção desativada.');
+      await onRefresh();
+    } catch (deactivateError) {
+      setError(getOperationError(deactivateError, 'Não foi possível desativar a proteção.'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className={`mt-3 rounded-xl border p-3 ${active ? 'border-emerald-400/25 bg-emerald-500/10' : 'border-amber-400/20 bg-amber-500/5'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${active ? 'bg-emerald-400/15' : 'bg-amber-400/15'}`}>
+            {active ? <Lock className="w-4 h-4 text-emerald-300" /> : <Crosshair className="w-4 h-4 text-amber-300" />}
+          </div>
+          <div>
+            <p className="text-white text-xs font-bold">{active ? 'Proteção ativa' : 'Modo proteção'}</p>
+            <p className="text-[10px] text-slate-400 mt-0.5">
+              {active
+                ? `Raio ${session?.radius_meters || radius}m • Última verificação: ${formatProtectionDate(session?.last_checked_at)}`
+                : 'Cria uma cerca temporária e alerta se houver deslocamento.'}
+            </p>
+            {session?.last_distance_meters != null && (
+              <p className={`text-[10px] mt-1 ${session.alert_triggered ? 'text-red-300' : 'text-slate-500'}`}>
+                Última distância: {Math.round(session.last_distance_meters)}m
+                {session.alert_triggered ? ' • alerta disparado' : ''}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {!active && (
+        <div className="mt-3">
+          <label className="text-[10px] uppercase tracking-wide text-slate-500 mb-1.5 block">Raio da geocerca</label>
+          <select
+            value={radius}
+            onChange={e => setRadius(Number(e.target.value))}
+            className="w-full rounded-lg border border-white/10 bg-[#0c1222] px-3 py-2 text-xs text-white outline-none"
+          >
+            {radiusOptions.map(option => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </select>
+          {radius === 5 && (
+            <p className="mt-2 text-[10px] text-amber-300">
+              Raio de 5m pode gerar falsos alertas devido à variação do GPS.
+            </p>
+          )}
+        </div>
+      )}
+
+      {(message || error) && (
+        <p className={`mt-3 rounded-lg px-3 py-2 text-[11px] ${error ? 'bg-red-500/10 text-red-300 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/20'}`}>
+          {error || message}
+        </p>
+      )}
+
+      <button
+        onClick={active ? handleDeactivate : handleActivate}
+        disabled={busy}
+        className={`mt-3 w-full rounded-xl py-2.5 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60 ${
+          active
+            ? 'bg-white/8 text-slate-100 border border-white/10 hover:bg-white/12'
+            : 'bg-gradient-to-r from-amber-400 to-yellow-500 text-[#0c1222]'
+        }`}
+      >
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : active ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+        {busy ? 'PROCESSANDO...' : active ? 'Desativar Proteção' : 'Ativar Proteção'}
+      </button>
+    </div>
+  );
+}
+
+function MovementAlertModal({
+  alert,
+  token,
+  onClose,
+}: {
+  alert: MovementAlertData;
+  token: string | null;
+  onClose: () => void;
+}) {
+  const audioRef = useRef<{
+    context?: AudioContext;
+    oscillator?: OscillatorNode;
+    gain?: GainNode;
+    timer?: number;
+  }>({});
+  const [silenced, setSilenced] = useState(false);
+  const [sendingFurto, setSendingFurto] = useState(false);
+
+  const stopSiren = async () => {
+    const audio = audioRef.current;
+    if (audio.timer) window.clearInterval(audio.timer);
+    try {
+      audio.gain?.gain.setTargetAtTime(0.0001, audio.context?.currentTime || 0, 0.08);
+      window.setTimeout(() => {
+        try { audio.oscillator?.stop(); } catch {}
+        try { audio.context?.close(); } catch {}
+      }, 150);
+    } catch {}
+    audioRef.current = {};
+    setSilenced(true);
+    navigator.vibrate?.(0);
+    if (token) {
+      try { await apiPost('/protection/siren-silenced', { equipment_id: alert.bike.id }, token); } catch {}
+    }
+  };
+
+  useEffect(() => {
+    navigator.vibrate?.([800, 250, 800, 250, 1200]);
+    try {
+      const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
+      const context = new AudioCtor();
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      oscillator.type = 'sawtooth';
+      oscillator.frequency.value = 520;
+      gain.gain.value = 0.0001;
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start();
+      gain.gain.setTargetAtTime(0.28, context.currentTime, 0.1);
+      let high = false;
+      const timer = window.setInterval(() => {
+        high = !high;
+        oscillator.frequency.setTargetAtTime(high ? 980 : 520, context.currentTime, 0.05);
+      }, 430);
+      audioRef.current = { context, oscillator, gain, timer };
+    } catch (audioError) {
+      console.warn('[Proteção] Sirene bloqueada pelo navegador:', audioError);
+    }
+
+    return () => {
+      const audio = audioRef.current;
+      if (audio.timer) window.clearInterval(audio.timer);
+      try { audio.oscillator?.stop(); } catch {}
+      try { audio.context?.close(); } catch {}
+      navigator.vibrate?.(0);
+    };
+  }, []);
+
+  const openMaps = () => {
+    window.open(`https://www.google.com/maps?q=${alert.latitude},${alert.longitude}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const emitFurto = async () => {
+    if (!token) return;
+    setSendingFurto(true);
+    try {
+      await apiPost(`/bikes/${alert.bike.id}/furto`, {}, token);
+      await stopSiren();
+      onClose();
+    } catch (error) {
+      window.alert('Não foi possível emitir o alerta de furto agora. Tente novamente.');
+    } finally {
+      setSendingFurto(false);
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[700] bg-red-950/90 backdrop-blur-md flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.92, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.92, y: 20 }}
+        className="w-full max-w-md rounded-3xl border border-red-400/30 bg-[#130b12] shadow-2xl shadow-red-500/30 overflow-hidden"
+      >
+        <div className="p-6 text-center border-b border-red-400/10">
+          <div className="w-20 h-20 rounded-full bg-red-500 mx-auto mb-4 flex items-center justify-center shadow-lg shadow-red-500/40 animate-pulse">
+            <AlertTriangle className="w-10 h-10 text-white" />
+          </div>
+          <p className="text-red-300 text-xs font-black tracking-[0.25em] uppercase">Movimentação detectada</p>
+          <h2 className="text-white text-2xl font-black mt-2">🚨 ATENÇÃO</h2>
+          <p className="text-slate-300 text-sm mt-2">
+            Seu equipamento saiu da área protegida.
+          </p>
+        </div>
+
+        <div className="p-5 space-y-3">
+          <div className="rounded-2xl bg-white/5 border border-white/10 p-4">
+            <p className="text-white font-bold">{alert.bike.brand} {alert.bike.name}</p>
+            <p className="text-slate-400 text-xs mt-1">Série: {alert.bike.serie}</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-red-500/10 border border-red-400/20 p-3">
+              <p className="text-red-200 text-[10px] uppercase">Distância</p>
+              <p className="text-white text-xl font-black">{Math.round(alert.distance_meters)}m</p>
+            </div>
+            <div className="rounded-2xl bg-amber-500/10 border border-amber-400/20 p-3">
+              <p className="text-amber-200 text-[10px] uppercase">Raio configurado</p>
+              <p className="text-white text-xl font-black">{alert.radius_meters}m</p>
+            </div>
+          </div>
+          <p className="text-slate-500 text-xs text-center">Horário: {formatProtectionDate(alert.timestamp)}</p>
+
+          <button onClick={openMaps} className="w-full rounded-xl bg-white text-slate-950 py-3 font-bold text-sm flex items-center justify-center gap-2">
+            <Navigation className="w-4 h-4" />
+            Ver localização
+          </button>
+          <button onClick={emitFurto} disabled={sendingFurto} className="w-full rounded-xl bg-red-500 text-white py-3 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60">
+            <AlertTriangle className="w-4 h-4" />
+            {sendingFurto ? 'Emitindo alerta...' : 'Emitir Alerta de Furto'}
+          </button>
+          <button onClick={stopSiren} className="w-full rounded-xl border border-white/10 bg-white/5 text-slate-200 py-3 font-bold text-sm flex items-center justify-center gap-2">
+            {silenced ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {silenced ? 'Sirene silenciada' : 'Silenciar Sirene'}
+          </button>
+          <button onClick={onClose} className="w-full text-slate-500 text-xs py-2">Fechar alerta</button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 export default function MeusEquipamentos() {
-  const { bikes, removeBike, updateBike } = useBikes();
+  const { bikes, removeBike, updateBike, refreshBikes } = useBikes();
+  const { token } = useAuth();
   const [selectedBike, setSelectedBike] = useState<any>(null);
   const [bikeToDelete, setBikeToDelete] = useState<any>(null);
   const [bikeToEdit, setBikeToEdit] = useState<any>(null);
+  const [movementAlert, setMovementAlert] = useState<MovementAlertData | null>(null);
   const activeCount = bikes.filter(b => b.protected).length;
 
   return (
@@ -412,6 +817,13 @@ export default function MeusEquipamentos() {
                   </button>
                 )}
 
+                <ProtectionControls
+                  bike={bike}
+                  token={token}
+                  onRefresh={refreshBikes}
+                  onMovementAlert={setMovementAlert}
+                />
+
                 {/* Actions: Edit / Delete */}
                 <div className="flex gap-2 mt-3">
                   <button
@@ -500,6 +912,17 @@ export default function MeusEquipamentos() {
             bike={bikeToEdit}
             onSave={updateBike}
             onClose={() => setBikeToEdit(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Movement Alert Modal */}
+      <AnimatePresence>
+        {movementAlert && (
+          <MovementAlertModal
+            alert={movementAlert}
+            token={token}
+            onClose={() => setMovementAlert(null)}
           />
         )}
       </AnimatePresence>

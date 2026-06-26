@@ -32,6 +32,45 @@ export default function Sinistros() {
   const fetchSinistros = async () => {
     try {
       setLoading(true)
+      if (filtroTipo === 'movimentacao') {
+        const res = await fetch(`${API_BASE}/protection/admin/movement-alerts`, { headers: { Authorization: `Bearer ${token}` } })
+        if (res.ok) {
+          const data = await res.json()
+          setSinistros((Array.isArray(data) ? data : []).map((event) => ({
+            _id: event.id,
+            tipo: 'movimentacao',
+            status: event.event_type === 'outside_area_cancelled' ? 'fechado' : 'aberto',
+            statusRecuperacao: event.event_type === 'protection_alert_triggered' ? 'em_andamento' : 'falso_positivo',
+            diasEmAndamento: 0,
+            movementEvent: true,
+            event_type: event.event_type,
+            latitude: event.latitude,
+            longitude: event.longitude,
+            distance_meters: event.distance_meters,
+            radius_meters: event.radius_meters,
+            dataOcorrencia: event.created_at,
+            veiculoSnapshot: {
+              nome: event.equipment?.name,
+              marca: event.equipment?.brand,
+              cor: event.equipment?.color,
+              serie: event.equipment?.serie,
+              foto: event.equipment?.photo,
+            },
+            proprietarioSnapshot: {
+              nome: event.user?.name,
+              email: event.user?.email,
+              telefone: event.user?.phone,
+            },
+            localOcorrencia: event.latitude && event.longitude
+              ? `${Number(event.latitude).toFixed(5)}, ${Number(event.longitude).toFixed(5)}`
+              : 'Localizacao protegida',
+            rastreadorOnline: true,
+          })))
+        } else {
+          setSinistros([])
+        }
+        return
+      }
       let url = `${API_BASE}/sinistros`
       const params = new URLSearchParams()
       if (filtroStatus !== 'todos') params.append('status', filtroStatus)
@@ -86,16 +125,16 @@ export default function Sinistros() {
   const suspensos = filtrados.filter(s => s.status === 'suspenso')
   const fechados = filtrados.filter(s => s.status === 'fechado')
 
-  const tipoLabels = { roubo: 'Roubo', furto: 'Furto', tentativa_roubo: 'Tentativa', apropriacao_indebita: 'Apropriação' }
-  const tipoColors = { roubo: 'bg-red-500/20 text-red-400', furto: 'bg-orange-500/20 text-orange-400', tentativa_roubo: 'bg-yellow-500/20 text-yellow-400', apropriacao_indebita: 'bg-purple-500/20 text-purple-400' }
+  const tipoLabels = { roubo: 'Roubo', furto: 'Furto', tentativa_roubo: 'Tentativa', apropriacao_indebita: 'Apropriação', movimentacao: 'Movimentação' }
+  const tipoColors = { roubo: 'bg-red-500/20 text-red-400', furto: 'bg-orange-500/20 text-orange-400', tentativa_roubo: 'bg-yellow-500/20 text-yellow-400', apropriacao_indebita: 'bg-purple-500/20 text-purple-400', movimentacao: 'bg-cyan-500/20 text-cyan-300' }
   const recLabels = { em_andamento: 'Em Andamento', veiculo_encontrado: 'Encontrado', falso_positivo: 'Falso Positivo', sem_exito: 'Sem Êxito', recuperado: 'Recuperado' }
   const recColors = { em_andamento: 'text-amber-400', veiculo_encontrado: 'text-blue-400', falso_positivo: 'text-slate-400', sem_exito: 'text-red-400', recuperado: 'text-green-400' }
   const fmtDate = (d) => d ? new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'
   const fmtDias = (d) => d === 0 ? 'Hoje' : d === 1 ? '1 dia' : `${d} dias`
 
   const Card = ({ s, coluna }) => (
-    <div draggable onDragStart={() => setDraggingId(s._id)} onDragEnd={() => setDraggingId(null)}
-      className={`bg-slate-800/60 border border-white/5 rounded-xl p-4 mb-3 cursor-move hover:border-amber-400/30 transition-all ${draggingId === s._id ? 'opacity-50' : ''}`}>
+    <div draggable={!s.movementEvent} onDragStart={() => !s.movementEvent && setDraggingId(s._id)} onDragEnd={() => setDraggingId(null)}
+      className={`bg-slate-800/60 border border-white/5 rounded-xl p-4 mb-3 ${s.movementEvent ? 'cursor-default' : 'cursor-move'} hover:border-amber-400/30 transition-all ${draggingId === s._id ? 'opacity-50' : ''}`}>
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-2">
           <span className={`px-2 py-0.5 rounded text-[10px] font-medium border ${tipoColors[s.tipo] || 'bg-slate-500/20 text-slate-400'}`}>{tipoLabels[s.tipo] || s.tipo}</span>
@@ -119,11 +158,29 @@ export default function Sinistros() {
         {s.rastreadorOnline && <span className="text-[10px] text-green-400 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />Online</span>}
       </div>
       <div className="flex items-center gap-2 pt-3 border-t border-white/5">
-        <button onClick={() => setSinistroSelecionado(s)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700 transition-colors"><Eye className="w-3 h-3" /> Ver</button>
-        {s.prontaResposta === 'disponivel' && <button onClick={() => handleProntaResposta(s._id)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-amber-400/10 text-amber-400 text-[11px] hover:bg-amber-400/20 transition-colors"><Zap className="w-3 h-3" /> PR</button>}
-        {coluna !== 'aberto' && <button onClick={() => handleMoverStatus(s._id, 'aberto')} className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700"><AlertTriangle className="w-3 h-3" /></button>}
-        {coluna !== 'suspenso' && <button onClick={() => handleMoverStatus(s._id, 'suspenso')} className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700"><Pause className="w-3 h-3" /></button>}
-        {coluna !== 'fechado' && <button onClick={() => handleMoverStatus(s._id, 'fechado')} className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700"><CheckCircle className="w-3 h-3" /></button>}
+        {s.movementEvent ? (
+          <>
+            <a
+              href={s.latitude && s.longitude ? `https://www.google.com/maps?q=${s.latitude},${s.longitude}` : '#'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-cyan-500/10 text-cyan-300 text-[11px] hover:bg-cyan-500/20 transition-colors"
+            >
+              <MapPin className="w-3 h-3" /> Ver local
+            </a>
+            <span className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px]">
+              {Math.round(s.distance_meters || 0)}m / raio {s.radius_meters || '-'}m
+            </span>
+          </>
+        ) : (
+          <>
+            <button onClick={() => setSinistroSelecionado(s)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700 transition-colors"><Eye className="w-3 h-3" /> Ver</button>
+            {s.prontaResposta === 'disponivel' && <button onClick={() => handleProntaResposta(s._id)} className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-amber-400/10 text-amber-400 text-[11px] hover:bg-amber-400/20 transition-colors"><Zap className="w-3 h-3" /> PR</button>}
+            {coluna !== 'aberto' && <button onClick={() => handleMoverStatus(s._id, 'aberto')} className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700"><AlertTriangle className="w-3 h-3" /></button>}
+            {coluna !== 'suspenso' && <button onClick={() => handleMoverStatus(s._id, 'suspenso')} className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700"><Pause className="w-3 h-3" /></button>}
+            {coluna !== 'fechado' && <button onClick={() => handleMoverStatus(s._id, 'fechado')} className="px-2 py-1.5 rounded-lg bg-slate-700/50 text-slate-300 text-[11px] hover:bg-slate-700"><CheckCircle className="w-3 h-3" /></button>}
+          </>
+        )}
       </div>
     </div>
   )
@@ -192,7 +249,7 @@ export default function Sinistros() {
             <option value="todos">Todos status</option><option value="aberto">Aberto</option><option value="suspenso">Suspenso</option><option value="fechado">Fechado</option>
           </select>
           <select value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)} className="px-3 py-2 bg-slate-800/50 border border-white/10 rounded-lg text-white text-sm">
-            <option value="todos">Todos tipos</option><option value="roubo">Roubo</option><option value="furto">Furto</option><option value="tentativa_roubo">Tentativa</option><option value="apropriacao_indebita">Apropriação</option>
+            <option value="todos">Todos tipos</option><option value="movimentacao">Movimentação</option><option value="roubo">Roubo</option><option value="furto">Furto</option><option value="tentativa_roubo">Tentativa</option><option value="apropriacao_indebita">Apropriação</option>
           </select>
         </div>
 

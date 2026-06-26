@@ -22,6 +22,22 @@ export interface BikeData {
   boNumber?: string;
   alertDate?: string | null;
   scanCount?: number;
+  protection_active?: boolean;
+  protectionStatus?: {
+    id: string;
+    active: boolean;
+    radius_meters: number;
+    initial_latitude: number;
+    initial_longitude: number;
+    activated_at: string;
+    deactivated_at?: string | null;
+    last_checked_at?: string | null;
+    outside_detected_at?: string | null;
+    alert_triggered: boolean;
+    alert_triggered_at?: string | null;
+    last_distance_meters?: number | null;
+    updated_at?: string | null;
+  } | null;
 }
 
 type BikeApiData = Partial<BikeData> & {

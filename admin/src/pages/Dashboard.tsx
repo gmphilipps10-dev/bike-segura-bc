@@ -165,6 +165,7 @@ function activityColor(type: string) {
     sinistro: 'bg-red-400',
     recuperacao: 'bg-purple-400',
     qr: 'bg-cyan-400',
+    protection: 'bg-orange-400',
   }
   return map[type] || 'bg-slate-400'
 }

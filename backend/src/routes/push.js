@@ -128,4 +128,65 @@ async function notificarFurto(bike, userId) {
   }
 }
 
-module.exports = { router, notificarFurto };
+// ===== ENVIAR NOTIFICACAO DE MOVIMENTACAO PROTEGIDA (interno) =====
+async function notificarProtecaoMovimento(bike, userId, details = {}) {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
+    console.warn('[Push] VAPID nao configurado. Notificacao de protecao nao enviada.');
+    return;
+  }
+
+  try {
+    const subscriptions = await PushSubscription.find({ userId, ativo: true });
+    if (subscriptions.length === 0) {
+      console.log('[Push] Nenhuma subscription ativa para o proprietario.');
+      return;
+    }
+
+    const mapsUrl = details.latitude != null && details.longitude != null
+      ? `https://www.google.com/maps?q=${details.latitude},${details.longitude}`
+      : '/#/equipamentos';
+
+    const payload = JSON.stringify({
+      title: '🚨 MOVIMENTACAO DETECTADA',
+      body: `${bike.brand || ''} ${bike.name || 'Equipamento'} saiu da area protegida (${Math.round(details.distanceMeters || 0)}m).`,
+      icon: '/logo-oficial.jpg',
+      badge: '/favicon.png',
+      tag: `protection-${bike._id}`,
+      data: {
+        url: '/#/equipamentos',
+        mapsUrl,
+        bikeId: String(bike._id),
+        tipo: 'protection_alert',
+      },
+      actions: [
+        { action: 'ver', title: 'Abrir app' },
+        { action: 'fechar', title: 'Fechar' }
+      ]
+    });
+
+    const results = await Promise.allSettled(
+      subscriptions.map(sub =>
+        webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: sub.keys },
+          payload
+        )
+      )
+    );
+
+    const invalidas = subscriptions.filter((_, i) => results[i].status === 'rejected');
+    if (invalidas.length > 0) {
+      await PushSubscription.deleteMany({
+        endpoint: { $in: invalidas.map(s => s.endpoint) }
+      });
+      console.log(`[Push] ${invalidas.length} subscriptions invalidas removidas.`);
+    }
+
+    const sucessos = results.filter(r => r.status === 'fulfilled').length;
+    const falhas = results.filter(r => r.status === 'rejected').length;
+    console.log(`[Push] Protecao notificada: ${sucessos} sucessos, ${falhas} falhas (${subscriptions.length} total)`);
+  } catch (error) {
+    console.error('[Push] Erro ao notificar protecao:', error.message);
+  }
+}
+
+module.exports = { router, notificarFurto, notificarProtecaoMovimento };

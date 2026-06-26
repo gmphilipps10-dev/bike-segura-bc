@@ -6,6 +6,7 @@ const Bike = require('../models/Bike');
 const Pagamento = require('../models/Pagamento');
 const PrePrintedQR = require('../models/PrePrintedQR');
 const Sinistro = require('../models/Sinistro');
+const ProtectionEvent = require('../models/ProtectionEvent');
 const { buildAnalyticsSummary } = require('./analytics');
 
 const router = express.Router();
@@ -98,14 +99,27 @@ async function buildReferralStats() {
 }
 
 async function buildRecentActivity() {
-  const [users, bikes, pagamentos, sinistros, recuperados, qrs] = await Promise.all([
+  const [users, bikes, pagamentos, sinistros, recuperados, qrs, protectionEvents] = await Promise.all([
     User.find().select('createdAt').sort({ createdAt: -1 }).limit(5).lean(),
     Bike.find().select('name brand createdAt').sort({ createdAt: -1 }).limit(5).lean(),
     Pagamento.find({ status: 'pago' }).select('plano valor dataPagamento updatedAt').sort({ dataPagamento: -1, updatedAt: -1 }).limit(5).lean(),
     Sinistro.find({ tipo: { $in: ['furto', 'roubo'] } }).select('tipo createdAt dataOcorrencia').sort({ createdAt: -1 }).limit(5).lean(),
     Sinistro.find({ statusRecuperacao: 'recuperado' }).select('dataFechamento dataAtualizacao updatedAt').sort({ dataAtualizacao: -1, updatedAt: -1 }).limit(5).lean(),
     PrePrintedQR.find({ status: 'vinculado' }).select('stickerNumber vinculadoAt updatedAt').sort({ vinculadoAt: -1, updatedAt: -1 }).limit(5).lean(),
+    ProtectionEvent.find({ event_type: { $in: ['protection_activated', 'protection_deactivated', 'outside_area_detected', 'protection_alert_triggered'] } })
+      .select('event_type distance_meters created_at equipment_id')
+      .sort({ created_at: -1 })
+      .limit(8)
+      .populate('equipment_id', 'name brand')
+      .lean(),
   ]);
+
+  const protectionTitles = {
+    protection_activated: 'Protecao ativada',
+    protection_deactivated: 'Protecao desativada',
+    outside_area_detected: 'Movimentacao detectada',
+    protection_alert_triggered: 'Alerta de protecao confirmado',
+  };
 
   return [
     ...users.map(item => ({
@@ -143,6 +157,12 @@ async function buildRecentActivity() {
       title: 'QR Code ativado',
       description: `${item.stickerNumber || 'Adesivo'} vinculado a um equipamento`,
       date: eventDate(item.vinculadoAt || item.updatedAt),
+    })),
+    ...protectionEvents.map(item => ({
+      type: 'protection',
+      title: protectionTitles[item.event_type] || 'Evento de protecao',
+      description: `${item.equipment_id?.brand || 'Equipamento'} ${item.equipment_id?.name || ''}${item.distance_meters ? ` - ${Math.round(item.distance_meters)}m` : ''}`.trim(),
+      date: eventDate(item.created_at),
     })),
   ]
     .sort((a, b) => Number(new Date(b.date)) - Number(new Date(a.date)))

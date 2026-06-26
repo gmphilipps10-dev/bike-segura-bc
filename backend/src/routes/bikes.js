@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const Bike = require('../models/Bike');
 const PrePrintedQR = require('../models/PrePrintedQR');
 const Pagamento = require('../models/Pagamento');
+const ProtectionSession = require('../models/ProtectionSession');
 const authMiddleware = require('../middleware/auth');
 const adminMiddleware = require('../middleware/admin');
 const { vincularProximoQR, generateHash } = require('../utils/qrManager');
@@ -44,6 +45,57 @@ async function sincronizarPlanoUsuario(userId) {
     plano,
     planoAtivo: true,
     planoDataExpiracao: expiracoes.length ? new Date(Math.max(...expiracoes.map(Number))) : null,
+  });
+}
+
+function serializeProtectionSession(session) {
+  if (!session) return null;
+  return {
+    id: String(session._id || session.id),
+    active: Boolean(session.active),
+    radius_meters: session.radius_meters,
+    initial_latitude: session.initial_latitude,
+    initial_longitude: session.initial_longitude,
+    activated_at: session.activated_at,
+    deactivated_at: session.deactivated_at,
+    last_checked_at: session.last_checked_at,
+    outside_detected_at: session.outside_detected_at,
+    alert_triggered: Boolean(session.alert_triggered),
+    alert_triggered_at: session.alert_triggered_at,
+    last_distance_meters: session.last_distance_meters,
+    updated_at: session.updated_at,
+  };
+}
+
+async function anexarStatusProtecao(bikes) {
+  const plainBikes = bikes.map(bike => (
+    typeof bike.toObject === 'function'
+      ? bike.toObject({ virtuals: true })
+      : { ...bike }
+  ));
+  const ids = plainBikes.map(bike => bike._id || bike.id).filter(Boolean);
+
+  if (!ids.length) return plainBikes;
+
+  const sessions = await ProtectionSession
+    .find({ equipment_id: { $in: ids } })
+    .sort({ active: -1, updated_at: -1, activated_at: -1 })
+    .lean();
+
+  const latestByEquipment = new Map();
+  for (const session of sessions) {
+    const key = String(session.equipment_id);
+    if (!latestByEquipment.has(key)) latestByEquipment.set(key, session);
+  }
+
+  return plainBikes.map(bike => {
+    const session = latestByEquipment.get(String(bike._id || bike.id));
+    return {
+      ...bike,
+      id: String(bike._id || bike.id),
+      protection_active: Boolean(session?.active),
+      protectionStatus: serializeProtectionSession(session),
+    };
   });
 }
 
@@ -111,7 +163,7 @@ router.use(authMiddleware);
 router.get('/', async (req, res) => {
   try {
     const bikes = await Bike.find({ userId: req.userId });
-    res.json(bikes);
+    res.json(await anexarStatusProtecao(bikes));
   } catch (error) {
     res.status(500).json({ message: 'Erro' });
   }
@@ -121,7 +173,7 @@ router.get('/', async (req, res) => {
 router.get('/all', adminMiddleware, async (req, res) => {
   try {
     const bikes = await Bike.find().sort({ createdAt: -1 });
-    res.json(bikes);
+    res.json(await anexarStatusProtecao(bikes));
   } catch (error) {
     console.error('[Admin-Bikes] Erro:', error);
     res.status(500).json({ message: 'Erro ao listar equipamentos.' });
@@ -223,6 +275,8 @@ router.post('/', async (req, res) => {
       updatedAt: bike.updatedAt,
       plano: user?.plano || 'free',
       planoAtivo: user?.planoAtivo || false,
+      protection_active: false,
+      protectionStatus: null,
       rastreioAjustado: (rastreamento || '') !== bike.rastreamento, // true se o backend ajustou o rastreamento
     };
 

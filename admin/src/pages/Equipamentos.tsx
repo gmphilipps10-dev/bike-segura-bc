@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Search, Bike, Download, FileText, Table } from '../components/Icons'
+import { Search, Bike, Download, FileText, Table, Shield, Clock, Activity } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 
@@ -40,7 +40,7 @@ export default function Equipamentos() {
   if (filtro !== 'todos') f = f.filter(e => e.status === filtro)
 
   const getExportData = () => {
-    const headers = ['Nome', 'Marca', 'Tipo', 'Cor', 'Serie', 'Sticker', 'Status', 'Protegido', 'Rastreamento', 'Dono']
+    const headers = ['Nome', 'Marca', 'Tipo', 'Cor', 'Serie', 'Sticker', 'Status', 'Protegido', 'Rastreamento', 'Protecao ativa', 'Raio', 'Ultima verificacao', 'Ultima distancia', 'Alerta protecao', 'Dono']
     const rows = f.map(e => [
       e.name || '-',
       e.brand || '-',
@@ -51,6 +51,11 @@ export default function Equipamentos() {
       e.status === 'furto' ? 'Furtado' : e.status === 'recuperada' ? 'Recuperada' : 'Ativo',
       e.protected ? 'Sim' : 'Nao',
       e.rastreamento || 'Nenhum',
+      e.protectionStatus?.active ? 'Sim' : 'Nao',
+      e.protectionStatus?.radius_meters ? `${e.protectionStatus.radius_meters}m` : '-',
+      e.protectionStatus?.last_checked_at ? new Date(e.protectionStatus.last_checked_at).toLocaleString('pt-BR') : '-',
+      e.protectionStatus?.last_distance_meters != null ? `${Math.round(e.protectionStatus.last_distance_meters)}m` : '-',
+      e.protectionStatus?.alert_triggered ? 'Sim' : 'Nao',
       e.userId?.name || e.userId?.email || '-',
     ])
     return { headers, rows }
@@ -98,6 +103,34 @@ export default function Equipamentos() {
                   </div>
                   <p className="text-slate-500 text-xs">{e.brand} - {e.type} - {e.color}</p>
                   <p className="text-slate-600 text-[10px] font-mono mt-0.5">{e.serie} {e.stickerNumber && `| ${e.stickerNumber}`}</p>
+                  <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
+                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 ${
+                      e.protectionStatus?.active
+                        ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300'
+                        : 'border-slate-600/60 bg-slate-800/60 text-slate-400'
+                    }`}>
+                      <Shield className="w-3 h-3" />
+                      Protecao {e.protectionStatus?.active ? 'ativa' : 'inativa'}
+                    </span>
+                    {e.protectionStatus?.radius_meters && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-blue-400/20 bg-blue-400/10 px-2 py-1 text-blue-300">
+                        <Activity className="w-3 h-3" />
+                        Raio {e.protectionStatus.radius_meters}m
+                      </span>
+                    )}
+                    {e.protectionStatus?.last_checked_at && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-slate-300">
+                        <Clock className="w-3 h-3" />
+                        {new Date(e.protectionStatus.last_checked_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                        {e.protectionStatus.last_distance_meters != null ? ` • ${Math.round(e.protectionStatus.last_distance_meters)}m` : ''}
+                      </span>
+                    )}
+                    {e.protectionStatus?.alert_triggered && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-red-400/30 bg-red-400/10 px-2 py-1 text-red-300">
+                        Alerta confirmado
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

@@ -67,7 +67,7 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
   next();
 });
 app.use(express.json({ limit: '1mb' }));
@@ -182,6 +182,7 @@ app.use('/api/ocorrencias', require('./routes/ocorrencias'));
 app.use('/api/sinistros', sinistrosRouter);
 app.use('/api/pagamentos', require('./routes/pagamentos'));
 app.use('/api/push', pushModule.router);
+app.use('/api/protection', require('./routes/protection'));
 app.use('/api/noticias', require('./routes/noticias'));
 app.use('/api/analytics', analyticsModule.publicRouter);
 app.use('/api/admin/analytics', analyticsModule.adminRouter);
