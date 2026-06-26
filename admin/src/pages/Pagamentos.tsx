@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CreditCard, CheckCircle, Clock, AlertTriangle, XCircle, Download, FileText, Table, Trash2 } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
@@ -7,13 +8,16 @@ import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function Pagamentos() {
+  const [searchParams] = useSearchParams()
   const [pagamentos, setPagamentos] = useState<any[]>([])
   const [stats, setStats] = useState({
     total: 0, pagos: 0, pendentes: 0, atrasados: 0, cancelados: 0,
     faturamentoTotal: 0, faturamentoPendente: 0, faturamentoAtrasado: 0,
   })
   const [loading, setLoading] = useState(true)
-  const [filtro, setFiltro] = useState<'todos' | 'pago' | 'pendente' | 'atrasado' | 'cancelado'>('todos')
+  const [filtro, setFiltro] = useState<'todos' | 'pago' | 'pendente' | 'atrasado' | 'cancelado'>((searchParams.get('filtro') as any) || 'todos')
+  const [busca, setBusca] = useState(searchParams.get('busca') || '')
+  const [registroId, setRegistroId] = useState(searchParams.get('id') || '')
   const [modalExcluir, setModalExcluir] = useState<{ aberto: boolean, pagamento: any | null }>({ aberto: false, pagamento: null })
   const [motivo, setMotivo] = useState('')
   const [excluindo, setExcluindo] = useState(false)
@@ -44,7 +48,30 @@ export default function Pagamentos() {
 
   useEffect(() => { fetchData() }, [token])
 
-  const filtrados = filtro === 'todos' ? pagamentos : pagamentos.filter(p => p.status === filtro)
+  useEffect(() => {
+    setBusca(searchParams.get('busca') || '')
+    setRegistroId(searchParams.get('id') || '')
+    setFiltro((searchParams.get('filtro') as any) || 'todos')
+  }, [searchParams])
+
+  const filtradosPorStatus = filtro === 'todos' ? pagamentos : pagamentos.filter(p => p.status === filtro)
+  const filtradosPorRegistro = registroId
+    ? filtradosPorStatus.filter(p => String(p._id || p.id) === registroId)
+    : filtradosPorStatus
+  const filtrados = busca
+    ? filtradosPorRegistro.filter(p => {
+      const termo = busca.toLowerCase()
+      const numeros = busca.replace(/\D/g, '')
+      return p.userName?.toLowerCase().includes(termo)
+        || p.userEmail?.toLowerCase().includes(termo)
+        || p.bikeName?.toLowerCase().includes(termo)
+        || p.bikeBrand?.toLowerCase().includes(termo)
+        || p.bikeSerie?.toLowerCase().includes(termo)
+        || p.plano?.toLowerCase().includes(termo)
+        || p.asaasId?.toLowerCase().includes(termo)
+        || (numeros && p.userCpf?.replace(/\D/g, '').includes(numeros))
+    })
+    : filtradosPorRegistro
 
   const statusConfig: Record<string, { label: string, cor: string, bg: string, icon: any }> = {
     pago: { label: 'PAGO', cor: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
@@ -198,6 +225,14 @@ export default function Pagamentos() {
                     {f === 'todos' ? 'TODOS' : f.toUpperCase()}
                   </button>
                 ))}
+                <div className="glass-card flex items-center gap-2 px-3 py-1.5">
+                  <input
+                    value={busca}
+                    onChange={event => { setBusca(event.target.value); setRegistroId('') }}
+                    placeholder="Buscar cobrança..."
+                    className="w-44 bg-transparent text-xs text-white outline-none placeholder:text-slate-600"
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
                 <button onClick={handleExportarCSV} className="btn-secondary flex items-center gap-1.5 text-xs px-3 py-2" title="Exportar CSV">

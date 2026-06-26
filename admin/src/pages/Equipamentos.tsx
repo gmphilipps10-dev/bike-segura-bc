@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Search, Bike, Download, FileText, Table } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
 import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
@@ -6,8 +7,10 @@ import { exportarCSV, exportarPDF, exportarExcel } from '../utils/exportar'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function Equipamentos() {
+  const [searchParams] = useSearchParams()
   const [equips, setEquips] = useState<any[]>([])
-  const [busca, setBusca] = useState('')
+  const [busca, setBusca] = useState(searchParams.get('busca') || '')
+  const [registroId, setRegistroId] = useState(searchParams.get('id') || '')
   const [filtro, setFiltro] = useState<'todos' | 'normal' | 'furto'>('todos')
   const [loading, setLoading] = useState(true)
   const token = localStorage.getItem('admin_token') || ''
@@ -19,8 +22,21 @@ export default function Equipamentos() {
       .catch(() => setLoading(false))
   }, [token])
 
+  useEffect(() => {
+    setBusca(searchParams.get('busca') || '')
+    setRegistroId(searchParams.get('id') || '')
+  }, [searchParams])
+
   let f = equips
-  if (busca) f = f.filter(e => e.name?.toLowerCase().includes(busca.toLowerCase()) || e.serie?.includes(busca))
+  if (registroId) f = f.filter(e => String(e._id || e.id) === registroId)
+  if (busca) f = f.filter(e => {
+    const termo = busca.toLowerCase()
+    return e.name?.toLowerCase().includes(termo)
+      || e.brand?.toLowerCase().includes(termo)
+      || e.type?.toLowerCase().includes(termo)
+      || e.serie?.toLowerCase().includes(termo)
+      || e.stickerNumber?.toLowerCase().includes(termo)
+  })
   if (filtro !== 'todos') f = f.filter(e => e.status === filtro)
 
   const getExportData = () => {
@@ -57,7 +73,7 @@ export default function Equipamentos() {
           <div className="flex gap-2">
             <div className="glass-card flex items-center gap-2 px-3 py-2">
               <Search className="w-4 h-4 text-slate-500" />
-              <input type="text" placeholder="Buscar..." value={busca} onChange={e => setBusca(e.target.value)} className="bg-transparent text-white text-sm w-40 outline-none placeholder-slate-600" />
+              <input type="text" placeholder="Buscar..." value={busca} onChange={e => { setBusca(e.target.value); setRegistroId('') }} className="bg-transparent text-white text-sm w-40 outline-none placeholder-slate-600" />
             </div>
             {(['todos', 'normal', 'furto'] as const).map(fi => (
               <button key={fi} onClick={() => setFiltro(fi)} className={`px-3 py-2 rounded-lg text-xs font-bold ${filtro === fi ? 'bg-amber-400 text-slate-900' : 'glass-card text-slate-400'}`}>{fi === 'todos' ? 'TODOS' : fi === 'normal' ? 'ATIVOS' : 'FURTADOS'}</button>

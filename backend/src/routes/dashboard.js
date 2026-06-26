@@ -173,6 +173,10 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
       usuariosComEquipamento,
       equipamentosSemPlanoAtivo,
       assinaturasProximasVencimento,
+      equipamentosAguardandoAtivacao,
+      cadastrosIncompletos,
+      pagamentosVencendoHoje,
+      qrBikeIds,
       analytics,
       indicacoes,
       sinistrosTotal,
@@ -216,6 +220,19 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
         planoAtivo: true,
         planoDataExpiracao: { $ne: null, $gt: now, $lte: next15Days },
       }),
+      Bike.countDocuments({ protected: { $ne: true } }),
+      User.countDocuments({
+        $or: [
+          { cpf: { $in: ['', null] } },
+          { phone: { $in: ['', null] } },
+          { email: { $in: ['', null] } },
+        ],
+      }),
+      Pagamento.countDocuments({
+        status: { $in: ['pendente', 'atrasado'] },
+        dataVencimento: { $gte: todayStart, $lt: addDays(todayStart, 1) },
+      }),
+      PrePrintedQR.distinct('bikeId', { status: 'vinculado', bikeId: { $ne: null } }),
       buildAnalyticsSummary(),
       buildReferralStats(),
       Sinistro.countDocuments({ tipo: { $in: ['furto', 'roubo'] } }),
@@ -250,8 +267,74 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
 
     const visitantes = analytics.usuariosUnicos || analytics.acessosUltimos30Dias || 0;
     const clientesSemEquipamento = Math.max(0, totalClientes - usuariosComEquipamento.length);
+    const equipamentosSemQrCode = Math.max(0, totalEquipamentos - qrBikeIds.length);
     const taxaConversao = percent(assinaturas30 || assinaturasAtivas, visitantes || totalClientes);
     const taxaRecuperacao = percent(sinistrosRecuperados, sinistrosTotal);
+    const pendenciasItems = [
+      {
+        key: 'clientesAguardandoAprovacao',
+        label: 'Clientes aguardando aprovação',
+        quantidade: 0,
+        prioridade: 'verde',
+        rota: '/clientes',
+      },
+      {
+        key: 'equipamentosAguardandoAtivacao',
+        label: 'Equipamentos aguardando ativação',
+        quantidade: equipamentosAguardandoAtivacao,
+        prioridade: equipamentosAguardandoAtivacao > 0 ? 'amarelo' : 'verde',
+        rota: '/equipamentos',
+      },
+      {
+        key: 'pagamentosPendentes',
+        label: 'Pagamentos pendentes',
+        quantidade: pagamentosPendentes,
+        prioridade: pagamentosPendentes > 0 ? 'amarelo' : 'verde',
+        rota: '/pagamentos?filtro=pendente',
+      },
+      {
+        key: 'pagamentosVencidos',
+        label: 'Pagamentos vencidos',
+        quantidade: pagamentosVencidos,
+        prioridade: pagamentosVencidos > 0 ? 'vermelho' : 'verde',
+        rota: '/pagamentos?filtro=atrasado',
+      },
+      {
+        key: 'planosProximosVencimento',
+        label: 'Planos próximos do vencimento',
+        quantidade: assinaturasProximasVencimento,
+        prioridade: assinaturasProximasVencimento > 0 ? 'amarelo' : 'verde',
+        rota: '/planos',
+      },
+      {
+        key: 'adesivosDisponiveis',
+        label: 'Adesivos QR disponíveis para instalação',
+        quantidade: adesivosDisponiveis,
+        prioridade: adesivosDisponiveis < 20 ? 'amarelo' : 'verde',
+        rota: '/adesivos?status=disponivel',
+      },
+      {
+        key: 'equipamentosSemQrCode',
+        label: 'Equipamentos sem QR Code vinculado',
+        quantidade: equipamentosSemQrCode,
+        prioridade: equipamentosSemQrCode > 0 ? 'amarelo' : 'verde',
+        rota: '/equipamentos',
+      },
+      {
+        key: 'cadastrosIncompletos',
+        label: 'Cadastros incompletos',
+        quantidade: cadastrosIncompletos,
+        prioridade: cadastrosIncompletos > 0 ? 'amarelo' : 'verde',
+        rota: '/clientes',
+      },
+    ];
+    const pendenciasTotal = pendenciasItems.reduce((total, item) => total + Number(item.quantidade || 0), 0);
+    const pendenciasUrgentes = pendenciasItems
+      .filter(item => item.prioridade === 'vermelho')
+      .reduce((total, item) => total + Number(item.quantidade || 0), 0);
+    const pendenciasAtencao = pendenciasItems
+      .filter(item => item.prioridade === 'amarelo')
+      .reduce((total, item) => total + Number(item.quantidade || 0), 0);
 
     res.json({
       resumoPrincipal: {
@@ -286,6 +369,13 @@ router.get('/summary', adminMiddleware, async (_req, res) => {
         assinaturasProximasVencimento,
         adesivosQrLivres: adesivosDisponiveis,
         adesivosQrInativos: adesivosInativos,
+      },
+      centralPendencias: {
+        total: pendenciasTotal,
+        urgentes: pendenciasUrgentes,
+        atencao: pendenciasAtencao,
+        hoje: pagamentosVencendoHoje,
+        items: pendenciasItems,
       },
       indicacoes,
       sinistros: {

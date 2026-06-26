@@ -10,10 +10,11 @@ import Pagamentos from './pages/Pagamentos'
 import Relatorios from './pages/Relatorios'
 import Sinistros from './pages/Sinistros'
 import Analytics from './pages/Analytics'
+import GlobalSearch from './components/GlobalSearch'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isLoggedIn } = useAuth()
-  return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />
+  return isLoggedIn ? <><GlobalSearch />{children}</> : <Navigate to="/login" replace />
 }
 
 function AppRoutes() {

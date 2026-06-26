@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import QRCode from 'qrcode'
 import { CheckCircle, AlertTriangle, Printer, Plus } from '../components/Icons'
 import Sidebar from '../components/Sidebar'
@@ -56,13 +57,16 @@ const dividirEmPaginas = <T,>(items: T[], tamanho: number) =>
   )
 
 export default function Adesivos() {
+  const [searchParams] = useSearchParams()
   const [todosItems, setTodosItems] = useState<Adesivo[]>([])
   const [stats, setStats] = useState({ total: 0, disponiveis: 0, vinculados: 0, inativos: 0 })
   const [loading, setLoading] = useState(true)
   const [gerando, setGerando] = useState(false)
   const [imprimindo, setImprimindo] = useState(false)
   const [msg, setMsg] = useState('')
-  const [filtro, setFiltro] = useState<FiltroAdesivo>('todos')
+  const [filtro, setFiltro] = useState<FiltroAdesivo>((searchParams.get('status') as FiltroAdesivo) || 'todos')
+  const [busca, setBusca] = useState(searchParams.get('busca') || '')
+  const [registroId, setRegistroId] = useState(searchParams.get('id') || '')
   const token = localStorage.getItem('admin_token') || ''
 
   const fetchData = () => {
@@ -89,6 +93,12 @@ export default function Adesivos() {
   }
 
   useEffect(() => { fetchData() }, [token])
+
+  useEffect(() => {
+    setBusca(searchParams.get('busca') || '')
+    setRegistroId(searchParams.get('id') || '')
+    setFiltro((searchParams.get('status') as FiltroAdesivo) || 'todos')
+  }, [searchParams])
 
   const gerarLote = () => {
     const confirmou = window.confirm(
@@ -127,9 +137,23 @@ export default function Adesivos() {
       .finally(() => setGerando(false))
   }
 
-  const items = filtro === 'todos'
+  const itemsPorFiltro = filtro === 'todos'
     ? todosItems
     : todosItems.filter(item => item.status === filtro)
+  const itemsPorRegistro = registroId
+    ? itemsPorFiltro.filter(item => String(item._id) === registroId)
+    : itemsPorFiltro
+  const items = busca
+    ? itemsPorRegistro.filter(item => {
+      const termo = busca.toLowerCase()
+      return item.stickerNumber?.toLowerCase().includes(termo)
+        || item.hash?.toLowerCase().includes(termo)
+        || item.bikeId?.name?.toLowerCase().includes(termo)
+        || item.bikeId?.serie?.toLowerCase().includes(termo)
+        || item.ultimoVinculo?.equipamentoNome?.toLowerCase().includes(termo)
+        || item.ultimoVinculo?.equipamentoSerie?.toLowerCase().includes(termo)
+    })
+    : itemsPorRegistro
 
   // A grafica precisa receber a sequencia fisica completa. Por isso, a
   // impressao inclui livres, vinculados e inativos, independentemente do

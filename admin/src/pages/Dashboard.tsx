@@ -65,6 +65,19 @@ type DashboardData = {
   }
   atividadeRecente: { type: string; title: string; description: string; date: string }[]
   alertasAdministrativos: Record<string, number>
+  centralPendencias: {
+    total: number
+    urgentes: number
+    atencao: number
+    hoje: number
+    items: {
+      key: string
+      label: string
+      quantidade: number
+      prioridade: 'verde' | 'amarelo' | 'vermelho' | string
+      rota: string
+    }[]
+  }
   indicacoes: {
     totalIndicacoes: number
     indicacoesConvertidas: number
@@ -121,6 +134,7 @@ const emptyData: DashboardData = {
   },
   atividadeRecente: [],
   alertasAdministrativos: {},
+  centralPendencias: { total: 0, urgentes: 0, atencao: 0, hoje: 0, items: [] },
   indicacoes: { totalIndicacoes: 0, indicacoesConvertidas: 0, ranking: [] },
   sinistros: {
     alertasFurtoEmitidos: 0,
@@ -151,16 +165,10 @@ function activityColor(type: string) {
   return map[type] || 'bg-slate-400'
 }
 
-function alertLabel(key: string) {
-  const labels: Record<string, string> = {
-    clientesSemEquipamento: 'Clientes sem equipamento',
-    equipamentosSemPlanoAtivo: 'Equipamentos sem plano ativo',
-    pagamentosVencidos: 'Pagamentos vencidos',
-    assinaturasProximasVencimento: 'Assinaturas próximas do vencimento',
-    adesivosQrLivres: 'Adesivos QR livres',
-    adesivosQrInativos: 'Adesivos QR inativos',
-  }
-  return labels[key] || key
+function priorityClasses(priority: string) {
+  if (priority === 'vermelho') return 'border-red-400/20 bg-red-400/10 text-red-300'
+  if (priority === 'amarelo') return 'border-amber-400/20 bg-amber-400/10 text-amber-300'
+  return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300'
 }
 
 export default function Dashboard() {
@@ -287,21 +295,50 @@ export default function Dashboard() {
                 )}
               </SectionCard>
 
-              <SectionCard title="Alertas administrativos" subtitle="Pontos que merecem atencao">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {Object.entries(data.alertasAdministrativos).map(([key, value]) => (
-                    <Link
-                      key={key}
-                      to={key.includes('pagamentos') ? '/pagamentos' : key.includes('adesivos') ? '/adesivos' : key.includes('plano') || key.includes('assinaturas') ? '/planos' : '/clientes'}
-                      className="rounded-xl border border-white/5 bg-white/[0.03] p-4 hover:border-amber-400/30 transition-colors"
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-slate-300 text-sm">{alertLabel(key)}</p>
-                        <span className={`text-lg font-bold ${Number(value) > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{formatNumber(Number(value))}</span>
-                      </div>
-                    </Link>
-                  ))}
+              <SectionCard title="Central de Pendências" subtitle="Itens que precisam de decisão operacional">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+                  <div className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
+                    <p className="text-slate-500 text-[11px]">Total</p>
+                    <p className="text-white text-2xl font-bold">{formatNumber(data.centralPendencias.total)}</p>
+                  </div>
+                  <div className="rounded-xl border border-red-400/20 bg-red-400/10 p-3">
+                    <p className="text-red-300 text-[11px]">Urgentes</p>
+                    <p className="text-red-300 text-2xl font-bold">{formatNumber(data.centralPendencias.urgentes)}</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-3">
+                    <p className="text-amber-300 text-[11px]">Atenção</p>
+                    <p className="text-amber-300 text-2xl font-bold">{formatNumber(data.centralPendencias.atencao)}</p>
+                  </div>
+                  <div className="rounded-xl border border-blue-400/20 bg-blue-400/10 p-3">
+                    <p className="text-blue-300 text-[11px]">Hoje</p>
+                    <p className="text-blue-300 text-2xl font-bold">{formatNumber(data.centralPendencias.hoje)}</p>
+                  </div>
                 </div>
+
+                {!data.centralPendencias.items.length ? <EmptyState text="Nenhuma pendência configurada." /> : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {data.centralPendencias.items.map(item => (
+                      <Link
+                        key={item.key}
+                        to={item.rota}
+                        className="rounded-xl border border-white/5 bg-white/[0.03] p-4 hover:border-amber-400/30 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-slate-300 text-sm">{item.label}</p>
+                            <span className={`mt-2 inline-flex rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide ${priorityClasses(item.prioridade)}`}>
+                              {item.prioridade}
+                            </span>
+                          </div>
+                          <span className={`text-xl font-bold ${Number(item.quantidade) > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>{formatNumber(Number(item.quantidade))}</span>
+                        </div>
+                        <div className="mt-3 inline-flex rounded-lg border border-white/10 px-3 py-1 text-xs font-semibold text-amber-300">
+                          Abrir →
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </SectionCard>
             </section>
 

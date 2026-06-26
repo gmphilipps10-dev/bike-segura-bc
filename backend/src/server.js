@@ -186,6 +186,7 @@ app.use('/api/noticias', require('./routes/noticias'));
 app.use('/api/analytics', analyticsModule.publicRouter);
 app.use('/api/admin/analytics', analyticsModule.adminRouter);
 app.use('/api/admin/dashboard', require('./routes/dashboard'));
+app.use('/api/admin/search', require('./routes/adminSearch'));
 
 // ========== STATIC FILES (depois das rotas!) ==========
 const publicPath = path.join(__dirname, '../public');

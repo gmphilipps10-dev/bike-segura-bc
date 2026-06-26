@@ -1,5 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import SinistroModal from '../components/sinistro/SinistroModal'
 import SinistroDetalhes from '../components/sinistro/SinistroDetalhes'
@@ -8,18 +9,25 @@ import { AlertTriangle, Shield, CheckCircle, MapPin, User, Bike, Zap, Pause, X, 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 export default function Sinistros() {
+  const [searchParams] = useSearchParams()
   const [sinistros, setSinistros] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [filtroStatus, setFiltroStatus] = useState('todos')
   const [filtroTipo, setFiltroTipo] = useState('todos')
-  const [busca, setBusca] = useState('')
+  const [busca, setBusca] = useState(searchParams.get('busca') || '')
+  const [registroId, setRegistroId] = useState(searchParams.get('id') || '')
   const [modalNovo, setModalNovo] = useState(false)
   const [sinistroSelecionado, setSinistroSelecionado] = useState(null)
   const [draggingId, setDraggingId] = useState(null)
   const token = localStorage.getItem('admin_token') || ''
 
   useEffect(() => { fetchSinistros(); fetchStats() }, [filtroStatus, filtroTipo])
+
+  useEffect(() => {
+    setBusca(searchParams.get('busca') || '')
+    setRegistroId(searchParams.get('id') || '')
+  }, [searchParams])
 
   const fetchSinistros = async () => {
     try {
@@ -63,9 +71,15 @@ export default function Sinistros() {
   }
 
   const filtrados = sinistros.filter(s => {
+    if (registroId && String(s._id || s.id) !== registroId) return false
     if (!busca) return true
     const t = busca.toLowerCase()
-    return (s.veiculoSnapshot?.nome?.toLowerCase().includes(t) || s.proprietarioSnapshot?.nome?.toLowerCase().includes(t) || s.localOcorrencia?.toLowerCase().includes(t))
+    return (s.veiculoSnapshot?.nome?.toLowerCase().includes(t)
+      || s.veiculoSnapshot?.marca?.toLowerCase().includes(t)
+      || s.veiculoSnapshot?.serie?.toLowerCase().includes(t)
+      || s.proprietarioSnapshot?.nome?.toLowerCase().includes(t)
+      || s.localOcorrencia?.toLowerCase().includes(t)
+      || s.boletimOcorrencia?.toLowerCase().includes(t))
   })
 
   const abertos = filtrados.filter(s => s.status === 'aberto')
@@ -171,7 +185,7 @@ export default function Sinistros() {
         <div className="px-6 py-3 flex items-center gap-3 border-b border-white/5">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-            <input type="text" placeholder="Buscar..." value={busca} onChange={(e) => setBusca(e.target.value)}
+            <input type="text" placeholder="Buscar..." value={busca} onChange={(e) => { setBusca(e.target.value); setRegistroId('') }}
               className="w-full pl-10 pr-4 py-2 bg-slate-800/50 border border-white/10 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-amber-400/50" />
           </div>
           <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="px-3 py-2 bg-slate-800/50 border border-white/10 rounded-lg text-white text-sm">
