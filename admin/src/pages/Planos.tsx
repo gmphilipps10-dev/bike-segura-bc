@@ -5,10 +5,10 @@ import Sidebar from '../components/Sidebar'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api'
 
 const PLANOS = [
-  { id: 'bronze', nome: 'Bronze', cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Star, desc: 'Protecao basica com QR Code' },
-  { id: 'prata', nome: 'Prata', cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', icon: Shield, desc: 'Protecao intermediaria' },
-  { id: 'ouro', nome: 'Ouro', cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: Gem, desc: 'Protecao avancada' },
-  { id: 'diamante', nome: 'Diamante', cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', icon: Gem, desc: 'Protecao premium completa' },
+  { id: 'bronze', nome: 'Bronze', cor: 'text-amber-600', bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: Star, desc: 'QR Code + alerta de furto, sem geocerca' },
+  { id: 'prata', nome: 'Prata', cor: 'text-slate-300', bg: 'bg-slate-400/10', border: 'border-slate-400/20', icon: Shield, desc: 'TAG Bluetooth, sem geocerca/Ativar Protecao' },
+  { id: 'ouro', nome: 'Ouro', cor: 'text-yellow-400', bg: 'bg-yellow-400/10', border: 'border-yellow-400/20', icon: Gem, desc: 'GPS 4G + geocerca + Ativar Protecao' },
+  { id: 'diamante', nome: 'Diamante', cor: 'text-blue-400', bg: 'bg-blue-400/10', border: 'border-blue-400/20', icon: Gem, desc: 'TAG + GPS + protecao premium completa' },
 ]
 
 type PlanoId = 'bronze' | 'prata' | 'ouro' | 'diamante'

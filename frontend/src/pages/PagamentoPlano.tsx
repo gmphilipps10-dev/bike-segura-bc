@@ -17,10 +17,10 @@ import {
 } from '../hooks/usePlanPrices';
 
 const planosConfig = {
-  bronze: { name: 'Bronze', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10', desc: 'Protecao basica' },
-  prata: { name: 'Prata', icon: Medal, color: 'text-slate-300', bg: 'bg-slate-400/10', desc: 'TAG iOS ou Android' },
-  ouro: { name: 'Ouro', icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10', desc: 'Rastreador GPS 4G' },
-  diamante: { name: 'Diamante', icon: Gem, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'TAG + Rastreador GPS 4G' },
+  bronze: { name: 'Bronze', icon: Award, color: 'text-amber-600', bg: 'bg-amber-500/10', desc: 'QR Code + alerta de furto' },
+  prata: { name: 'Prata', icon: Medal, color: 'text-slate-300', bg: 'bg-slate-400/10', desc: 'TAG Bluetooth iOS ou Android' },
+  ouro: { name: 'Ouro', icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10', desc: 'GPS 4G + geocerca + Ativar Proteção' },
+  diamante: { name: 'Diamante', icon: Gem, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'TAG + GPS + proteção máxima' },
 };
 
 type MetodoPagamento = 'pix' | 'boleto' | 'cartao';

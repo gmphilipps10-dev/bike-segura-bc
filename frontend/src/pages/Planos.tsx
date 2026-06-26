@@ -38,7 +38,7 @@ const plans = [
   {
     id: 'bronze',
     name: 'Bronze',
-    subtitle: 'Cadastro + Alerta de Furto',
+    subtitle: 'Identificação + Alerta de Furto',
     icon: Award,
     period: '/mes',
     color: 'from-amber-600 to-amber-700',
@@ -46,68 +46,70 @@ const plans = [
     popular: false,
     features: [
       'Acesso ao App Bike Segura BC',
-      'Cadastro do proprietario e equipamentos',
-      'Botao de alerta de furto',
-      'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
+      'Cadastro do proprietário e do equipamento',
+      'Botão Emitir Alerta de Furto',
+      'Acionamento via ACT (Acordo de Cooperação Técnica)',
       'Adesivo ultradestrutivel identificador',
-      'Sem rastreamento',
+      'Consulta pública por QR Code',
+      'Sem TAG, GPS, geocerca ou Ativar Proteção',
     ],
   },
   {
     id: 'prata',
     name: 'Prata',
-    subtitle: 'TAG (iOS ou Android)',
+    subtitle: 'TAG Bluetooth + identificação',
     icon: Medal,
     period: '/mes',
     color: 'from-slate-400 to-slate-500',
     borderColor: 'border-slate-400/30',
     popular: false,
     features: [
-      'Acesso ao App Bike Segura BC',
+      'Tudo do plano Bronze',
       'Suporte via WhatsApp',
-      'Botao de alerta de furto',
-      'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
-      'Instalacao de TAG (iOS ou Android)',
-      'Adesivo ultradestrutivel identificador',
-      'Recuperacao assistida',
+      'Instalação de TAG Bluetooth (iOS ou Android)',
+      'Apoio na localização por rede Bluetooth',
+      'Recuperação assistida quando houver indício de localização',
+      'Geocerca e Ativar Proteção disponíveis apenas com GPS',
     ],
   },
   {
     id: 'ouro',
     name: 'Ouro',
-    subtitle: 'Rastreador GPS 4G',
+    subtitle: 'GPS 4G + Geocerca',
     icon: Crown,
     period: '/mes',
     color: 'from-amber-400 to-yellow-500',
     borderColor: 'border-amber-400/50',
     popular: true,
     features: [
-      'Acesso ao App Bike Segura BC',
+      'Tudo do plano Bronze',
       'Suporte via WhatsApp',
-      'Botao de alerta de furto',
-      'Acionamento via ACT (Acordo de Cooperacao Tecnica)',
-      'Instalacao de rastreador GPS 4G',
-      'Adesivo ultradestrutivel identificador',
-      'Recuperacao assistida',
+      'Instalação de rastreador GPS 4G',
+      'Botão Ativar Proteção no app',
+      'Geocerca temporária com raio configurável',
+      'Alerta de movimentação após 10 segundos fora da área',
+      'Sirene, vibração e aviso no aplicativo',
+      'Recuperação assistida com localização GPS',
     ],
   },
   {
     id: 'diamante',
     name: 'Diamante',
-    subtitle: 'TAG + Rastreador GPS 4G',
+    subtitle: 'TAG + GPS + Proteção máxima',
     icon: Gem,
     period: '/mes',
     color: 'from-blue-400 to-cyan-400',
     borderColor: 'border-blue-400/30',
     popular: false,
     features: [
-      'Acesso ao App Bike Segura BC',
+      'Tudo do plano Ouro',
       'Suporte via WhatsApp',
-      'Botao de alerta de furto',
-      'Acionamento das forcas de seguranca via ACT',
-      'Instalacao de TAG (iOS ou Android) + rastreador GPS 4G',
-      'Adesivo ultradestrutivel identificador',
-      'Recuperacao assistida',
+      'Instalação de TAG Bluetooth + rastreador GPS 4G',
+      'Ativar Proteção com geocerca temporária',
+      'Dupla camada: localização GPS + apoio por TAG',
+      'Alerta de movimentação no app com localização atual',
+      'Prioridade operacional na recuperação assistida',
+      'Proteção premium para quem quer o pacote completo',
     ],
   },
 ];
@@ -446,6 +448,12 @@ export default function Planos() {
               <div>
                 <p className="text-amber-400 text-xs font-semibold mb-1">Os equipamentos de rastreamento estão incluídos no plano?</p>
                 <p className="text-slate-400 text-xs leading-relaxed">Nao. O valor do plano se refere ao servico Bike Segura BC, com opcao de cobranca mensal ou pagamento do ano completo. TAG e Rastreador GPS 4G sao cobrados a parte.</p>
+              </div>
+              <div>
+                <p className="text-amber-400 text-xs font-semibold mb-1">O que é Ativar Proteção com geocerca?</p>
+                <p className="text-slate-400 text-xs leading-relaxed">
+                  É um modo antifurto para equipamentos com GPS. Ao ativar, o app cria uma área protegida temporária ao redor da bike. Se ela sair dessa área por tempo suficiente, o proprietário recebe alerta de movimentação no aplicativo. Por depender de localização GPS, esse recurso está nos planos Ouro e Diamante.
+                </p>
               </div>
               <div>
                 <p className="text-amber-400 text-xs font-semibold mb-1">O que é o ACT?</p>

@@ -88,13 +88,13 @@ function getOpcoesRastreamento(plano?: string): RastreioOpcao[] {
 function getMensagemPlanoRastreamento(plano?: string): string | null {
   switch (plano) {
     case 'bronze':
-      return 'O plano Bronze nao inclui rastreamento. Para adicionar TAG, GPS ou ambos, faca upgrade do plano.';
+      return 'O plano Bronze nao inclui rastreamento, geocerca ou Ativar Protecao. Para adicionar TAG ou GPS, faca upgrade do plano.';
     case 'prata':
-      return 'No plano Prata, voce pode usar TAG. Para GPS, faca upgrade para Ouro ou Diamante.';
+      return 'No plano Prata, voce pode usar TAG Bluetooth. Geocerca e Ativar Protecao exigem GPS nos planos Ouro ou Diamante.';
     case 'ouro':
-      return 'No plano Ouro, voce pode usar Rastreador GPS. Para TAG tambem, faca upgrade para Diamante.';
+      return 'No plano Ouro, voce pode usar Rastreador GPS, geocerca e Ativar Protecao. Para TAG tambem, faca upgrade para Diamante.';
     case 'diamante':
-      return 'Plano Diamante: acesso completo a TAG e Rastreador GPS.';
+      return 'Plano Diamante: acesso completo a TAG, Rastreador GPS, geocerca e Ativar Protecao.';
     default:
       return 'No periodo de teste, voce pode explorar todas as opcoes. Para ativar o rastreamento, escolha um plano.';
   }
