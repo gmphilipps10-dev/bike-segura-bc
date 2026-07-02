@@ -62,6 +62,8 @@ export default function Adesivos() {
   const [stats, setStats] = useState({ total: 0, disponiveis: 0, vinculados: 0, inativos: 0 })
   const [loading, setLoading] = useState(true)
   const [gerando, setGerando] = useState(false)
+  const [liberando, setLiberando] = useState(false)
+  const [liberandoId, setLiberandoId] = useState('')
   const [imprimindo, setImprimindo] = useState(false)
   const [msg, setMsg] = useState('')
   const [filtro, setFiltro] = useState<FiltroAdesivo>((searchParams.get('status') as FiltroAdesivo) || 'todos')
@@ -135,6 +137,59 @@ export default function Adesivos() {
       })
       .catch(err => { console.error('[GerarLote] Erro:', err); setMsg('Erro ao gerar lote.') })
       .finally(() => setGerando(false))
+  }
+
+  const liberarVinculos = async () => {
+    const totalBloqueados = stats.vinculados + stats.inativos
+    if (totalBloqueados === 0 || liberando) return
+
+    const confirmou = window.confirm(
+      `Liberar ${totalBloqueados} adesivos em uso/inativos? Os QR Codes ficarao disponiveis novamente e os equipamentos de teste perderao o vinculo antigo.`
+    )
+    if (!confirmou) return
+
+    setLiberando(true)
+    setMsg('')
+    try {
+      const res = await fetch(`${API_BASE}/preprinted/liberar-vinculos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Erro ao liberar adesivos.')
+      setMsg(`${data.adesivos_liberados || 0} adesivos liberados. ${data.equipamentos_atualizados || 0} equipamentos atualizados.`)
+      fetchData()
+    } catch (err: any) {
+      console.error('[LiberarAdesivos] Erro:', err)
+      setMsg(err.message || 'Erro ao liberar adesivos.')
+    } finally {
+      setLiberando(false)
+    }
+  }
+
+  const liberarAdesivo = async (item: Adesivo) => {
+    if (liberandoId) return
+
+    const confirmou = window.confirm(`Liberar o adesivo ${item.stickerNumber}?`)
+    if (!confirmou) return
+
+    setLiberandoId(item._id)
+    setMsg('')
+    try {
+      const res = await fetch(`${API_BASE}/preprinted/${item._id}/liberar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Erro ao liberar adesivo.')
+      setMsg(`${item.stickerNumber} liberado.`)
+      fetchData()
+    } catch (err: any) {
+      console.error('[LiberarAdesivo] Erro:', err)
+      setMsg(err.message || 'Erro ao liberar adesivo.')
+    } finally {
+      setLiberandoId('')
+    }
   }
 
   const itemsPorFiltro = filtro === 'todos'
@@ -341,6 +396,12 @@ export default function Adesivos() {
             <button onClick={gerarLote} disabled={gerando} className="btn-primary flex items-center gap-2 disabled:opacity-50">
               <Plus className="w-4 h-4" />{gerando ? 'Gerando...' : 'Gerar Lote (+100)'}
             </button>
+            {(stats.vinculados + stats.inativos) > 0 && (
+              <button onClick={liberarVinculos} disabled={liberando} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                <CheckCircle className="w-4 h-4" />
+                {liberando ? 'Liberando...' : `Liberar em uso/inativos (${stats.vinculados + stats.inativos})`}
+              </button>
+            )}
             <button
               onClick={imprimirAdesivos}
               disabled={loading || imprimindo || adesivosParaImpressao.length === 0}
@@ -439,6 +500,16 @@ export default function Adesivos() {
                         </p>
                       )}
                     </div>
+                  )}
+
+                  {item.status !== 'disponivel' && (
+                    <button
+                      onClick={() => liberarAdesivo(item)}
+                      disabled={liberandoId === item._id}
+                      className="mt-4 w-full rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-xs font-bold text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-50"
+                    >
+                      {liberandoId === item._id ? 'Liberando...' : 'Liberar adesivo'}
+                    </button>
                   )}
                 </div>
               ))}
