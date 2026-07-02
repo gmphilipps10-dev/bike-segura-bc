@@ -633,6 +633,66 @@ function cyclingBounds(routes: CyclingRoute[]) {
   return coordinates.length ? L.latLngBounds(coordinates) : null;
 }
 
+function coordinateKey(point: [number, number]) {
+  return `${point[0]},${point[1]}`;
+}
+
+function dedupeConsecutiveCoordinates(path: [number, number][]) {
+  return path.filter((point, index) => {
+    if (index === 0) return true;
+    return coordinateKey(point) !== coordinateKey(path[index - 1]);
+  });
+}
+
+function reversePath(path: [number, number][]) {
+  return [...path].reverse();
+}
+
+function mergeContiguousCyclingSegments(segments: CyclingSegment[]) {
+  const remaining = segments
+    .map((segment) => dedupeConsecutiveCoordinates(segment.coordinates))
+    .filter((coordinates) => coordinates.length >= 2);
+  const merged: [number, number][][] = [];
+
+  while (remaining.length) {
+    let path = remaining.shift() || [];
+    let changed = true;
+
+    while (changed) {
+      changed = false;
+      const head = coordinateKey(path[0]);
+      const tail = coordinateKey(path[path.length - 1]);
+
+      for (let index = 0; index < remaining.length; index++) {
+        const candidate = remaining[index];
+        const candidateHead = coordinateKey(candidate[0]);
+        const candidateTail = coordinateKey(candidate[candidate.length - 1]);
+
+        if (tail === candidateHead) {
+          path = [...path, ...candidate.slice(1)];
+        } else if (tail === candidateTail) {
+          path = [...path, ...reversePath(candidate).slice(1)];
+        } else if (head === candidateTail) {
+          path = [...candidate.slice(0, -1), ...path];
+        } else if (head === candidateHead) {
+          path = [...reversePath(candidate).slice(0, -1), ...path];
+        } else {
+          continue;
+        }
+
+        remaining.splice(index, 1);
+        path = dedupeConsecutiveCoordinates(path);
+        changed = true;
+        break;
+      }
+    }
+
+    merged.push(path);
+  }
+
+  return merged;
+}
+
 function CyclingViewport({ routes, selectedRoute }: {
   routes: CyclingRoute[];
   selectedRoute: CyclingRoute | null;
@@ -659,39 +719,34 @@ function CurrentCyclingLayer({ routes, selectedRouteId, onSelect }: {
   selectedRouteId: string | null;
   onSelect: (route: CyclingRoute) => void;
 }) {
+  const mergedRoutes = useMemo(
+    () => routes.map((route) => ({
+      route,
+      paths: mergeContiguousCyclingSegments(route.segments),
+    })),
+    [routes]
+  );
+
   return (
     <>
-      {routes.flatMap((route) =>
-        route.segments.flatMap((segment) => {
+      {mergedRoutes.flatMap(({ route, paths }) =>
+        paths.map((path, index) => {
           const selected = route.id === selectedRouteId;
           const color = CYCLING_COLORS[route.type];
-          return [
+          return (
             <Polyline
-              key={`${route.id}-${segment.osmId}-outline`}
-              positions={segment.coordinates}
-              pathOptions={{
-                color: '#07101d',
-                weight: selected ? 10 : 8,
-                opacity: selected ? 0.9 : 0.62,
-                lineCap: 'round',
-                lineJoin: 'round',
-              }}
-              eventHandlers={{ click: () => onSelect(route) }}
-            />,
-            <Polyline
-              key={`${route.id}-${segment.osmId}`}
-              positions={segment.coordinates}
+              key={`${route.id}-${index}`}
+              positions={path}
               pathOptions={{
                 color,
                 weight: selected ? 7 : 5,
                 opacity: selectedRouteId && !selected ? 0.32 : 0.95,
-                dashArray: route.type === 'ciclofaixa' ? '9 7' : undefined,
                 lineCap: 'round',
                 lineJoin: 'round',
               }}
               eventHandlers={{ click: () => onSelect(route) }}
-            />,
-          ];
+            />
+          );
         })
       )}
     </>
