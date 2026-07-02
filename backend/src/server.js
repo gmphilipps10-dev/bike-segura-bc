@@ -175,6 +175,7 @@ app.get('/qr/:hash', async (req, res) => {
 // ========== API ROUTES ==========
 const pushModule = require('./routes/push');
 const analyticsModule = require('./routes/analytics');
+const installationsModule = require('./routes/installations');
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bikes', require('./routes/bikes'));
 app.use('/api/preprinted', require('./routes/preprinted'));
@@ -185,8 +186,10 @@ app.use('/api/push', pushModule.router);
 app.use('/api/protection', require('./routes/protection'));
 app.use('/api/noticias', require('./routes/noticias'));
 app.use('/api/partner-stores', require('./routes/partnerStores'));
+app.use('/api/installations', installationsModule.publicRouter);
 app.use('/api/analytics', analyticsModule.publicRouter);
 app.use('/api/admin/analytics', analyticsModule.adminRouter);
+app.use('/api/admin/installations', installationsModule.adminRouter);
 app.use('/api/admin/dashboard', require('./routes/dashboard'));
 app.use('/api/admin/search', require('./routes/adminSearch'));
 

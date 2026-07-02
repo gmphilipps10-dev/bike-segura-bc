@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft, Check, Copy, QrCode, CreditCard, FileText,
-  Shield, Award, Medal, Crown, Gem, Loader2, Bike, Clock3
+  Shield, Award, Medal, Crown, Gem, Loader2, Bike, Clock3, CalendarDays
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useBikes } from '../context/BikeContext';
@@ -23,6 +23,10 @@ const planosConfig = {
   ouro: { name: 'Ouro', icon: Crown, color: 'text-yellow-400', bg: 'bg-yellow-400/10', desc: 'GPS 4G + geocerca + Ativar Proteção' },
   diamante: { name: 'Diamante', icon: Gem, color: 'text-blue-400', bg: 'bg-blue-400/10', desc: 'TAG + GPS + proteção máxima' },
 };
+
+function planRequiresInstallation(planId: string) {
+  return ['prata', 'ouro', 'diamante'].includes(planId);
+}
 
 type MetodoPagamento = 'pix' | 'boleto' | 'cartao';
 type Frequencia = 'mensal' | 'anual';
@@ -106,6 +110,17 @@ export default function PagamentoPlano() {
       })
       .finally(() => setCarregandoExistente(false));
   }, [searchParams, token]);
+
+  useEffect(() => {
+    if (resultado?.status !== 'pago') return;
+    if (!planRequiresInstallation(resultado.plano || planoId) || !resultado.bikeId) return;
+
+    const timer = window.setTimeout(() => {
+      navigate(`/instalacao/agendar/${resultado.bikeId}`);
+    }, 1400);
+
+    return () => window.clearTimeout(timer);
+  }, [resultado, planoId, navigate]);
 
   const handleCriarCobranca = async () => {
     if (!isLoggedIn || !token) {
@@ -440,10 +455,23 @@ export default function PagamentoPlano() {
               <div className="flex items-start gap-2">
                 <Shield className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                 <p className="text-slate-400 text-xs leading-relaxed">
-                  A protecao deste equipamento sera ativada automaticamente quando o Asaas confirmar o pagamento.
+                  {resultado.status === 'pago'
+                    ? 'Seu equipamento ja esta ativo no Bike Segura BC. Enquanto aguarda a instalacao, voce ja pode utilizar o cadastro antifurto, QR Code, passaporte digital, alerta de furto e rede de apoio.'
+                    : 'A protecao deste equipamento sera ativada automaticamente quando o Asaas confirmar o pagamento.'}
                 </p>
               </div>
             </div>
+
+            {resultado.status === 'pago' && planRequiresInstallation(resultado.plano || planoId) && resultado.bikeId && (
+              <button
+                type="button"
+                onClick={() => navigate(`/instalacao/agendar/${resultado.bikeId}`)}
+                className="w-full py-3.5 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-300 font-bold text-sm flex items-center justify-center gap-2"
+              >
+                <CalendarDays className="w-4 h-4" />
+                AGENDAR INSTALAÇÃO
+              </button>
+            )}
 
             {['pendente', 'atrasado'].includes(resultado.status) && (
               <button

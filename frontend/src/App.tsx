@@ -13,6 +13,7 @@ import Mapa from './pages/Mapa';
 import MeuPerfil from './pages/MeuPerfil';
 import Planos from './pages/Planos';
 import PagamentoPlano from './pages/PagamentoPlano';
+import AgendarInstalacao from './pages/AgendarInstalacao';
 
 import Indicacoes from './pages/Indicacoes';
 import IndicarLanding from './pages/IndicarLanding';
@@ -59,6 +60,7 @@ function AppRoutes() {
         <Route path="/perfil" element={<PrivateRoute><MeuPerfil /></PrivateRoute>} />
         <Route path="/planos" element={<TrialGuard isLoggedIn={isLoggedIn}><Planos /></TrialGuard>} />
         <Route path="/pagamento" element={<PrivateRoute><PagamentoPlano /></PrivateRoute>} />
+        <Route path="/instalacao/agendar/:equipmentId" element={<PrivateRoute><AgendarInstalacao /></PrivateRoute>} />
         <Route path="/indicacoes" element={<PrivateRoute><Indicacoes /></PrivateRoute>} />
         <Route path="/indicar/:codigo" element={<IndicarLanding />} />
         <Route path="/qr/:hash" element={<ConsultaPublica />} />

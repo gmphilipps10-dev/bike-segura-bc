@@ -10,6 +10,7 @@ const menu = [
   { path: '/planos', label: 'Planos', icon: ClipboardList },
   { path: '/pagamentos', label: 'Pagamentos', icon: CreditCard },
   { path: '/lojas-parceiras', label: 'Lojas Parceiras', icon: Users },
+  { path: '/instalacoes', label: 'Instalações', icon: ClipboardList },
   { path: '/analytics', label: 'Estatisticas', icon: Activity },
   { path: '/relatorios', label: 'Relatorios', icon: Activity },
   { path: '/sinistros', label: 'Sinistros', icon: AlertTriangle },

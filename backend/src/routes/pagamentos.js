@@ -27,6 +27,7 @@ const {
   registrarVendaParceira,
   cancelarVendasParceirasDoPagamento,
 } = require('../utils/partnerSales');
+const { ensureInstallationForPayment } = require('./installations');
 
 const router = express.Router();
 const PLANOS_ORDEM = ['free', 'bronze', 'prata', 'ouro', 'diamante'];
@@ -738,6 +739,14 @@ router.post('/webhook', async (req, res) => {
       }
     } catch (partnerError) {
       console.error('[Webhook] Erro ao sincronizar venda parceira:', partnerError.message);
+    }
+
+    if (novoStatus === 'pago' && pagamento.bikeId) {
+      try {
+        await ensureInstallationForPayment(pagamento);
+      } catch (installationError) {
+        console.error('[Webhook] Erro ao preparar instalacao:', installationError.message);
+      }
     }
 
     if (pagamento.bikeId) await atualizarPlanoUsuario(pagamento.userId);

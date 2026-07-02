@@ -4,13 +4,13 @@ import {
   ArrowLeft, Plus, Shield, ShieldCheck, MapPin, QrCode,
   X, Copy, Check, ExternalLink, Share2, Download,
   Pencil, Trash2, AlertTriangle, Save, Lock, Unlock,
-  Navigation, Volume2, VolumeX, Loader2, Crosshair
+  Navigation, Volume2, VolumeX, Loader2, Crosshair, CalendarDays, Wrench
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import { useBikes } from '../context/BikeContext';
 import { useAuth } from '../context/AuthContext';
-import { apiPost } from '../config/api';
+import { apiGet, apiPost } from '../config/api';
 
 function getOperationError(error: unknown, fallback: string) {
   if (!(error instanceof Error)) return fallback;
@@ -710,6 +710,22 @@ function MovementAlertModal({
   );
 }
 
+const installationStatusLabel: Record<string, string> = {
+  cadastro_realizado: 'Cadastro realizado',
+  plano_ativo: 'Plano ativo',
+  dispositivo_em_preparacao: 'Dispositivo em preparação',
+  instalacao_agendada: 'Instalação agendada',
+  instalado: 'Instalado',
+  cancelado: 'Cancelado',
+};
+
+function installationStatusClass(status: string) {
+  if (status === 'instalado') return 'border-emerald-400/25 bg-emerald-500/10 text-emerald-300';
+  if (status === 'instalacao_agendada') return 'border-amber-400/25 bg-amber-500/10 text-amber-300';
+  if (status === 'cancelado') return 'border-red-400/25 bg-red-500/10 text-red-300';
+  return 'border-cyan-400/20 bg-cyan-500/10 text-cyan-300';
+}
+
 export default function MeusEquipamentos() {
   const { bikes, removeBike, updateBike, refreshBikes } = useBikes();
   const { token } = useAuth();
@@ -717,7 +733,35 @@ export default function MeusEquipamentos() {
   const [bikeToDelete, setBikeToDelete] = useState<any>(null);
   const [bikeToEdit, setBikeToEdit] = useState<any>(null);
   const [movementAlert, setMovementAlert] = useState<MovementAlertData | null>(null);
+  const [installationsByBike, setInstallationsByBike] = useState<Record<string, any>>({});
   const activeCount = bikes.filter(b => b.protected).length;
+
+  useEffect(() => {
+    if (!token || !bikes.length) {
+      setInstallationsByBike({});
+      return;
+    }
+
+    let cancelled = false;
+    const loadInstallations = async () => {
+      const entries = await Promise.all(bikes.map(async bike => {
+        try {
+          const data = await apiGet(`/installations/my/${bike.id}`, token);
+          return [bike.id, data.installation] as const;
+        } catch {
+          return [bike.id, null] as const;
+        }
+      }));
+      if (!cancelled) {
+        setInstallationsByBike(Object.fromEntries(entries.filter(([, item]) => item)));
+      }
+    };
+
+    loadInstallations();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, bikes.map(bike => bike.id).join('|')]);
 
   return (
     <div className="min-h-screen bg-[#0c1222] relative overflow-x-hidden">
@@ -823,6 +867,34 @@ export default function MeusEquipamentos() {
                   onRefresh={refreshBikes}
                   onMovementAlert={setMovementAlert}
                 />
+
+                {installationsByBike[bike.id] && (
+                  <div className={`mt-3 rounded-xl border p-3 ${installationStatusClass(installationsByBike[bike.id].installation_status)}`}>
+                    <div className="flex items-start gap-2">
+                      {installationsByBike[bike.id].installation_status === 'instalacao_agendada'
+                        ? <CalendarDays className="w-4 h-4 shrink-0 mt-0.5" />
+                        : <Wrench className="w-4 h-4 shrink-0 mt-0.5" />}
+                      <div className="flex-1">
+                        <p className="text-xs font-bold">
+                          {installationStatusLabel[installationsByBike[bike.id].installation_status] || 'Instalação'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {installationsByBike[bike.id].installation_status === 'instalacao_agendada'
+                            ? `${installationsByBike[bike.id].installation_date_br} às ${installationsByBike[bike.id].installation_time}`
+                            : `Prazo técnico a partir de ${installationsByBike[bike.id].min_installation_date_br}`}
+                        </p>
+                      </div>
+                    </div>
+                    {!['instalado', 'cancelado'].includes(installationsByBike[bike.id].installation_status) && (
+                      <Link
+                        to={`/instalacao/agendar/${bike.id}`}
+                        className="mt-3 block w-full rounded-lg bg-white/10 px-3 py-2 text-center text-[11px] font-bold text-white"
+                      >
+                        AGENDAR / VER DETALHES
+                      </Link>
+                    )}
+                  </div>
+                )}
 
                 {/* Actions: Edit / Delete */}
                 <div className="flex gap-2 mt-3">
