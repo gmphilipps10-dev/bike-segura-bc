@@ -11,6 +11,7 @@ import {
   Table,
   Plus,
   TrendingUp,
+  Trash2,
 } from '../components/Icons'
 import { exportarCSV, exportarPDF } from '../utils/exportar'
 
@@ -61,6 +62,7 @@ export default function LojasParceiras() {
   const [summary, setSummary] = useState<any>({ total_vendido: 0, total_comissao_pendente: 0, total_comissao_paga: 0, comissao_por_loja: [] })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState('')
   const [editingId, setEditingId] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [toast, setToast] = useState('')
@@ -166,6 +168,29 @@ export default function LojasParceiras() {
       percentual_comissao: Number(loja.percentual_comissao || 10),
     })
     setTab('cadastro')
+  }
+
+  const deleteStore = async (loja: any) => {
+    const confirmou = window.confirm(`Excluir a loja parceira "${loja.nome_fantasia}"? Esta acao nao pode ser desfeita.`)
+    if (!confirmou) return
+
+    setDeletingId(loja.id)
+    setError('')
+    try {
+      const res = await fetch(`${API_BASE}/partner-stores/${loja.id}`, {
+        method: 'DELETE',
+        headers: authHeaders,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Erro ao excluir loja.')
+      if (editingId === loja.id) resetForm()
+      await Promise.all([loadStores(), loadSales(), loadSummary()])
+      showToast('Loja parceira excluida.')
+    } catch (err: any) {
+      setError(err.message || 'Erro ao excluir loja.')
+    } finally {
+      setDeletingId('')
+    }
   }
 
   const copyLink = async (link: string) => {
@@ -357,7 +382,19 @@ export default function LojasParceiras() {
                               <button onClick={() => openQrCode(loja.link)} className="text-cyan-300 text-xs hover:text-cyan-200 text-left">Abrir QR Code</button>
                             </div>
                           </td>
-                          <td className="p-3"><button onClick={() => editStore(loja)} className="text-slate-300 text-xs hover:text-white">Editar</button></td>
+                          <td className="p-3">
+                            <div className="flex items-center gap-3">
+                              <button onClick={() => editStore(loja)} className="text-slate-300 text-xs hover:text-white">Editar</button>
+                              <button
+                                onClick={() => deleteStore(loja)}
+                                disabled={deletingId === loja.id}
+                                className="inline-flex items-center gap-1 text-red-300 text-xs hover:text-red-200 disabled:opacity-50"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                {deletingId === loja.id ? 'Excluindo...' : 'Excluir'}
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>

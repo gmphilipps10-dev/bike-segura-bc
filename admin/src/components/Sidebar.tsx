@@ -14,6 +14,7 @@ const menu = [
   { path: '/analytics', label: 'Estatisticas', icon: Activity },
   { path: '/relatorios', label: 'Relatorios', icon: Activity },
   { path: '/sinistros', label: 'Sinistros', icon: AlertTriangle },
+  { path: '/manutencao', label: 'Manutencao', icon: AlertTriangle },
 ]
 
 export default function Sidebar() {

@@ -12,6 +12,7 @@ import Sinistros from './pages/Sinistros'
 import Analytics from './pages/Analytics'
 import LojasParceiras from './pages/LojasParceiras'
 import Instalacoes from './pages/Instalacoes'
+import Manutencao from './pages/Manutencao'
 import GlobalSearch from './components/GlobalSearch'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
@@ -34,6 +35,7 @@ function AppRoutes() {
       <Route path="/instalacoes" element={<PrivateRoute><Instalacoes /></PrivateRoute>} />
       <Route path="/relatorios" element={<PrivateRoute><Relatorios /></PrivateRoute>} />
       <Route path="/sinistros" element={<PrivateRoute><Sinistros /></PrivateRoute>} />
+      <Route path="/manutencao" element={<PrivateRoute><Manutencao /></PrivateRoute>} />
     </Routes>
   )
 }

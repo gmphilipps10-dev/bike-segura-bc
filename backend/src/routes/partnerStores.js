@@ -209,6 +209,28 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+router.delete('/:id', async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Loja parceira invalida.' });
+    }
+
+    const vendas = await PartnerSale.countDocuments({ partner_store_id: req.params.id });
+    if (vendas > 0) {
+      return res.status(409).json({
+        message: 'Esta loja possui vendas vinculadas. Zere os dados de teste ou mantenha a loja inativa para preservar o historico.',
+      });
+    }
+
+    const loja = await PartnerStore.findByIdAndDelete(req.params.id);
+    if (!loja) return res.status(404).json({ message: 'Loja parceira nao encontrada.' });
+
+    res.json({ success: true, message: 'Loja parceira excluida.' });
+  } catch {
+    res.status(500).json({ message: 'Erro ao excluir loja parceira.' });
+  }
+});
+
 router.get('/sales', async (req, res) => {
   try {
     const match = buildSaleMatch(req.query);

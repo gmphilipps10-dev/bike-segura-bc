@@ -190,6 +190,7 @@ app.use('/api/installations', installationsModule.publicRouter);
 app.use('/api/analytics', analyticsModule.publicRouter);
 app.use('/api/admin/analytics', analyticsModule.adminRouter);
 app.use('/api/admin/installations', installationsModule.adminRouter);
+app.use('/api/admin/maintenance', require('./routes/maintenance'));
 app.use('/api/admin/dashboard', require('./routes/dashboard'));
 app.use('/api/admin/search', require('./routes/adminSearch'));
 
