@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/bike-segura-bc-backend/api';
 
 export async function apiGet(endpoint: string, token?: string) {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };

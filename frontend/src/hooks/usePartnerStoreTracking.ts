@@ -52,6 +52,8 @@ export function usePartnerStoreTracking() {
   const location = useLocation();
 
   useEffect(() => {
+    if (location.pathname === '/institucional' || location.pathname.startsWith('/institucional/')) return;
+
     getStoredPartnerStore();
 
     const params = new URLSearchParams(location.search);

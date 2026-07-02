@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BikeProvider } from './context/BikeContext';
@@ -14,6 +14,7 @@ import MeuPerfil from './pages/MeuPerfil';
 import Planos from './pages/Planos';
 import PagamentoPlano from './pages/PagamentoPlano';
 import AgendarInstalacao from './pages/AgendarInstalacao';
+import InstitucionalPortal from './pages/InstitucionalPortal';
 
 import Indicacoes from './pages/Indicacoes';
 import IndicarLanding from './pages/IndicarLanding';
@@ -35,6 +36,8 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isInstitutionalRoute = location.pathname === '/institucional' || location.pathname.startsWith('/institucional/');
   useAnalyticsTracker();
   usePartnerStoreTracking();
 
@@ -49,9 +52,15 @@ function AppRoutes() {
 
   return (
     <>
-      <TrialBanner isLoggedIn={isLoggedIn} />
+      {!isInstitutionalRoute && <TrialBanner isLoggedIn={isLoggedIn} />}
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/institucional" element={<Navigate to="/institucional/dashboard" replace />} />
+        <Route path="/institucional/login" element={<InstitucionalPortal view="login" />} />
+        <Route path="/institucional/dashboard" element={<InstitucionalPortal view="dashboard" />} />
+        <Route path="/institucional/consulta" element={<InstitucionalPortal view="consulta" />} />
+        <Route path="/institucional/alertas" element={<InstitucionalPortal view="alertas" />} />
+        <Route path="/institucional/historico" element={<InstitucionalPortal view="historico" />} />
         <Route path="/" element={<TrialGuard isLoggedIn={isLoggedIn}><Home /></TrialGuard>} />
         <Route path="/equipamentos" element={<PrivateRoute><MeusEquipamentos /></PrivateRoute>} />
         <Route path="/cadastrar" element={<PrivateRoute><CadastrarNovo /></PrivateRoute>} />

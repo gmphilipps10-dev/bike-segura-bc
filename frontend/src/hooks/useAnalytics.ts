@@ -75,6 +75,10 @@ function sendAnalyticsEvent(
   });
 }
 
+function isInstitutionalPath(page: string) {
+  return page === '/institucional' || page.startsWith('/institucional/') || page.startsWith('/institucional?');
+}
+
 export function useAnalyticsTracker() {
   const location = useLocation();
   const { token } = useAuth();
@@ -92,13 +96,15 @@ export function useAnalyticsTracker() {
 
   useEffect(() => {
     if (appOpenSentRef.current) return;
-    appOpenSentRef.current = true;
     const page = `${locationRef.current.pathname}${locationRef.current.search}`;
+    if (isInstitutionalPath(page)) return;
+    appOpenSentRef.current = true;
     sendAnalyticsEvent('app_open', page || '/', tokenRef.current);
   }, []);
 
   useEffect(() => {
     const page = `${location.pathname}${location.search}`;
+    if (isInstitutionalPath(page)) return;
     sendAnalyticsEvent('page_view', page || '/', tokenRef.current);
   }, [location.pathname, location.search]);
 
@@ -114,6 +120,7 @@ export function useAnalyticsTracker() {
       if (!button) return;
 
       const page = `${locationRef.current.pathname}${locationRef.current.search}`;
+      if (isInstitutionalPath(page)) return;
       sendAnalyticsEvent('button_click', page || '/', tokenRef.current, button, {
         advertiser_id: clickable.getAttribute('data-analytics-advertiser-id') || undefined,
         advertiser_name: clickable.getAttribute('data-analytics-advertiser-name') || undefined,
