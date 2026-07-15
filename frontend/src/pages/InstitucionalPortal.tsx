@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import {
   AlertTriangle,
@@ -124,6 +124,13 @@ type NavItem = {
   icon: LucideIcon;
 };
 
+type LoginContext = {
+  eyebrow: string;
+  title: string;
+  message: string;
+  badgeClass: string;
+};
+
 const TOKEN_KEY = 'bike_segura_institutional_token';
 const USER_KEY = 'bike_segura_institutional_user';
 
@@ -163,6 +170,42 @@ const SEARCH_TYPES = [
   { value: 'caracteristicas', label: 'Características' },
   { value: 'tipo', label: 'Tipo' },
 ];
+
+function loginContextFromParam(value: string | null): LoginContext {
+  if (value === 'gm') {
+    return {
+      eyebrow: 'Guarda Municipal',
+      title: 'Acesso GMBC',
+      message: 'Entrada exclusiva para operadores autorizados da Guarda Municipal.',
+      badgeClass: 'border-emerald-300/30 bg-emerald-400/10 text-emerald-100',
+    };
+  }
+
+  if (value === 'pm') {
+    return {
+      eyebrow: 'Policia Militar',
+      title: 'Acesso PMBC',
+      message: 'Entrada exclusiva para operadores autorizados da Policia Militar.',
+      badgeClass: 'border-sky-300/30 bg-sky-400/10 text-sky-100',
+    };
+  }
+
+  if (value === 'admin') {
+    return {
+      eyebrow: 'Bike Segura BC',
+      title: 'Admin Institucional',
+      message: 'Entrada administrativa para gestao institucional, auditoria e acompanhamento operacional.',
+      badgeClass: 'border-amber-300/30 bg-amber-300/10 text-amber-100',
+    };
+  }
+
+  return {
+    eyebrow: 'Forcas de Seguranca',
+    title: 'Portal Institucional',
+    message: 'Acesso exclusivo para operadores autorizados da Guarda Municipal, Policia Militar e Bike Segura BC.',
+    badgeClass: 'border-cyan-300/30 bg-cyan-400/10 text-cyan-100',
+  };
+}
 
 function readStoredUser(): InstitutionalUser | null {
   try {
@@ -265,8 +308,10 @@ function InfoRow({ label, value }: { label: string; value?: string | number | nu
 
 function LoginScreen({
   onLogin,
+  context,
 }: {
   onLogin: (email: string, password: string) => Promise<void>;
+  context: LoginContext;
 }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -290,21 +335,19 @@ function LoginScreen({
     <main className="min-h-screen bg-[#101318] text-slate-100">
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-5 py-8">
         <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-amber-400/25 bg-amber-400/10">
-            <Shield className="h-6 w-6 text-amber-300" />
+          <div className={`flex h-12 w-12 items-center justify-center rounded-lg border ${context.badgeClass}`}>
+            <Shield className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-300">Bike Segura BC</p>
-            <h1 className="text-2xl font-black text-white">Portal Institucional</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-300">{context.eyebrow}</p>
+            <h1 className="text-2xl font-black text-white">{context.title}</h1>
           </div>
         </div>
 
         <form onSubmit={submit} className="rounded-lg border border-white/10 bg-[#171c22] p-5 shadow-2xl shadow-black/20">
           <div className="mb-5 flex items-start gap-3 rounded-md border border-cyan-400/20 bg-cyan-400/10 px-3 py-3">
             <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-cyan-200" />
-            <p className="text-xs leading-relaxed text-cyan-50">
-              Acesso exclusivo para operadores autorizados da Guarda Municipal, Polícia Militar e Bike Segura BC.
-            </p>
+            <p className="text-xs leading-relaxed text-cyan-50">{context.message}</p>
           </div>
 
           <label className="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400" htmlFor="institutional-email">
@@ -346,6 +389,13 @@ function LoginScreen({
             Entrar
           </button>
         </form>
+
+        <Link
+          to="/forcasdeseguranca"
+          className="mt-4 text-center text-xs font-bold text-slate-400 transition hover:text-amber-100"
+        >
+          Voltar para a escolha da instituicao
+        </Link>
 
         <p className="mt-5 text-center text-[11px] leading-relaxed text-slate-500">
           Uso restrito, auditado e vinculado à finalidade operacional. Dados pessoais são exibidos apenas mediante motivo registrado.
@@ -958,6 +1008,7 @@ function HistoricoView({ logs, loading }: { logs: AccessLog[]; loading: boolean 
 
 export default function InstitucionalPortal({ view }: { view: PortalView }) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [user, setUser] = useState<InstitutionalUser | null>(() => readStoredUser());
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -976,6 +1027,8 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
   const [notice, setNotice] = useState('');
 
   const authenticatedView = view === 'login' ? 'dashboard' : view;
+  const selectedInstitution = searchParams.get('instituicao');
+  const loginContext = useMemo(() => loginContextFromParam(selectedInstitution), [selectedInstitution]);
 
   const login = useCallback(async (email: string, password: string) => {
     const data = await institutionalRequest<{ token: string; user: InstitutionalUser }>('/institutional/login', null, {
@@ -997,7 +1050,7 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
     localStorage.removeItem(USER_KEY);
     setToken(null);
     setUser(null);
-    navigate('/institucional/login', { replace: true });
+    navigate('/forcasdeseguranca', { replace: true });
   }, [navigate, token]);
 
   const loadDashboard = useCallback(async () => {
@@ -1098,7 +1151,7 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
   );
 
   if (view === 'login' || !token || !user) {
-    return <LoginScreen onLogin={login} />;
+    return <LoginScreen onLogin={login} context={loginContext} />;
   }
 
   return (

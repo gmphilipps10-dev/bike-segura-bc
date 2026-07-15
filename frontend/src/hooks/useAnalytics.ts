@@ -76,7 +76,12 @@ function sendAnalyticsEvent(
 }
 
 function isInstitutionalPath(page: string) {
-  return page === '/institucional' || page.startsWith('/institucional/') || page.startsWith('/institucional?');
+  return page === '/institucional'
+    || page.startsWith('/institucional/')
+    || page.startsWith('/institucional?')
+    || page === '/forcasdeseguranca'
+    || page.startsWith('/forcasdeseguranca/')
+    || page.startsWith('/forcasdeseguranca?');
 }
 
 export function useAnalyticsTracker() {

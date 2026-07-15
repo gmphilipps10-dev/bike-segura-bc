@@ -42,7 +42,13 @@ da conta.
 
 Use:
 
-`CORS_ORIGINS=https://www.bikesegurabc.com.br,https://bikesegurabc.com.br`
+`CORS_ORIGINS=https://www.bikesegurabc.com.br,https://bikesegurabc.com.br,https://forcasdeseguranca.bikesegurabc.com.br`
+
+O subdominio institucional `forcasdeseguranca.bikesegurabc.com.br` deve apontar
+para o mesmo app do frontend. Na DigitalOcean, adicione esse dominio em
+`Settings/Networking > Domains` do app. Se o DNS nao for gerenciado pela
+DigitalOcean, crie um CNAME `forcasdeseguranca` apontando para o alias
+`ondigitalocean.app` exibido pela propria DigitalOcean.
 
 Mantenha:
 

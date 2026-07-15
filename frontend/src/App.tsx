@@ -15,6 +15,7 @@ import Planos from './pages/Planos';
 import PagamentoPlano from './pages/PagamentoPlano';
 import AgendarInstalacao from './pages/AgendarInstalacao';
 import InstitucionalPortal from './pages/InstitucionalPortal';
+import ForcasSegurancaPortal from './pages/ForcasSegurancaPortal';
 
 import Indicacoes from './pages/Indicacoes';
 import IndicarLanding from './pages/IndicarLanding';
@@ -33,11 +34,22 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return isLoggedIn ? <>{children}</> : <Navigate to="/login" replace />;
 }
 
+function isForcasSegurancaHost() {
+  if (typeof window === 'undefined') return false;
+  const hostname = window.location.hostname.toLowerCase();
+  return hostname.startsWith('forcasdeseguranca.') || hostname.startsWith('seguranca.');
+}
+
 function AppRoutes() {
   const { isLoggedIn } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isInstitutionalRoute = location.pathname === '/institucional' || location.pathname.startsWith('/institucional/');
+  const isSecurityHost = isForcasSegurancaHost();
+  const isInstitutionalRoute = isSecurityHost
+    || location.pathname === '/institucional'
+    || location.pathname.startsWith('/institucional/')
+    || location.pathname === '/forcasdeseguranca'
+    || location.pathname.startsWith('/forcasdeseguranca/');
   useAnalyticsTracker();
   usePartnerStoreTracking();
 
@@ -55,13 +67,14 @@ function AppRoutes() {
       {!isInstitutionalRoute && <TrialBanner isLoggedIn={isLoggedIn} />}
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forcasdeseguranca" element={<ForcasSegurancaPortal />} />
         <Route path="/institucional" element={<Navigate to="/institucional/dashboard" replace />} />
         <Route path="/institucional/login" element={<InstitucionalPortal view="login" />} />
         <Route path="/institucional/dashboard" element={<InstitucionalPortal view="dashboard" />} />
         <Route path="/institucional/consulta" element={<InstitucionalPortal view="consulta" />} />
         <Route path="/institucional/alertas" element={<InstitucionalPortal view="alertas" />} />
         <Route path="/institucional/historico" element={<InstitucionalPortal view="historico" />} />
-        <Route path="/" element={<TrialGuard isLoggedIn={isLoggedIn}><Home /></TrialGuard>} />
+        <Route path="/" element={isSecurityHost ? <ForcasSegurancaPortal /> : <TrialGuard isLoggedIn={isLoggedIn}><Home /></TrialGuard>} />
         <Route path="/equipamentos" element={<PrivateRoute><MeusEquipamentos /></PrivateRoute>} />
         <Route path="/cadastrar" element={<PrivateRoute><CadastrarNovo /></PrivateRoute>} />
         <Route path="/delegacia" element={<TrialGuard isLoggedIn={isLoggedIn}><DelegaciaVirtual /></TrialGuard>} />

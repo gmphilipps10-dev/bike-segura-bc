@@ -53,6 +53,7 @@ export function usePartnerStoreTracking() {
 
   useEffect(() => {
     if (location.pathname === '/institucional' || location.pathname.startsWith('/institucional/')) return;
+    if (location.pathname === '/forcasdeseguranca' || location.pathname.startsWith('/forcasdeseguranca/')) return;
 
     getStoredPartnerStore();
 
@@ -78,5 +79,5 @@ export function usePartnerStoreTracking() {
     return () => {
       cancelled = true;
     };
-  }, [location.search]);
+  }, [location.pathname, location.search]);
 }
