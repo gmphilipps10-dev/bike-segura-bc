@@ -183,9 +183,9 @@ function loginContextFromParam(value: string | null): LoginContext {
 
   if (value === 'pm') {
     return {
-      eyebrow: 'Policia Militar',
+      eyebrow: 'Polícia Militar',
       title: 'Acesso PMSC',
-      message: 'Entrada exclusiva para operadores autorizados da Policia Militar.',
+      message: 'Entrada exclusiva para operadores autorizados da Polícia Militar.',
       badgeClass: 'border-sky-300/30 bg-sky-400/10 text-sky-100',
     };
   }
@@ -200,9 +200,9 @@ function loginContextFromParam(value: string | null): LoginContext {
   }
 
   return {
-    eyebrow: 'Forcas de Seguranca',
+    eyebrow: 'Forças de Segurança',
     title: 'Portal Institucional',
-    message: 'Acesso exclusivo para operadores autorizados da Guarda Municipal, Policia Militar e Bike Segura BC.',
+    message: 'Acesso exclusivo para operadores autorizados da Guarda Municipal, Polícia Militar e Bike Segura BC.',
     badgeClass: 'border-cyan-300/30 bg-cyan-400/10 text-cyan-100',
   };
 }
