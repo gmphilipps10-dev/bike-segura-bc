@@ -282,7 +282,7 @@ function EditBikeModal({ bike, onSave, onClose }: { bike: any; onSave: (id: stri
           </div>
           <div>
             <label className="text-slate-400 text-[11px] mb-1.5 block">Caracteristicas</label>
-            <textarea rows={2} value={form.caracteristicas} onChange={e => handleChange('caracteristicas', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none resize-none" />
+            <textarea rows={2} placeholder="Ex: arranhão no garfo direito, adesivo Hard Rock no quadro, fita vermelha no guidão..." value={form.caracteristicas} onChange={e => handleChange('caracteristicas', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm outline-none resize-none" />
           </div>
           <div>
             <label className="text-slate-400 text-[11px] mb-1.5 block">Rastreamento</label>

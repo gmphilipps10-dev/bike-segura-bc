@@ -258,6 +258,7 @@ async function findBikeByQr(rawValue) {
 function searchFieldsForType(type) {
   const fields = {
     qr: [],
+    similaridade: ['brand', 'name', 'color', 'caracteristicas', 'type'],
     serie: ['serie'],
     quadro: ['serie'],
     rastreador: ['rastreamento', 'plataformaTag'],
@@ -269,6 +270,223 @@ function searchFieldsForType(type) {
     geral: ['serie', 'brand', 'name', 'color', 'caracteristicas', 'type', 'rastreamento', 'plataformaTag'],
   };
   return fields[type] || fields.geral;
+}
+
+const SIMILARITY_STOPWORDS = new Set([
+  'a', 'as', 'o', 'os', 'um', 'uma', 'uns', 'umas',
+  'de', 'do', 'da', 'dos', 'das', 'no', 'na', 'nos', 'nas',
+  'em', 'com', 'sem', 'para', 'por', 'ao', 'aos', 'e', 'ou',
+  'lado', 'parte', 'bike', 'bicicleta', 'equipamento',
+]);
+
+const SIMILARITY_ALIASES = {
+  arranhao: ['arranhado', 'risco', 'riscado', 'raspado', 'ralado'],
+  arranhado: ['arranhao', 'risco', 'riscado', 'raspado', 'ralado'],
+  risco: ['arranhao', 'arranhado', 'riscado'],
+  riscado: ['arranhao', 'arranhado', 'risco'],
+  raspado: ['arranhao', 'ralado'],
+  ralado: ['arranhao', 'raspado'],
+  amassado: ['amassada', 'dente', 'batido'],
+  quebrado: ['quebrada', 'trincado', 'trincada'],
+  adesivo: ['sticker', 'decalque', 'colante'],
+  sticker: ['adesivo', 'decalque'],
+  decalque: ['adesivo', 'sticker'],
+  garfo: ['suspensao', 'forquilha'],
+  suspensao: ['garfo', 'amortecedor'],
+  quadro: ['chassi', 'frame'],
+  guidon: ['guidao'],
+  guidao: ['guidon'],
+  selim: ['banco'],
+  banco: ['selim'],
+  roda: ['aro', 'pneu'],
+  aro: ['roda'],
+  pneu: ['roda'],
+  direito: ['direita'],
+  direita: ['direito'],
+  esquerdo: ['esquerda'],
+  esquerda: ['esquerdo'],
+  frontal: ['frente', 'dianteiro', 'dianteira'],
+  frente: ['frontal', 'dianteiro', 'dianteira'],
+  traseiro: ['traseira', 'atras'],
+  traseira: ['traseiro', 'atras'],
+  branco: ['branca'],
+  branca: ['branco'],
+  preto: ['preta'],
+  preta: ['preto'],
+  vermelho: ['vermelha'],
+  vermelha: ['vermelho'],
+  amarelo: ['amarela'],
+  amarela: ['amarelo'],
+  azul: ['azulada'],
+  verde: ['esverdeada'],
+  prata: ['prateado', 'prateada', 'cinza'],
+  cinza: ['prata', 'prateado', 'prateada'],
+  dourado: ['dourada'],
+  dourada: ['dourado'],
+};
+
+function normalizeSearchText(value) {
+  return safeString(value, 2000)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function uniqueItems(items) {
+  return Array.from(new Set(items.filter(Boolean)));
+}
+
+function tokenizeSimilarityText(value) {
+  return uniqueItems(
+    normalizeSearchText(value)
+      .split(/\s+/)
+      .map(token => token.trim())
+      .filter(token => token.length >= 2 && !SIMILARITY_STOPWORDS.has(token))
+  );
+}
+
+function similarityTokenVariants(token) {
+  return uniqueItems([token, ...(SIMILARITY_ALIASES[token] || [])]);
+}
+
+function fieldTokenSet(text) {
+  return new Set(String(text || '').split(/\s+/).filter(Boolean));
+}
+
+function isInformationField(fieldName) {
+  return ['modelo', 'cor', 'tipo', 'serie'].includes(fieldName);
+}
+
+function buildSimilarityFields(bike) {
+  return [
+    { name: 'caracteristicas', label: 'detalhes cadastrados', weight: 3.8, text: normalizeSearchText(bike.caracteristicas) },
+    { name: 'modelo', label: 'marca/modelo', weight: 2.2, text: normalizeSearchText(`${bike.brand || ''} ${bike.name || ''}`) },
+    { name: 'cor', label: 'cor', weight: 2.2, text: normalizeSearchText(bike.color) },
+    { name: 'tipo', label: 'tipo', weight: 1.6, text: normalizeSearchText(bike.type) },
+    { name: 'serie', label: 'serie/rastreador', weight: 0.8, text: normalizeSearchText(`${bike.serie || ''} ${bike.rastreamento || ''} ${bike.plataformaTag || ''}`) },
+  ];
+}
+
+function scoreBikeSimilarity(bike, rawQuery) {
+  const normalizedQuery = normalizeSearchText(rawQuery);
+  const baseTokens = tokenizeSimilarityText(rawQuery);
+  if (!normalizedQuery || !baseTokens.length) return null;
+
+  const fields = buildSimilarityFields(bike);
+  const matchedTerms = new Set();
+  const matchedFields = new Set();
+  let exactShortInformationMatches = 0;
+  let score = 0;
+
+  fields.forEach(field => {
+    if (normalizedQuery.length >= 4 && field.text.includes(normalizedQuery)) {
+      score += field.name === 'caracteristicas' ? 9 : 5;
+      matchedFields.add(field.label);
+    }
+  });
+
+  baseTokens.forEach(token => {
+    const variants = similarityTokenVariants(token);
+    let bestWeight = 0;
+    let bestField = '';
+    let exactTokenMatched = false;
+
+    fields.forEach(field => {
+      if (!field.text) return;
+      const words = fieldTokenSet(field.text);
+      const matchedVariant = variants.find(variant => field.text.includes(variant));
+      if (!matchedVariant) return;
+      const exactWordMatch = words.has(matchedVariant);
+      const variantPenalty = matchedVariant === token ? 1 : 0.82;
+      const tokenWeight = token.length >= 5 ? 1.25 : 1;
+      const informationBonus = exactWordMatch && isInformationField(field.name) ? 1.25 : 1;
+      const weighted = field.weight * variantPenalty * tokenWeight;
+      if (weighted * informationBonus > bestWeight) {
+        bestWeight = weighted * informationBonus;
+        bestField = field.label;
+        exactTokenMatched = matchedVariant === token && exactWordMatch;
+      }
+    });
+
+    if (bestWeight > 0) {
+      score += bestWeight;
+      matchedTerms.add(token);
+      if (bestField) matchedFields.add(bestField);
+      if (exactTokenMatched && token.length <= 3) exactShortInformationMatches += 1;
+      if (exactTokenMatched && token.length >= 5) score += 0.5;
+    }
+  });
+
+  const matchedRatio = matchedTerms.size / baseTokens.length;
+  const minimumTokenMatches = baseTokens.length <= 2
+    ? baseTokens.length
+    : Math.ceil(baseTokens.length * 0.6);
+  if (matchedTerms.size < minimumTokenMatches) return null;
+
+  if (matchedRatio === 1) score += Math.min(4, baseTokens.length * 1.4);
+  if (matchedFields.size >= 2) score += 1.2;
+
+  const importantTokenMatches = Array.from(matchedTerms).filter(token => token.length >= 4).length;
+  if (score < 2.1 || (importantTokenMatches === 0 && exactShortInformationMatches === 0)) return null;
+
+  const maxScore = Math.max(8, baseTokens.length * 4.4 + 5);
+  const similarity = Math.max(35, Math.min(99, Math.round((score / maxScore) * 100)));
+  const terms = Array.from(matchedTerms).slice(0, 8);
+
+  return {
+    bike,
+    score,
+    similarity,
+    matchedTerms: terms,
+    matchReason: terms.length
+      ? `Semelhanca encontrada em ${Array.from(matchedFields).slice(0, 2).join(' e ')}: ${terms.join(', ')}.`
+      : 'Semelhanca encontrada no cadastro do equipamento.',
+  };
+}
+
+function similarityMongoQuery(rawQuery) {
+  const tokens = tokenizeSimilarityText(rawQuery)
+    .flatMap(similarityTokenVariants)
+    .filter(token => token.length >= 3)
+    .slice(0, 16);
+
+  if (!tokens.length) return {};
+
+  const searchableFields = ['brand', 'name', 'color', 'caracteristicas', 'type', 'serie', 'rastreamento', 'plataformaTag'];
+  return {
+    $or: tokens.flatMap(token => {
+      const regex = new RegExp(escapeRegex(token), 'i');
+      return searchableFields.map(field => ({ [field]: regex }));
+    }),
+  };
+}
+
+async function searchBikesBySimilarity(term) {
+  const bikes = await Bike.find(similarityMongoQuery(term))
+    .sort({ updatedAt: -1 })
+    .limit(180)
+    .lean();
+
+  return bikes
+    .map(bike => scoreBikeSimilarity(bike, term))
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.bike.status === 'furto' && b.bike.status !== 'furto') return -1;
+      if (a.bike.status !== 'furto' && b.bike.status === 'furto') return 1;
+      return b.score - a.score;
+    })
+    .slice(0, 25);
+}
+
+function equipmentSimilaritySummary(match) {
+  return {
+    ...equipmentSummary(match.bike),
+    similarity: match.similarity,
+    matchedTerms: match.matchedTerms,
+    matchReason: match.matchReason,
+  };
 }
 
 function validateReason(reason, reasonText, allowedReasons) {
@@ -424,6 +642,7 @@ publicRouter.get('/search', institutionalAuth, async (req, res) => {
   try {
     const term = safeString(req.query.q, 120);
     const type = safeString(req.query.type || 'geral', 60);
+    const isSimilaritySearch = ['similaridade', 'detalhes', 'visual'].includes(type);
     if (term.length < 2) {
       return res.status(400).json({ message: 'Informe pelo menos 2 caracteres para consulta.' });
     }
@@ -434,7 +653,13 @@ publicRouter.get('/search', institutionalAuth, async (req, res) => {
       resultsById.set(String(byQr.bike._id), equipmentSummary(byQr.bike, { includeQr: true, qr: byQr.qr }));
     }
 
-    if (type !== 'qr') {
+    if (isSimilaritySearch) {
+      const similarityMatches = await searchBikesBySimilarity(term);
+      similarityMatches.forEach(match => {
+        const id = String(match.bike._id);
+        resultsById.set(id, equipmentSimilaritySummary(match));
+      });
+    } else if (type !== 'qr') {
       const fields = searchFieldsForType(type);
       const regex = new RegExp(escapeRegex(term), 'i');
       const bikes = await Bike.find({
@@ -454,13 +679,56 @@ publicRouter.get('/search', institutionalAuth, async (req, res) => {
     await writeAccessLog(req, req.institutionalUser, 'search', {
       searchTerm: term,
       searchType: type,
-      metadata: { resultCount: results.length },
+      metadata: { resultCount: results.length, mode: isSimilaritySearch ? 'similarity' : 'exact' },
     });
 
     res.json({ results });
   } catch (error) {
     console.error('[Institutional] Search error:', error);
     res.status(500).json({ message: 'Erro ao consultar equipamentos.' });
+  }
+});
+
+publicRouter.get('/image-candidates', institutionalAuth, async (req, res) => {
+  try {
+    const details = safeString(req.query.q, 120);
+    const resultsById = new Map();
+
+    if (details.length >= 2) {
+      const similarityMatches = await searchBikesBySimilarity(details);
+      similarityMatches.forEach(match => {
+        resultsById.set(String(match.bike._id), equipmentSimilaritySummary(match));
+      });
+    }
+
+    const usedIds = Array.from(resultsById.keys()).filter(mongoose.isValidObjectId);
+    const remaining = Math.max(0, 80 - resultsById.size);
+    if (remaining > 0) {
+      const bikes = await Bike.find({
+        photo: { $nin: [null, ''] },
+        ...(usedIds.length ? { _id: { $nin: usedIds } } : {}),
+      })
+        .sort({ status: 1, updatedAt: -1 })
+        .limit(remaining)
+        .lean();
+
+      bikes.forEach(bike => {
+        const id = String(bike._id);
+        if (!resultsById.has(id)) resultsById.set(id, equipmentSummary(bike));
+      });
+    }
+
+    const results = Array.from(resultsById.values()).slice(0, 80);
+    await writeAccessLog(req, req.institutionalUser, 'image_search_candidates', {
+      searchTerm: details,
+      searchType: 'foto',
+      metadata: { resultCount: results.length },
+    });
+
+    res.json({ results });
+  } catch (error) {
+    console.error('[Institutional] Image candidates error:', error);
+    res.status(500).json({ message: 'Erro ao preparar busca por imagem.' });
   }
 });
 

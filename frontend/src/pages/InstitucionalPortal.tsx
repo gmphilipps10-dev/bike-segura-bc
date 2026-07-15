@@ -11,6 +11,7 @@ import {
   Clock3,
   Eye,
   History,
+  Image as ImageIcon,
   Loader2,
   LockKeyhole,
   LogOut,
@@ -19,6 +20,7 @@ import {
   Search,
   Shield,
   Siren,
+  UploadCloud,
   UserRound,
   X,
 } from 'lucide-react';
@@ -80,6 +82,10 @@ type EquipmentSummary = {
     rastreamento?: string;
     plataformaTag?: string;
   };
+  similarity?: number;
+  imageSimilarity?: number;
+  matchedTerms?: string[];
+  matchReason?: string;
 };
 
 type OwnerData = {
@@ -161,6 +167,8 @@ const TRIGGER_REASON_OPTIONS: ReasonOption[] = [
 
 const SEARCH_TYPES = [
   { value: 'geral', label: 'Geral' },
+  { value: 'similaridade', label: 'Similaridade visual' },
+  { value: 'foto', label: 'Foto + detalhes' },
   { value: 'qr', label: 'QR/adesivo' },
   { value: 'serie', label: 'Quadro/série' },
   { value: 'rastreador', label: 'TAG/GPS' },
@@ -170,6 +178,94 @@ const SEARCH_TYPES = [
   { value: 'caracteristicas', label: 'Características' },
   { value: 'tipo', label: 'Tipo' },
 ];
+
+const IMAGE_SIGNATURE_SIZE = 48;
+const IMAGE_SIGNATURE_BUCKETS = 4;
+
+function loadComparableImage(source: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Imagem indisponivel para comparacao.'));
+    image.src = source;
+  });
+}
+
+async function imageSignatureFromSource(source: string): Promise<number[]> {
+  const image = await loadComparableImage(source);
+  const canvas = document.createElement('canvas');
+  canvas.width = IMAGE_SIGNATURE_SIZE;
+  canvas.height = IMAGE_SIGNATURE_SIZE;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) throw new Error('Nao foi possivel ler a imagem.');
+
+  context.drawImage(image, 0, 0, IMAGE_SIGNATURE_SIZE, IMAGE_SIGNATURE_SIZE);
+  const { data } = context.getImageData(0, 0, IMAGE_SIGNATURE_SIZE, IMAGE_SIGNATURE_SIZE);
+  const bins = new Array(IMAGE_SIGNATURE_BUCKETS ** 3).fill(0);
+
+  for (let index = 0; index < data.length; index += 4) {
+    const alpha = data[index + 3];
+    if (alpha < 40) continue;
+    const red = data[index];
+    const green = data[index + 1];
+    const blue = data[index + 2];
+    const brightness = (red + green + blue) / 3;
+    if (brightness < 8 || brightness > 248) continue;
+
+    const redBucket = Math.min(IMAGE_SIGNATURE_BUCKETS - 1, Math.floor(red / 64));
+    const greenBucket = Math.min(IMAGE_SIGNATURE_BUCKETS - 1, Math.floor(green / 64));
+    const blueBucket = Math.min(IMAGE_SIGNATURE_BUCKETS - 1, Math.floor(blue / 64));
+    const bucketIndex = redBucket * 16 + greenBucket * 4 + blueBucket;
+    bins[bucketIndex] += 1;
+  }
+
+  const total = bins.reduce((sum, value) => sum + value, 0) || 1;
+  return bins.map(value => value / total);
+}
+
+function compareImageSignatures(source: number[], candidate: number[]) {
+  const intersection = source.reduce((sum, value, index) => sum + Math.min(value, candidate[index] || 0), 0);
+  return Math.round(intersection * 100);
+}
+
+async function rankResultsByImageSimilarity(results: EquipmentSummary[], imageDataUrl: string) {
+  const sourceSignature = await imageSignatureFromSource(imageDataUrl);
+  const scored = await Promise.all(results.map(async equipment => {
+    let imageSimilarity = 0;
+    if (equipment.photo) {
+      try {
+        const candidateSignature = await imageSignatureFromSource(equipment.photo);
+        imageSimilarity = compareImageSignatures(sourceSignature, candidateSignature);
+      } catch {
+        imageSimilarity = 0;
+      }
+    }
+
+    const textSimilarity = equipment.similarity || 0;
+    const combinedSimilarity = Math.max(imageSimilarity, Math.round((imageSimilarity * 0.7) + (textSimilarity * 0.3)));
+    return {
+      ...equipment,
+      imageSimilarity,
+      similarity: combinedSimilarity || textSimilarity || undefined,
+      matchedTerms: imageSimilarity > 0
+        ? Array.from(new Set(['foto', ...(equipment.matchedTerms || [])])).slice(0, 5)
+        : equipment.matchedTerms,
+      matchReason: imageSimilarity > 0
+        ? `Semelhanca visual pela foto cadastrada (${imageSimilarity}%).${equipment.matchReason ? ` ${equipment.matchReason}` : ''}`
+        : equipment.matchReason,
+    };
+  }));
+
+  return scored
+    .filter(equipment => (equipment.imageSimilarity || 0) >= 24 || (equipment.similarity || 0) >= 45)
+    .sort((a, b) => {
+      if (a.status === 'furto' && b.status !== 'furto') return -1;
+      if (a.status !== 'furto' && b.status === 'furto') return 1;
+      return (b.similarity || 0) - (a.similarity || 0);
+    })
+    .slice(0, 25);
+}
 
 function loginContextFromParam(value: string | null): LoginContext {
   if (value === 'gm') {
@@ -591,6 +687,21 @@ function EquipmentCard({
             {equipment.type} · {equipment.color} · Série {equipment.serieMasked}
           </p>
           <p className="mt-1 text-[11px] text-slate-500">{equipment.cityUf}</p>
+          {typeof equipment.similarity === 'number' && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="rounded bg-amber-300/15 px-2 py-1 text-[10px] font-black uppercase text-amber-100">
+                {equipment.similarity}% similar
+              </span>
+              {equipment.matchedTerms?.slice(0, 4).map(term => (
+                <span key={term} className="rounded bg-cyan-300/10 px-2 py-1 text-[10px] font-bold text-cyan-100">
+                  {term}
+                </span>
+              ))}
+            </div>
+          )}
+          {equipment.matchReason && (
+            <p className="mt-1 text-[11px] leading-snug text-slate-400">{equipment.matchReason}</p>
+          )}
         </div>
       </div>
     </button>
@@ -841,8 +952,11 @@ function ConsultaView({
   selectedEquipment,
   owner,
   loading,
+  imagePreview,
+  imageName,
   onSearchTerm,
   onSearchType,
+  onImageFile,
   onSearch,
   onOpenEquipment,
   onViewOwner,
@@ -854,13 +968,24 @@ function ConsultaView({
   selectedEquipment: EquipmentSummary | null;
   owner: OwnerData | null;
   loading: boolean;
+  imagePreview: string;
+  imageName: string;
   onSearchTerm: (value: string) => void;
   onSearchType: (value: string) => void;
+  onImageFile: (file: File | null) => void;
   onSearch: (event: FormEvent) => void;
   onOpenEquipment: (equipment: EquipmentSummary) => void;
   onViewOwner: (equipment: EquipmentSummary) => void;
   onTrigger: (equipment: EquipmentSummary) => void;
 }) {
+  const isSimilaritySearch = searchType === 'similaridade';
+  const isPhotoSearch = searchType === 'foto';
+  const searchPlaceholder = isSimilaritySearch
+    ? 'Ex: arranhão no garfo direito, adesivo hard rock no quadro'
+    : isPhotoSearch
+      ? 'Detalhes observados na foto: adesivo, arranhão, peça, cor...'
+    : 'QR, série, marca, modelo, cor...';
+
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(320px,430px)_1fr]">
       <section className="space-y-3">
@@ -880,7 +1005,7 @@ function ConsultaView({
                 value={searchTerm}
                 onChange={event => onSearchTerm(event.target.value)}
                 className="min-w-0 flex-1 rounded-md border border-white/10 bg-black/20 px-3 py-3 text-sm text-white outline-none focus:border-amber-300"
-                placeholder="QR, série, marca, modelo, cor..."
+                placeholder={searchPlaceholder}
               />
               <button
                 type="submit"
@@ -892,6 +1017,47 @@ function ConsultaView({
               </button>
             </div>
           </div>
+          {isPhotoSearch && (
+            <div className="mt-3 rounded-md border border-white/10 bg-black/15 p-3">
+              <input
+                id="institutional-photo-search"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={event => onImageFile(event.target.files?.[0] || null)}
+              />
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <label
+                  htmlFor="institutional-photo-search"
+                  className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-black text-[#101318] transition hover:bg-amber-100"
+                >
+                  <UploadCloud className="h-4 w-4" />
+                  Enviar foto
+                </label>
+                {imageName ? (
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-slate-100">{imageName}</p>
+                    <button type="button" onClick={() => onImageFile(null)} className="mt-1 text-[11px] font-bold text-amber-100">
+                      Remover foto
+                    </button>
+                  </div>
+                ) : (
+                  <p className="flex min-w-0 items-center gap-2 text-xs text-slate-400">
+                    <ImageIcon className="h-4 w-4 shrink-0 text-cyan-200" />
+                    A foto será comparada com as imagens cadastradas.
+                  </p>
+                )}
+              </div>
+              {imagePreview && (
+                <img src={imagePreview} alt="" className="mt-3 h-36 w-full rounded-md object-cover sm:w-56" />
+              )}
+            </div>
+          )}
+          {(isSimilaritySearch || isPhotoSearch) && (
+            <p className="mt-3 text-xs leading-relaxed text-slate-400">
+              Descreva marcas visuais, adesivos, peças, lados e cores. A busca considera detalhes parecidos cadastrados no equipamento.
+            </p>
+          )}
         </form>
 
         <div className="space-y-2">
@@ -1017,6 +1183,8 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
   const [searchType, setSearchType] = useState('geral');
   const [searchResults, setSearchResults] = useState<EquipmentSummary[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [imageSearchDataUrl, setImageSearchDataUrl] = useState('');
+  const [imageSearchName, setImageSearchName] = useState('');
   const [alerts, setAlerts] = useState<EquipmentSummary[]>([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
   const [logs, setLogs] = useState<AccessLog[]>([]);
@@ -1093,12 +1261,50 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
     setOwner(null);
   }, [token]);
 
+  const handleImageSearchFile = useCallback((file: File | null) => {
+    setImageSearchDataUrl('');
+    setImageSearchName('');
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setNotice('Envie uma imagem valida para a busca por foto.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImageSearchDataUrl(String(reader.result || ''));
+      setImageSearchName(file.name);
+      setNotice('');
+    };
+    reader.onerror = () => setNotice('Nao foi possivel ler a imagem enviada.');
+    reader.readAsDataURL(file);
+  }, []);
+
   const submitSearch = useCallback(async (event: FormEvent) => {
     event.preventDefault();
     if (!token) return;
-    setSearchLoading(true);
     setNotice('');
+    if (searchType === 'foto' && !imageSearchDataUrl) {
+      setNotice('Envie uma foto para realizar a busca por imagem.');
+      return;
+    }
+
+    setSearchLoading(true);
     try {
+      if (searchType === 'foto') {
+        const params = new URLSearchParams();
+        if (searchTerm.trim()) params.set('q', searchTerm.trim());
+        const data = await institutionalRequest<{ results: EquipmentSummary[] }>(`/institutional/image-candidates?${params}`, token);
+        const rankedResults = await rankResultsByImageSimilarity(data.results || [], imageSearchDataUrl);
+        setSearchResults(rankedResults);
+        setSelectedEquipment(null);
+        setOwner(null);
+        if (!rankedResults.length) {
+          setNotice('Nenhum equipamento semelhante foi encontrado com a foto enviada.');
+        }
+        return;
+      }
+
       const params = new URLSearchParams({ q: searchTerm, type: searchType });
       const data = await institutionalRequest<{ results: EquipmentSummary[] }>(`/institutional/search?${params}`, token);
       setSearchResults(data.results || []);
@@ -1109,7 +1315,7 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
     } finally {
       setSearchLoading(false);
     }
-  }, [searchTerm, searchType, token]);
+  }, [imageSearchDataUrl, searchTerm, searchType, token]);
 
   const submitReason = useCallback(async (reason: string, reasonText: string) => {
     if (!token || !modal) return;
@@ -1179,8 +1385,11 @@ export default function InstitucionalPortal({ view }: { view: PortalView }) {
           selectedEquipment={selectedEquipment}
           owner={owner}
           loading={searchLoading}
+          imagePreview={imageSearchDataUrl}
+          imageName={imageSearchName}
           onSearchTerm={setSearchTerm}
           onSearchType={setSearchType}
+          onImageFile={handleImageSearchFile}
           onSearch={submitSearch}
           onOpenEquipment={openEquipment}
           onViewOwner={equipment => setModal({ mode: 'owner', equipment })}

@@ -244,7 +244,7 @@ export default function CadastrarNovo() {
         {/* CARACTERISTICAS */}
         <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card p-5 mb-4">
           {sectionHeader(<ClipboardList className="w-4 h-4" />, 'Caracteristicas')}
-          <textarea rows={3} placeholder="Acessorios, modificacoes..." value={form.caracteristicas} onChange={e => handleChange('caracteristicas', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm placeholder:text-slate-600 outline-none resize-none" />
+          <textarea rows={3} placeholder="Ex: arranhão no garfo direito, adesivo Hard Rock no quadro, selim marrom, fita vermelha no guidão..." value={form.caracteristicas} onChange={e => handleChange('caracteristicas', e.target.value)} className="w-full glass-card px-3 py-2.5 text-white text-sm placeholder:text-slate-600 outline-none resize-none" />
         </motion.section>
 
         {/* RASTREAMENTO — opcoes controladas pelo plano */}
