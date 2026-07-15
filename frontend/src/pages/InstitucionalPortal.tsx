@@ -184,7 +184,7 @@ function loginContextFromParam(value: string | null): LoginContext {
   if (value === 'pm') {
     return {
       eyebrow: 'Policia Militar',
-      title: 'Acesso PMBC',
+      title: 'Acesso PMSC',
       message: 'Entrada exclusiva para operadores autorizados da Policia Militar.',
       badgeClass: 'border-sky-300/30 bg-sky-400/10 text-sky-100',
     };
@@ -245,7 +245,7 @@ function roleLabel(role: string) {
 
 function institutionLabel(institution: string) {
   if (institution === 'GMBC') return 'GMBC';
-  if (institution === 'PMBC') return 'PMBC';
+  if (institution === 'PMBC') return 'PMSC';
   if (institution === 'BIKE_SEGURA') return 'Bike Segura BC';
   return institution;
 }
